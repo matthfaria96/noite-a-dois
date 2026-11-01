@@ -738,10 +738,16 @@ body.carta-aberta .side, body.carta-aberta #dado-hud { opacity: 0 !important; }
    Placar do jogo: nomes em cima; embaixo, controles à esquerda, rolagem no centro
    e o último lance à direita. No desktop nada estica: tudo num bloco central confortável.
    ===================================================================== */
-/* iPhone (app na tela inicial): a altura "100%" deixa de fora a faixa da barra de gestos e sobrava um vão.
-   O tabuleiro e o placar usam a altura física da tela, e o fundo da página é o mesmo escuro da cena. */
+/* iPhone (app na tela inicial): o iOS não desenha elementos fixos na faixa de baixo, perto da barra de gestos;
+   ali só aparece o fundo da página. Então tudo fica acima dela, o fundo é o mesmo preto-vinho da base da cena
+   e a cena escurece até ele: a faixa vira o "chão" escuro, não um corte. */
 html, body { background: #070106; }
-#stage, #hud { top: 0; bottom: auto; height: 100vh; height: 100lvh; }
+#stage::after { content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 18%; pointer-events: none;
+  background: linear-gradient(transparent, #070106); }
+/* no app instalado a própria faixa já afasta os botões da barra de gestos: sem margem dobrada */
+@media (display-mode: standalone), (display-mode: fullscreen) {
+  #hud { padding-bottom: 14px; }
+}
 .topbar { gap: 10px; }
 .topbar .chip { flex: 1 1 0; }
 .bottom { display: grid; grid-template-columns: 1fr auto 1fr; align-items: end; gap: 10px; width: 100%; }
@@ -780,4 +786,29 @@ html, body { background: #070106; }
 .bottom { pointer-events: none; }
 .bottom .lado > *, .bottom .centro > * { pointer-events: auto; }
 #dado-hud { pointer-events: none; }
-#dice-layer { top: 0; bottom: auto; height: 100vh; height: 100lvh; }
+
+/* controles no meio da altura da tela: menu e mapa à esquerda, último lance à direita */
+.bottom { display: flex; flex-direction: column; align-items: center; }
+.bottom .lado { position: fixed; top: 50%; transform: translateY(-50%); z-index: 6; }
+.bottom .lado.esq { left: max(12px, env(safe-area-inset-left)); }
+.bottom .lado.dir { right: max(12px, env(safe-area-inset-right)); }
+/* os avisos laterais sobem um pouco para não encavalar com os controles do meio */
+.side { top: 27%; }
+@media (min-width: 700px) {
+  .bottom .lado.esq { left: max(24px, env(safe-area-inset-left)); }
+  .bottom .lado.dir { right: max(24px, env(safe-area-inset-right)); }
+  .side { top: 30%; }
+}
+
+/* pedra em vetor (botão de rolar e último lance) */
+.pedra-svg { display: block; width: 100%; height: 100%; overflow: visible; filter: drop-shadow(0 0 8px rgba(255, 60, 110, .55)); }
+.pedra-num { font: italic 700 25px var(--serif); fill: #fff3f6; paint-order: stroke; stroke: rgba(80, 0, 25, .55); stroke-width: 2.5px; }
+.die-ico { width: 40px; height: 46px; border-radius: 0; background: none; box-shadow: none; transform: none; display: block; }
+.die-ico .pedra-num { font-size: 27px; }
+#dado-hud .medalhao { width: 54px; height: 61px; border-radius: 0; overflow: visible; background: none; border: 0; box-shadow: none; }
+#dado-hud .medalhao .pedra-svg { filter: drop-shadow(0 0 12px rgba(255, 60, 110, .7)); }
+#dado-hud .legenda { flex-direction: column; align-items: center; gap: 1px; max-width: 84px; }
+#dado-hud .legenda b { display: none; }
+#dado-hud .quem { font-size: 11px; text-align: center; max-width: 84px; }
+#dado-hud .quem::before { content: none; }
+@keyframes medalhao { 0% { transform: scale(.5) rotate(-12deg); opacity: 0 } 60% { transform: scale(1.12) rotate(3deg); opacity: 1 } 100% { transform: none } }

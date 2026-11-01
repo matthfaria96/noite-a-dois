@@ -169,17 +169,6 @@ export class DiceStage {
     this.resize();
   }
 
-  // recorte quadrado em volta da pedra, logo depois de desenhar o quadro (a mesma pedra vai para o painel do jogo)
-  #foto() {
-    try {
-      const src = this.renderer.domElement, p = this.die.position.clone().project(this.camera);
-      const cx = (p.x + 1) / 2 * src.width, cy = (1 - p.y) / 2 * src.height, lado = Math.min(src.width, src.height) * 0.5;
-      const cv = document.createElement('canvas'); cv.width = cv.height = 192;
-      cv.getContext('2d').drawImage(src, cx - lado / 2, cy - lado / 2, lado, lado, 0, 0, 192, 192);
-      return cv.toDataURL('image/png');
-    } catch { return null; }
-  }
-
   // A pedra surge do escuro no centro, girando em torno do próprio eixo, e desacelera numa curva só
   // até parar de frente na face sorteada. Resolve quando ela para.
   roll(value, onLand) {
@@ -200,7 +189,7 @@ export class DiceStage {
       const nucleo = this.die.getObjectByName('nucleo'), corpo = this.die.children[0].material;
       this.die.children.forEach(c => { if (c.userData.n) c.visible = true; });
       const cam = this.camera;
-      let landed = false, foto = null;
+      let landed = false;
 
       const frame = () => {
         const now = performance.now();
@@ -228,12 +217,11 @@ export class DiceStage {
           onLand?.();
         }
         this.renderer.render(this.scene, this.camera);
-        if (landed && !foto && now - t0 > T + 250) foto = this.#foto();
         if (now - t0 < T + HOLD) requestAnimationFrame(frame);
         else {
           L.classList.remove('in'); L.classList.add('out');
           setTimeout(() => { L.classList.add('hidden'); L.classList.remove('out'); this.renderer.clear(); }, 450);
-          resolve(foto);
+          resolve();
         }
       };
       requestAnimationFrame(frame);

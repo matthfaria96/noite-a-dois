@@ -6,7 +6,7 @@ import { LIMITES, limitesAtivos, catalogo, baralho, armadilhas, sortes, desejos,
 import * as lembranca from './lembranca.js';
 
 window.progresso?.(0.74, 'Preparando o tabuleiro…');
-import { iconURL } from './icons.js';
+import { iconURL, pedraSVG } from './icons.js';
 import { $, wait, rnd, shuffle, store } from './util.js';
 import { GameAudio } from './audio.js';
 import { Narrator } from './voice.js';
@@ -323,15 +323,17 @@ async function move(who, to) {
   if (!p.quase && p.pos >= G.N - 6 && p.pos < G.N - 1) { p.quase = true; fala('quase'); }
 }
 
-// painel do último lance: a pedra fotografada quando parou, o número e quem tirou
-function ultimoLance(v, who, foto) {
+// último lance: a pedra em vetor com o número, e quem tirou; o botão de rolar mostra a mesma pedra
+function ultimoLance(v, who) {
   const el = $('#dado-hud');
-  if (foto) el.querySelector('img').src = foto;
+  el.querySelector('.medalhao').innerHTML = pedraSVG(v);
+  $('#btn-roll .die-ico').innerHTML = pedraSVG(v);
   el.querySelector('b').textContent = v;
   el.querySelector('.quem').innerHTML = `<i style="color:var(--${who})">${G.players[who].name}</i>`;
   el.style.setProperty('--c', `var(--${who})`);
   el.classList.remove('hidden', 'novo'); void el.offsetWidth; el.classList.add('novo');
 }
+$('#btn-roll .die-ico').innerHTML = pedraSVG(); // a pedra, sem número até o primeiro lance
 async function roll() {
   if (G.busy) return;
   G.busy = true; updateHUD();
@@ -341,9 +343,9 @@ async function roll() {
   const v = 1 + rnd(6);
   audio.roll();
   board.paused = true; // o palco do dado cobre a tela: o 3D do tabuleiro descansa
-  const foto = await dice.roll(v, () => { audio.land(); vibrar(25); });
+  await dice.roll(v, () => { audio.land(); vibrar(25); });
   board.paused = false;
-  ultimoLance(v, who, foto);
+  ultimoLance(v, who);
   if (v >= 5) talvez('dadoalto', 0.5);
   else if (v === 1) talvez('dadobaixo', 0.5);
   await pause(250);

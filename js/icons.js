@@ -105,3 +105,21 @@ export function iconURL(tipo, size = 128) {
   drawIcon(cv.getContext('2d'), tipo, size / 2, size / 2, size * 0.36);
   return (cache[k] = cv.toDataURL());
 }
+
+// Pedra do dado (o mesmo rubi lapidado da rolagem), em vetor: losango em pé com as 4 facetas da coroa,
+// contorno rosé e o número claro no centro. Serve para o botão de rolar e para o último lance.
+let pedraN = 0;
+export function pedraSVG(numero = '') {
+  const id = 'pd' + (pedraN++);
+  return `<svg class="pedra-svg" viewBox="0 0 64 72" aria-hidden="true">
+    <defs><radialGradient id="${id}" cx="40%" cy="35%" r="70%"><stop offset="0" stop-color="#ff5c7c"/><stop offset=".55" stop-color="#c8102e"/><stop offset="1" stop-color="#5c0418"/></radialGradient></defs>
+    <path d="M28 3h8l24 30v6L36 69h-8L4 39v-6Z" fill="url(#${id})"/>
+    <path d="M32 36 28 3h8Z M32 36 60 33v6Z M32 36 36 69h-8Z M32 36 4 39v-6Z" fill="#000" opacity=".12"/>
+    <path d="M32 36 36 3 60 33Z" fill="#ff8aa2" opacity=".28"/>
+    <path d="M32 36 4 33 28 3Z" fill="#ffb3c4" opacity=".38"/>
+    <path d="M32 36 60 39 36 69Z" fill="#2a0010" opacity=".42"/>
+    <path d="M32 36 4 39 28 69Z" fill="#3a0016" opacity=".26"/>
+    <path d="M28 3h8l24 30v6L36 69h-8L4 39v-6Z" fill="none" stroke="#ffb1c2" stroke-opacity=".7" stroke-width="1.2" stroke-linejoin="round"/>
+    ${numero !== '' ? `<text x="32" y="44" text-anchor="middle" class="pedra-num">${numero}</text>` : ''}
+  </svg>`;
+}
