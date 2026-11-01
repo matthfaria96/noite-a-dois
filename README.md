@@ -47,7 +47,7 @@ Ao publicar mudanças, aumente `VERSAO` em `sw.js` para os aparelhos baixarem a 
 
 ## Configurações (⚙️ na tela inicial ou ☰ → Configurações)
 - **Som:** volume da música e dos efeitos.
-- **Narração:** liga/desliga a narradora, escolhe o volume, a voz do aparelho e tem um botão para ouvir.
+- **Narração:** liga/desliga a narradora, escolhe o volume e tem um botão para ouvir.
 - **Gráficos:** Automático, Alta ou Leve.
   - **Alta:** brilho (bloom) e foco suave nas bordas.
   - **Leve:** sem bloom e com resolução menor.
@@ -70,10 +70,9 @@ Com isso, o jogo exige login (com "esqueci a senha" por e-mail), e os nomes, as 
 **Sem configurar**, o jogo usa uma conta local opcional (usuário e senha só neste aparelho, com hash PBKDF2), criada em Configurações → "Proteger o jogo com senha".
 
 ## Narração e música
-- **Narradora:** anuncia o início, a vez de cada um, as fases, armadilhas e sorte, lê as cartas e o desejo escolhido. A música abaixa enquanto ela fala.
-  Por padrão usa a voz feminina em português mais natural do aparelho. No iPhone e no Mac, a melhor costuma ser a *Luciana* (dá para baixar a versão "Aprimorada" em Ajustes → Acessibilidade → Conteúdo Falado → Vozes).
-- **Voz gravada (VoiceStudio):** as falas fixas estão em `audio/voz/ROTEIRO.md`. Exporte cada uma como MP3 com o nome indicado, coloque em `audio/voz/` e liste em `audio/lista.json`.
-  As falas com nomes e o texto das cartas continuam com a voz do aparelho.
+- **Narradora:** voz feminina sussurrada e sedutora, gravada no VoiceStudio (OmniVoice, clonada de um trecho de ASMR).
+  Ela dá as boas-vindas, avisa de quem é a vez, anuncia as fases, o tipo de carta, armadilhas, sorte, o Pico do Amor e o desejo. A música abaixa enquanto ela fala.
+  **Só toca falas gravadas** (`audio/voz/ROTEIRO.md`, listadas em `audio/lista.json`): o jogo não usa a voz do aparelho. Nomes, texto das cartas e desejos aparecem só na tela.
 - **Música:** trilha ambiente hipnótica **gerada em tempo real**, sem arquivo: acordes suspensos que "respiram", um grave profundo, batidas de coração bem baixinhas e notas cristalinas com eco.
   Ela esquenta a cada fase: o filtro abre, o coração acelera e aparecem mais notas. Para usar uma faixa própria, coloque `audio/musica.mp3` e marque `"musica": true` em `audio/lista.json`.
 
