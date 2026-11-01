@@ -1,11 +1,21 @@
 // Service worker: deixa o jogo abrir offline e instalável como app.
 // Ao mudar qualquer arquivo, aumente a VERSAO para os aparelhos baixarem a nova.
-const VERSAO = 'nad-v6';
+const VERSAO = 'nad-v7';
 const ARQUIVOS = [
   './',
   'index.html',
   'manifest.webmanifest',
   'audio/lista.json',
+  'audio/voz/armadilha.mp3',
+  'audio/voz/boas-vindas.mp3',
+  'audio/voz/desejo.mp3',
+  'audio/voz/fase-1.mp3',
+  'audio/voz/fase-2.mp3',
+  'audio/voz/fase-3.mp3',
+  'audio/voz/fase-4.mp3',
+  'audio/voz/pico.mp3',
+  'audio/voz/recusou.mp3',
+  'audio/voz/sorte.mp3',
   'css/style.css',
   'fonts/great-vibes-normal.woff2',
   'fonts/inter.woff2',
