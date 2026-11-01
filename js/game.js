@@ -1,15 +1,17 @@
 // Regras, fluxo de turnos, interface, configurações, conta, modo de teste, narração e música.
 import { Board3D } from './scene.js';
 import { DiceStage } from './dice.js';
-import { FASES, CATEGORIAS, VERDADE, DESAFIO, PENA, ARMADILHA, SORTE, DESEJOS } from './data.js';
+import { FASES, CATEGORIAS } from './data.js';
+import { LIMITES, limitesAtivos, baralho, armadilhas, sortes, desejos, faseDaCasa, pesoNoRitmo } from './cartas.js';
+import * as lembranca from './lembranca.js';
 import { iconURL } from './icons.js';
-import { $, wait, rnd, pick, shuffle, store } from './util.js';
+import { $, wait, rnd, shuffle, store } from './util.js';
 import { GameAudio } from './audio.js';
 import { Narrator } from './voice.js';
 import { auth } from './auth.js';
 
 // ------------------------------------------------------------ configurações (salvas no aparelho e na nuvem)
-const CFG_DEFAULT = { musica: 0.6, efeitos: 0.7, voz: 1, narracao: true, graficos: 'auto', dur: 40, start: 'ela', testeVel: 2 };
+const CFG_DEFAULT = { musica: 0.6, efeitos: 0.7, voz: 1, narracao: true, vibrar: true, graficos: 'auto', dur: 40, start: 'ela', ritmo: 'provocante', testeVel: 2, limites: {}, cartas: [] };
 const cfg = { ...CFG_DEFAULT, ...store.get('cfg', {}) };
 let saveT;
 function saveCfg() {
@@ -33,12 +35,13 @@ function generateBoard(N) {
   const tiles = [{ tipo: 'inicio', fase: 0 }];
   let prev = null;
   for (let i = 1; i < N - 1; i++) {
-    const fase = Math.min(3, Math.floor((i / (N - 1)) * 4));
+    const fase = faseDaCasa(i, N, cfg.ritmo);
     const pool = Object.entries(CATEGORIAS).filter(([k]) =>
       k !== prev && !(k === 'armadilha' && i < 3) && !(k === 'sorte' && prev === 'armadilha'));
-    const total = pool.reduce((s, [, c]) => s + c.peso[fase], 0);
+    const peso = ([k, c]) => c.peso[fase] * pesoNoRitmo(k, cfg.ritmo);
+    const total = pool.reduce((s, e) => s + peso(e), 0);
     let r = Math.random() * total, tipo = pool[0][0];
-    for (const [k, cat] of pool) { r -= cat.peso[fase]; if (r <= 0) { tipo = k; break; } }
+    for (const e of pool) { r -= peso(e); if (r <= 0) { tipo = e[0]; break; } }
     tiles.push({ tipo, fase });
     prev = tipo;
   }
@@ -63,16 +66,17 @@ const G = { N: cfg.dur, starter: cfg.start, players: {}, turn: 'ela', busy: fals
 const TESTE = { on: false, vel: 1 };
 const other = g => (g === 'ele' ? 'ela' : 'ele');
 const pause = ms => wait(ms / (TESTE.on ? TESTE.vel : 1));
-const say = key => (TESTE.on && TESTE.vel > 1 ? Promise.resolve() : voice.say(key));
-// reações espontâneas da narradora: só às vezes, e nunca a mesma duas vezes seguidas
-const REACOES = ['uau', 'gostosinho', 'delicia', 'eu-amo', 'olha-so', 'assim-gosto', 'continua'];
-let ultimaReacao;
-function reage(chance = 0.4, opcoes = REACOES) {
-  if (Math.random() > chance) return;
-  const k = pick(opcoes.filter(o => o !== ultimaReacao));
-  ultimaReacao = k;
-  say(`reacao-${k}`);
+// narradora: falas curtas por momento do jogo. As opcionais (vez, dado, reações) só às vezes
+// e nunca em duas rodadas seguidas, para soarem espontâneas
+const fala = momento => (TESTE.on && TESTE.vel > 1 ? Promise.resolve() : voice.fala(momento));
+let ultimaOpcional = -9;
+function talvez(momento, chance) {
+  if (G.rodadas - ultimaOpcional < 2 || Math.random() > chance) return;
+  ultimaOpcional = G.rodadas;
+  fala(momento);
 }
+// vibração (Android; o iPhone não permite em páginas web)
+const vibrar = padrao => { if (cfg.vibrar && !TESTE.on) try { navigator.vibrate?.(padrao); } catch {} };
 
 function fill(text, who) {
   const me = G.players[who], par = G.players[other(who)];
@@ -163,22 +167,28 @@ function showCard({ cat, text, secs = 0, who, fase, refusable = true, falar = tr
       tm.onclick = () => {
         if (iv) return reset();
         const t0 = Date.now();
+        fala('tempo');
         iv = setInterval(() => {
           const left = Math.max(0, secs - (Date.now() - t0) / 1000);
           fg.style.strokeDashoffset = C * (1 - left / secs);
           lbl.textContent = Math.ceil(left) + 's';
-          if (left <= 0) { clearInterval(iv); iv = null; lbl.textContent = '⏰'; audio.alarm(); }
+          if (left <= 0) { clearInterval(iv); iv = null; lbl.textContent = '⏰'; audio.alarm(); vibrar([60, 80, 60]); fala('fimtempo'); }
         }, 200);
       };
     }
     let autoT;
-    const done = r => { clearInterval(iv); clearTimeout(autoT); hide('#card'); voice.stop(); if (r === 'feito' && falar) reage(); resolve(r); };
+    const done = r => {
+      clearInterval(iv); clearTimeout(autoT); hide('#card'); voice.stop();
+      if (r === 'feito') { G.diario.feitas++; if (falar) talvez(fase < 2 ? 'suave' : 'quente', 0.5); }
+      else G.diario.recusadas++;
+      resolve(r);
+    };
     $('#btn-done').onclick = () => done('feito');
     refuse.onclick = () => done('recusou');
     card.style.animation = 'none'; void card.offsetWidth; card.style.animation = '';
     show('#card');
     audio.card();
-    if (falar) say(cat.nome.toLowerCase());
+    if (falar) fala(tipo);
     if (TESTE.on) autoT = setTimeout(() => done(refusable && Math.random() < 0.12 ? 'recusou' : 'feito'), 1800 / TESTE.vel);
   });
 }
@@ -212,7 +222,8 @@ function startGame(teste = false) {
   };
   G.turn = G.starter === 'sorte' ? (Math.random() < 0.5 ? 'ele' : 'ela') : G.starter;
   G.tiles = generateBoard(G.N);
-  G.fase = 0; G.rodadas = 0; G.t0 = Date.now();
+  G.fase = 0; G.rodadas = 0; G.t0 = Date.now(); ultimaOpcional = -9;
+  G.diario = { feitas: 0, recusadas: 0, verdade: 0, desafio: 0, pena: 0, armadilha: 0, sorte: 0 };
   used.clear();
   G.busy = false;
   board.build(G.tiles);
@@ -226,9 +237,8 @@ function startGame(teste = false) {
   $('#test-badge b').textContent = `Modo de teste · ${TESTE.vel}×`;
   updateHUD();
   toast(`${G.players[G.turn].name} começa a noite…`);
-  say('inicio');
-  say('boas-vindas');
-  say('comeca');
+  fala('inicio');
+  fala('comeca');
   autoNext();
 }
 
@@ -243,7 +253,9 @@ async function move(who, to) {
   updateHUD();
   // entrou numa fase nova: a narradora anuncia e a música esquenta
   const f = G.tiles[p.pos].fase;
-  if (f > G.fase) { G.fase = f; audio.setPhase(f); say(`fase-${f + 1}`); }
+  if (f > G.fase) { G.fase = f; audio.setPhase(f); fala(`fase${f + 1}`); }
+  // alguém está quase no Pico: ela avisa uma vez por jogador
+  if (!p.quase && p.pos >= G.N - 6 && p.pos < G.N - 1) { p.quase = true; fala('quase'); }
 }
 
 async function roll() {
@@ -255,10 +267,11 @@ async function roll() {
   const v = 1 + rnd(6);
   audio.roll();
   board.paused = true; // o palco do dado cobre a tela: o 3D do tabuleiro descansa
-  await dice.roll(v, () => audio.land());
+  await dice.roll(v, () => { audio.land(); vibrar(25); });
   board.paused = false;
   board.placeDie(v, who);
-  if (v >= 5) reage(0.6, ['uau', 'olha-so']);
+  if (v >= 5) talvez('dadoalto', 0.5);
+  else if (v === 1) talvez('dadobaixo', 0.5);
   await pause(250);
   await move(who, p.pos + v);
   if (p.pos >= G.N - 1) return finish(who);
@@ -271,9 +284,9 @@ async function roll() {
 async function refusePenalty(who) {
   const p = G.players[who];
   const tipo = G.tiles[p.pos].tipo in CATEGORIAS ? G.tiles[p.pos].tipo : 'armadilha';
-  if (p.passe) { p.passe--; sides(tipo, 'Usou o passe livre', { titulo: 'Recusou', sub: p.name, subR: 'Sem penalidade' }); updateHUD(); return; }
+  if (p.passe) { p.passe--; sides(tipo, 'Usou o passe livre', { titulo: 'Recusou', sub: p.name, subR: 'Sem penalidade' }); updateHUD(); fala('passe'); return; }
   sides(tipo, 'Volta 2 casas', { titulo: 'Recusou', sub: p.name, subR: 'Penalidade' });
-  say('recusou');
+  fala('recusou');
   audio.trap();
   await move(who, p.pos - 2);
 }
@@ -289,8 +302,8 @@ async function resolveTile(who) {
   await pause(950);
 
   if (tile.tipo === 'verdade' || tile.tipo === 'desafio' || tile.tipo === 'pena') {
-    const src = { verdade: VERDADE, desafio: DESAFIO, pena: PENA }[tile.tipo][f];
-    const card = draw(tile.tipo + f, src, who);
+    const card = draw(tile.tipo + f, baralho(tile.tipo, f, cfg), who);
+    G.diario[tile.tipo]++;
     const r = await showCard({ cat, text: fill(card.t, who), secs: card.s, who, fase: f });
     if (r === 'recusou') await refusePenalty(who);
     return false;
@@ -298,8 +311,10 @@ async function resolveTile(who) {
 
   if (tile.tipo === 'armadilha') {
     audio.trap();
-    const card = draw('armadilha', ARMADILHA, who);
-    say('armadilha');
+    const card = draw('armadilha', armadilhas(cfg.limites), who);
+    G.diario.armadilha++;
+    vibrar([40, 60, 40]);
+    fala('armadilha');
     const text = fill(card.t, who);
     const r = await showCard({ cat, text, who, fase: f, falar: false });
     if (r === 'recusou') { await refusePenalty(who); return false; }
@@ -318,8 +333,9 @@ async function resolveTile(who) {
   }
 
   if (tile.tipo === 'sorte') {
-    const card = draw('sorte', SORTE, who);
-    say('sorte');
+    const card = draw('sorte', sortes(cfg.limites), who);
+    G.diario.sorte++;
+    fala('sorte');
     await showCard({ cat, text: fill(card.t, who), who, fase: f, refusable: false, falar: false });
     if (card.e === 'avancar') { sides('sorte', `Avança ${card.n} casa${card.n > 1 ? 's' : ''}`, { sub: 'Efeito', subR: p.name }); await move(who, p.pos + card.n); }
     if (card.e === 'passe') { p.passe++; updateHUD(); sides('sorte', 'Ganhou um passe livre', { sub: 'Efeito', subR: p.name }); }
@@ -340,7 +356,7 @@ function endTurn(again) {
   board.focus(next);
   G.busy = false;
   updateHUD();
-  say(pick(['vez-1', 'vez-2', 'vez-3', 'vez-4']));
+  talvez('vez', 0.5);
   autoNext();
 }
 
@@ -348,9 +364,10 @@ function finish(winner) {
   audio.win();
   const w = G.players[winner], l = G.players[other(winner)];
   updateHUD();
-  say(winner === 'ele' ? 'vencedor' : 'vencedora');
-  say('pico');
-  say('desejo');
+  vibrar([30, 50, 30, 50, 120]);
+  fala(winner === 'ele' ? 'vencedor' : 'vencedora');
+  fala('pico');
+  fala('desejo');
   if (!TESTE.on) {
     const st = store.get('stats', { partidas: 0, ele: 0, ela: 0 });
     st.partidas++; st[winner]++;
@@ -359,7 +376,7 @@ function finish(winner) {
   }
   $('#final-title').innerHTML = `<span style="color:var(--${winner})">${w.name}</span> chegou ao Pico do Amor!`;
   $('#final-sub').textContent = `Escolha a dedo 1 desejo para ${l.name} realizar:`;
-  const opts = shuffle([...DESEJOS.ambos, ...DESEJOS[winner]]).slice(0, 3);
+  const opts = shuffle(desejos(winner, cfg.limites)).slice(0, 3);
   const box = $('#wishes'); box.innerHTML = '';
   hide('#wish-chosen'); box.classList.remove('hidden');
   const choose = t => {
@@ -368,6 +385,13 @@ function finish(winner) {
     $('#wish-chosen .chosen-text').textContent = TESTE.on
       ? `Teste concluído: ${G.rodadas} rodadas em ${Math.round((Date.now() - G.t0) / 1000)}s (${TESTE.vel}×).`
       : `“${t}”`;
+    G.noite = {
+      data: new Date().toLocaleDateString('pt-BR', { day: 'numeric', month: 'long', year: 'numeric' }),
+      ele: G.players.ele.name, ela: G.players.ela.name, vencedor: w.name, desejo: t, numeros: lembranca.resumo(G),
+    };
+    G.noite.vezes = TESTE.on ? 0 : lembranca.registrar(G.noite);
+    lembranca.mostrar($('#memoria'), G.noite);
+    $('#btn-lembranca').classList.toggle('hidden', TESTE.on);
     show('#wish-chosen');
     audio.card();
   };
@@ -405,9 +429,11 @@ function bindRange(id, key, after) {
 bindRange('#cfg-musica', 'musica');
 bindRange('#cfg-efeitos', 'efeitos', () => audio.hop());
 bindRange('#cfg-voz', 'voz');
+$('#cfg-vibrar').checked = cfg.vibrar;
+$('#cfg-vibrar').onchange = e => { cfg.vibrar = e.target.checked; saveCfg(); if (cfg.vibrar) vibrar(30); };
 $('#cfg-narracao').checked = cfg.narracao;
 $('#cfg-narracao').onchange = e => { cfg.narracao = e.target.checked; applyCfg(); saveCfg(); };
-$('#btn-voz-teste').onclick = () => { voice.stop(); const was = voice.enabled; voice.enabled = true; voice.say('boas-vindas').then(() => { voice.enabled = was; }); };
+$('#btn-voz-teste').onclick = () => { voice.stop(); const was = voice.enabled; voice.enabled = true; voice.fala('inicio').then(() => { voice.enabled = was; }); };
 
 function renderConta() {
   const box = $('#conta');
@@ -422,6 +448,57 @@ function renderConta() {
 }
 function openSettings() { renderConta(); hide('#menu'); show('#settings'); }
 $('#btn-settings').onclick = openSettings;
+$('#btn-lembranca').onclick = () => G.noite && lembranca.guardar(G.noite).catch(() => toast('Não deu para salvar a imagem'));
+
+// ------------------------------------------------------------ ritmo, limites e cartas do casal
+segment('#seg-ritmo', () => cfg.ritmo, v => { cfg.ritmo = v; });
+function resumoNoite() {
+  const n = limitesAtivos(cfg.limites).length, c = cfg.cartas.length;
+  $('#limites-resumo').textContent = n ? `${n} ${n === 1 ? 'limite' : 'limites'} hoje` : 'Tudo liberado';
+  $('#cartas-resumo').textContent = c ? `${c} ${c === 1 ? 'carta' : 'cartas'} de vocês` : 'Criem as suas';
+}
+function abrirLimites() {
+  $('#limites-lista').innerHTML = LIMITES.map(l => `
+    <label class="limite"><span><b>${l.nome}</b><small>${l.desc}</small></span>
+      <span class="switch"><input type="checkbox" data-id="${l.id}" ${cfg.limites[l.id] === false ? '' : 'checked'}><i></i></span></label>`).join('');
+  $('#limites-lista').querySelectorAll('input').forEach(i => i.onchange = () => {
+    cfg.limites = { ...cfg.limites, [i.dataset.id]: i.checked };
+    saveCfg(); resumoNoite();
+  });
+  hide('#menu'); show('#limites');
+}
+$('#btn-limites').onclick = abrirLimites;
+$('#btn-limites-menu').onclick = abrirLimites;
+
+const nova = { tipo: 'verdade', f: 0, s: 0 };
+const segLocal = (id, k, num) => {
+  segSet(id, nova[k]);
+  document.querySelectorAll(`${id} button`).forEach(b => b.onclick = () => { nova[k] = num ? Number(b.dataset.v) : b.dataset.v; segSet(id, nova[k]); });
+};
+segLocal('#seg-nc-tipo', 'tipo'); segLocal('#seg-nc-fase', 'f', true); segLocal('#seg-nc-tempo', 's', true);
+function listarCartas() {
+  const ul = $('#lista-cartas');
+  $('#cartas-total').textContent = cfg.cartas.length ? `· ${cfg.cartas.length}` : '';
+  ul.innerHTML = cfg.cartas.length ? '' : '<li class="vazio">Nenhuma ainda. As cartas de vocês aparecem aqui.</li>';
+  cfg.cartas.forEach((c, i) => {
+    const li = document.createElement('li');
+    li.innerHTML = `<span class="tag t-${c.tipo}">${c.tipo === 'verdade' ? 'Verdade' : 'Desafio'} · ${FASES[c.f].nome}${c.s ? ' · ' + (c.s < 60 ? c.s + 's' : c.s / 60 + ' min') : ''}</span><p></p><button type="button" aria-label="Apagar carta">×</button>`;
+    li.querySelector('p').textContent = c.t;
+    li.querySelector('button').onclick = () => { cfg.cartas = cfg.cartas.filter((_, j) => j !== i); saveCfg(); listarCartas(); resumoNoite(); };
+    ul.append(li);
+  });
+}
+$('#btn-cartas').onclick = () => { listarCartas(); show('#cartas'); };
+$('#nova-carta').onsubmit = e => {
+  e.preventDefault();
+  const t = $('#nc-texto').value.trim().replace(/\s+/g, ' ');
+  if (t.length < 6) return toast('Escreva a carta primeiro');
+  cfg.cartas = [{ t, tipo: nova.tipo, f: nova.f, s: nova.s }, ...cfg.cartas];
+  $('#nc-texto').value = '';
+  saveCfg(); listarCartas(); resumoNoite();
+  toast('Carta adicionada ao baralho');
+};
+resumoNoite();
 $('#btn-settings-menu').onclick = openSettings;
 $('#btn-proteger').onclick = () => { hide('#settings'); openLock('criar'); };
 $('#btn-sair').onclick = async () => { await auth.logout(); hide('#settings'); hide('#hud'); hide('#setup'); openLock('entrar'); };
@@ -494,7 +571,8 @@ async function afterLogin() {
     if (prof.nome_ele) $('#name-ele').value = prof.nome_ele;
     if (prof.nome_ela) $('#name-ela').value = prof.nome_ela;
     applyCfg(); setGraficos(cfg.graficos);
-    G.N = cfg.dur; G.starter = cfg.start; segSet('#seg-dur', G.N); segSet('#seg-start', G.starter);
+    G.N = cfg.dur; G.starter = cfg.start; segSet('#seg-dur', G.N); segSet('#seg-start', G.starter); segSet('#seg-ritmo', cfg.ritmo);
+    $('#cfg-vibrar').checked = cfg.vibrar; resumoNoite();
   }
   show('#setup');
   board.setMode('orbit');

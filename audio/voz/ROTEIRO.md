@@ -1,42 +1,83 @@
 # Roteiro da narradora (gravado no VoiceStudio)
 
-Voz feminina sussurrada e sedutora, clonada de um trecho de ASMR. Ritmo lento, com respiros nas reticências.
-As falas `reacao-*` são reações espontâneas: tocam em cerca de 40% das cartas cumpridas (e às vezes num dado 5 ou 6), sem repetir a anterior.
-A narradora **só usa estas falas gravadas**: não há voz do aparelho. O que não está gravado (nomes, texto das cartas e desejos) fica só na tela.
+Voz feminina sussurrada e sedutora, clonada de um trecho de ASMR. Falas curtas e genéricas, que servem para qualquer carta:
+a narradora sugere, não explica. Nada de nomes nem de texto de carta (isso fica na tela).
+
+Cada momento do jogo tem várias variações (`<momento>-<n>`). O jogo sorteia sem repetir até todas saírem, e o sorteio
+continua de uma partida para a outra. As falas opcionais (vez, dado, reações) tocam só às vezes, com intervalo, para soarem espontâneas.
+Reações a cartas cumpridas: `suave-*` no Aquecimento e na Provocação, `quente-*` no Fogo e no Clímax.
 
 Cada fala é `audio/voz/<arquivo>.mp3` e precisa estar na lista `"voz"` de `audio/lista.json`.
-Os textos ficam em `FALAS`, em `js/voice.js`. Ao mudar uma fala, mude nos dois lugares e grave de novo.
+Os textos ficam em `FALAS`, em `js/voice.js`. Para variar mais, basta gravar `<momento>-<próximo n>`: o jogo já inclui.
 
 | arquivo | fala |
 |---|---|
-| inicio | Vamos começar… meus amores? |
-| boas-vindas | Bem-vindos à Noite a Dois. Respirem fundo… a subida até o Pico do Amor começa agora. |
-| comeca | Você começa… sem pressa. |
+| inicio-1 | Vamos começar… meus amores? |
+| inicio-2 | Prontos?… Então vem. |
+| inicio-3 | Hoje a noite é de vocês… |
+| comeca-1 | Você começa… |
+| comeca-2 | Primeiro… você. |
 | vez-1 | Sua vez… |
 | vez-2 | Agora é com você. |
-| vez-3 | Pode rolar o dado… devagar. |
-| vez-4 | É a sua vez… vem. |
-| fase-1 | Aquecimento. Olhares, segredos… e toques leves. |
-| fase-2 | Provocação. Agora os beijos ficam mais demorados. |
-| fase-3 | Fogo. Pele com pele… sem pressa nenhuma. |
-| fase-4 | Clímax. O pico está logo ali. Sem freios. |
-| verdade | Hora da verdade… |
-| desafio | Um desafio… pra você. |
-| pena | Uma pena… faça com carinho. |
-| armadilha | Cuidado… uma armadilha. |
-| sorte | A sorte sorriu pra você. |
-| pico | Vocês alcançaram o Pico do Amor. |
-| desejo | Agora escolha o seu desejo… com carinho. |
-| recusou | Hoje não? Tudo bem… mas você volta duas casas. |
-| vencedor | Ebaa! Temos um vencedor! |
-| vencedora | Ebaa! Temos uma vencedora! |
-| reacao-uau | Uau! |
-| reacao-gostosinho | Hmm… que gostosinho… |
-| reacao-delicia | Ai… que delícia… |
-| reacao-eu-amo | Eu amo! |
-| reacao-olha-so | Olha só… |
-| reacao-assim-gosto | Hmm… assim eu gosto. |
-| reacao-continua | Isso… continua assim. |
+| vez-3 | Joga pra mim… |
+| vez-4 | Vem… sua vez. |
+| vez-5 | Sua vez, amor… |
+| vez-6 | E agora… você. |
+| vez-7 | Sua vez… capricha. |
+| fase1-1 | Aquecimento… |
+| fase1-2 | Devagar… aquecimento. |
+| fase2-1 | Provocação… |
+| fase2-2 | Agora… provocação. |
+| fase3-1 | Fogo… |
+| fase3-2 | Tá esquentando… fogo. |
+| fase4-1 | Clímax… |
+| fase4-2 | Chegou a hora… clímax. |
+| verdade-1 | Verdade… |
+| verdade-2 | Hora da verdade… |
+| verdade-3 | Sem mentir pra mim… |
+| desafio-1 | Desafio… |
+| desafio-2 | Um desafio… |
+| desafio-3 | Quero ver você fazer… |
+| pena-1 | Pena… |
+| pena-2 | Com a pena… |
+| pena-3 | Bem de leve… |
+| armadilha-1 | Ops… armadilha. |
+| armadilha-2 | Ihh… caiu. |
+| armadilha-3 | Cuidado… |
+| sorte-1 | Que sorte… |
+| sorte-2 | Hoje é seu dia… |
+| sorte-3 | A sorte gosta de você… |
+| recusou-1 | Hoje não?… Duas casas pra trás. |
+| recusou-2 | Fugiu?… Volta duas. |
+| recusou-3 | Tudo bem… mas tem um preço. |
+| passe-1 | Passe livre… dessa vez passa. |
+| tempo-1 | Valendo… |
+| tempo-2 | Começou… |
+| fimtempo-1 | Tempo! |
+| fimtempo-2 | Acabou o tempo… |
+| dadoalto-1 | Uau! |
+| dadoalto-2 | Olha só… |
+| dadoalto-3 | Isso! |
+| dadobaixo-1 | Devagarinho… |
+| dadobaixo-2 | Sem pressa… |
+| quase-1 | Tá quase lá… |
+| quase-2 | Falta pouco… |
+| suave-1 | Que fofos… |
+| suave-2 | Hmm… |
+| suave-3 | Que lindo… |
+| suave-4 | Eu amo! |
+| suave-5 | Gostei… |
+| quente-1 | Ai… que delícia… |
+| quente-2 | Hmm… que gostosinho… |
+| quente-3 | Hmm… assim eu gosto. |
+| quente-4 | Isso… continua assim. |
+| quente-5 | Não para… |
+| quente-6 | Que calor… |
+| pico-1 | O Pico do Amor… |
+| desejo-1 | Escolha seu desejo… |
+| desejo-2 | Agora… escolhe com vontade. |
+| vencedor-1 | Ebaa! Temos um vencedor! |
+| vencedora-1 | Ebaa! Temos uma vencedora! |
 
 ## Música
 Para trocar a música gerada pelo jogo por uma faixa sua, coloque o arquivo `audio/musica.mp3` e mude `"musica"` para `true` em `audio/lista.json`. Ele toca em loop no lugar da trilha gerada.

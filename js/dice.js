@@ -1,18 +1,22 @@
 // Dado de cristal lapidado + "palco" do dado: o tabuleiro escurece e o dado gira em destaque.
 import * as THREE from 'three';
 import { ConvexGeometry } from 'three/addons/geometries/ConvexGeometry.js';
-import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 
 const SERIF = '"Playfair Display", Georgia, serif';
 const ease4 = t => 1 - Math.pow(1 - t, 4);
+const easeOutBack = t => 1 + 2.2 * Math.pow(t - 1, 3) + 1.2 * Math.pow(t - 1, 2); // passa um pouco do ponto e volta
 const easeInOut = t => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
 
 // Romboedro de cristal: um cubo esticado ao longo da diagonal, com duas pontas e 6 faces em losango.
 // Os cantos são levemente lapidados para cintilar. Faces opostas somam 7.
-const STRETCH = 1.65;   // quanto o cristal é esticado entre as pontas
+const STRETCH = 1.35;   // quanto o cristal é esticado entre as pontas
 const INR = 0.45;       // distância do centro até cada face (o dado pousa a essa altura)
-const CHAMFER = 0.13;   // lapidação dos cantos
-const CROWN = 0.085;    // cada face sobe numa pirâmide baixinha: 4 facetas que cintilam
+const CHAMFER = 0.2;    // lapidação dos cantos
+const CROWN = 0.06;     // cada face sobe numa pirâmide baixinha: 4 facetas que cintilam
 const AXES = [[1, 0, 0, 1], [-1, 0, 0, 6], [0, 1, 0, 2], [0, -1, 0, 5], [0, 0, 1, 3], [0, 0, -1, 4]];
 
 const SHAPE = (() => {
@@ -50,6 +54,26 @@ const faceToCamera = n => faceTo(n, true);
 // orientação do dado pousado no tabuleiro com `n` para cima e girado `yaw` em torno do eixo vertical
 export const faceUp = (n, yaw = 0) => new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), yaw).multiply(faceTo(n, false));
 
+// "caixa de joalheria": fundo escuro com faixas de luz fortes, como os softboxes de vitrine.
+// É o que dá reflexos nítidos e contraste nas facetas.
+function jewelryEnv(renderer) {
+  const sc = new THREE.Scene();
+  sc.background = new THREE.Color(0x070206);
+  const box = (w, h, color, k, pos, look) => {
+    const m = new THREE.Mesh(new THREE.PlaneGeometry(w, h), new THREE.MeshBasicMaterial({ color: new THREE.Color(color).multiplyScalar(k), side: THREE.DoubleSide }));
+    m.position.set(...pos); m.lookAt(...look); sc.add(m);
+  };
+  box(6, 1.2, 0xffffff, 9, [0, 6, 0], [0, 0, 0]);          // teto
+  box(0.7, 7, 0xffe8ee, 7, [-5, 1, 2], [0, 0, 0]);        // faixa esquerda
+  box(0.7, 7, 0xffe8ee, 6, [5, 1, -1], [0, 0, 0]);        // faixa direita
+  box(4, 0.5, 0xff6a8a, 5, [0, -1, -5], [0, 0, 0]);       // brilho rosado atrás
+  box(3, 3, 0xffb38a, 2.5, [2.5, 2, 5], [0, 0, 0]);       // âmbar quente na frente
+  const pm = new THREE.PMREMGenerator(renderer);
+  const tex = pm.fromScene(sc, 0.01).texture;
+  pm.dispose();
+  return tex;
+}
+
 function numberTexture(n) {
   const cv = document.createElement('canvas'); cv.width = cv.height = 256;
   const g = cv.getContext('2d');
@@ -68,10 +92,10 @@ function numberTexture(n) {
 export function makeDie(env) {
   const g = new THREE.Group();
   const crystal = new THREE.MeshPhysicalMaterial({
-    color: 0xff4a58, roughness: 0.02, metalness: 0, transmission: 1, thickness: 1.4, ior: 2.1,
+    color: 0xff4a58, roughness: 0, metalness: 0, transmission: 1, thickness: 1.6, ior: 2.3,
     attenuationColor: new THREE.Color(0xff1a34), attenuationDistance: 2.4,
     clearcoat: 1, clearcoatRoughness: 0, specularIntensity: 1, specularColor: new THREE.Color(0xffffff),
-    envMap: env, envMapIntensity: 3.2, emissive: 0x6a0012, emissiveIntensity: 0.55, flatShading: true,
+    envMap: env, envMapIntensity: 2.4, emissive: 0x5a0010, emissiveIntensity: 0.5, flatShading: true,
   });
   const body = new THREE.Mesh(new ConvexGeometry(SHAPE.pts), crystal);
   body.castShadow = true;
@@ -84,8 +108,8 @@ export function makeDie(env) {
     const map = numberTexture(f.n);
     // alphaTest + opaco: os números entram no "passe de refração" e aparecem por dentro do cristal
     const m = new THREE.Mesh(new THREE.PlaneGeometry(0.44, 0.44), new THREE.MeshStandardMaterial({
-      map, alphaTest: 0.5, side: THREE.DoubleSide, metalness: 0.9, roughness: 0.32, envMap: env, envMapIntensity: 1.8,
-      emissive: 0xffb437, emissiveMap: map, emissiveIntensity: 0.18,
+      map, alphaTest: 0.5, side: THREE.DoubleSide, metalness: 1, roughness: 0.22, envMap: env, envMapIntensity: 2.2,
+      emissive: 0xffc04a, emissiveMap: map, emissiveIntensity: 0.7,
     }));
     m.position.copy(f.center).addScaledVector(f.normal, CROWN + 0.006);
     m.quaternion.copy(faceToCamera(f.n)).invert();
@@ -120,7 +144,7 @@ export class DiceStage {
     r.setClearColor(0x000000, 0);
     this.host.appendChild(r.domElement);
     this.scene = new THREE.Scene();
-    this.env = new THREE.PMREMGenerator(r).fromScene(new RoomEnvironment(), 0.02).texture;
+    this.env = jewelryEnv(r);
     this.camera = new THREE.PerspectiveCamera(30, 1, 0.1, 50);
     this.camera.position.set(0, 0.35, 4.4);
     this.camera.lookAt(0, -0.05, 0);
@@ -135,7 +159,7 @@ export class DiceStage {
     this.scene.add(key, red1, red2, fill, rim);
 
     this.die = makeDie(this.env);
-    this.die.scale.setScalar(0.62);
+    this.die.scale.setScalar(0.7);
     this.scene.add(this.die);
 
     // estúdio infinito: esfera escura com brilho carmim na altura do dado
@@ -206,24 +230,35 @@ export class DiceStage {
     this.glint = new THREE.Sprite(new THREE.SpriteMaterial({ map: star, blending: THREE.AdditiveBlending, depthWrite: false, transparent: true, opacity: 0 }));
     this.scene.add(this.glint);
 
+    // bloom em meia resolução, só durante a rolagem: faz as facetas "estourarem" de luz
+    this.composer = new EffectComposer(r);
+    this.composer.addPass(new RenderPass(this.scene, this.camera));
+    this.bloom = new UnrealBloomPass(new THREE.Vector2(256, 256), 0.55, 0.5, 0.82);
+    this.composer.addPass(this.bloom);
+    this.composer.addPass(new OutputPass());
+
     window.addEventListener('resize', () => this.resize());
     this.resize();
     // pré-aquece os shaders e o passe de refração quando o navegador estiver ocioso,
     // para a primeira rolagem não travar
-    const warmup = () => { this.renderer.compile(this.scene, this.camera); this.renderer.render(this.scene, this.camera); this.renderer.clear(); };
+    const warmup = () => { this.renderer.compile(this.scene, this.camera); this.composer.render(); this.renderer.clear(); };
     (window.requestIdleCallback ?? (f => setTimeout(f, 1500)))(warmup, { timeout: 4000 });
   }
 
   resize() {
     const w = window.innerWidth, h = window.innerHeight;
     this.renderer.setSize(w, h);
+    this.composer.setSize(w, h);
+    this.bloom.resolution.set(w / 2, h / 2);
     this.camera.aspect = w / h;
-    this.camera.fov = w / h < 1 ? 56 : 30;
+    this.camera.fov = w / h < 1 ? 44 : 30; // no celular a câmera fecha mais para o dado não ficar pequeno
     this.camera.updateProjectionMatrix();
   }
 
   setQuality(q) {
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, q === 'leve' ? 1 : 1.5));
+    this.composer.setPixelRatio(Math.min(window.devicePixelRatio, q === 'leve' ? 1 : 1.5));
+    this.bloom.enabled = q !== 'leve';
     this.resize();
   }
 
@@ -241,8 +276,8 @@ export class DiceStage {
       const qT = new THREE.Quaternion().setFromEuler(new THREE.Euler(0.2, -0.36, 0.05, 'YXZ')).multiply(faceToCamera(value));
       const axis = new THREE.Vector3(Math.random() - 0.5, 1.6, Math.random() - 0.5).normalize(); // gira mais em torno do próprio eixo, como um pião
       const axis2 = new THREE.Vector3(1, Math.random() - 0.5, Math.random() - 0.5).normalize();
-      const spin = Math.PI * 2 * (2.5 + Math.random());
-      const T = 2900 / this.speed, HOLD = 1400 / this.speed, t0 = performance.now();
+      const spin = Math.PI * 2 * (3 + Math.random());
+      const T = 3000 / this.speed, HOLD = 1400 / this.speed, t0 = performance.now();
       let landed = false;
       const qa = new THREE.Quaternion(), qb = new THREE.Quaternion();
       const cam = this.camera, beamMat = this.beam.userData.mat;
@@ -250,7 +285,9 @@ export class DiceStage {
       const frame = () => {
         const now = performance.now();
         const t = Math.min(1, (now - t0) / T);
-        const e = easeInOut(t);
+        // entra girando rápido, desacelera em câmera lenta mostrando as facetas
+        // e assenta com peso: passa um pouco do ponto e volta
+        const e = t < 0.78 ? 0.9 * (1 - Math.pow(1 - t / 0.78, 3)) : 0.9 + 0.1 * easeOutBack((t - 0.78) / 0.22);
         const tl = landed ? (now - t0 - T) / 1000 : 0; // segundos desde o pouso
         // desce flutuando dentro do feixe, girando devagar, e assenta exatamente na face sorteada
         qa.setFromAxisAngle(axis, spin * (1 - e));
@@ -261,15 +298,19 @@ export class DiceStage {
         this.die.position.set(0, 2.4 * (1 - fall) + bob + (landed ? Math.min(0.12, tl * 0.4) * Math.max(0, 1 - tl) : 0), -0.8 * (1 - fall));
         // "respiro" ao pousar
         const pulse = landed ? Math.exp(-tl * 4) * 0.08 : 0;
-        this.die.scale.setScalar((0.4 + 0.22 * fall) * (1 + pulse));
-        // a câmera se aproxima devagar
-        cam.position.z = 4.6 - 0.5 * easeInOut(Math.min(1, (now - t0) / (T + HOLD)));
+        this.die.scale.setScalar((0.45 + 0.25 * fall) * (1 + pulse));
+        this.bloom.strength = 0.55 + pulse * 6;
+        // a câmera se aproxima devagar e orbita de leve: dá profundidade e paralaxe
+        const k = easeInOut(Math.min(1, (now - t0) / (T + HOLD)));
+        const orb = 0.28 * (1 - k) - 0.06;
+        cam.position.set(Math.sin(orb) * (4.6 - 0.6 * k), 0.35 + 0.25 * (1 - k), Math.cos(orb) * (4.6 - 0.6 * k));
+        cam.lookAt(0, -0.05, 0);
         // feixe: acende, e depois do pouso se recolhe
-        beamMat.opacity = Math.min(1, (now - t0) / 500) * (landed ? Math.max(0.15, 1 - tl * 1.4) : 1) * 0.55;
+        beamMat.opacity = Math.min(1, (now - t0) / 500) * (landed ? Math.max(0.15, 1 - tl * 1.4) : 1) * 0.4;
         this.beam.rotation.y = now / 5000;
-        this.pool.material.opacity = 0.7 * fall;
+        this.pool.material.opacity = 0.45 * fall;
         this.pool.scale.setScalar(0.6 + fall * 0.5 + pulse * 3);
-        this.aura.material.opacity = (0.7 + Math.sin(now / 700) * 0.12 + pulse * 3) * fall;
+        this.aura.material.opacity = (0.38 + Math.sin(now / 700) * 0.06 + pulse * 2) * fall;
         this.aura.scale.setScalar(4 + Math.sin(now / 900) * 0.2);
         // anel de luz: aro discreto que vira uma onda ao pousar
         const wave = landed ? Math.min(1, tl / 0.9) : 0;
@@ -298,7 +339,7 @@ export class DiceStage {
           this.glint.material.opacity = Math.sin(g * Math.PI) * 0.8;
           this.glint.scale.setScalar(0.15 + Math.sin(g * Math.PI) * 0.22);
         }
-        this.renderer.render(this.scene, this.camera);
+        if (this.bloom.enabled) this.composer.render(); else this.renderer.render(this.scene, this.camera);
         if (now - t0 < T + HOLD) requestAnimationFrame(frame);
         else {
           L.classList.remove('in'); L.classList.add('out');

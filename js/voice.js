@@ -1,38 +1,85 @@
-// Narradora: voz sussurrada gravada no VoiceStudio. Só toca as falas gravadas em audio/voz/<chave>.mp3
+// Narradora: voz sussurrada gravada no VoiceStudio. Só toca falas gravadas em audio/voz/<chave>.mp3
 // e listadas em audio/lista.json ("voz"); o que não estiver gravado fica em silêncio (o texto segue na tela).
+// As falas são curtas e genéricas (servem para qualquer carta). Cada momento do jogo tem várias variações,
+// sorteadas sem repetir até todas terem saído, e isso vale entre partidas.
+import { store, rnd } from './util.js';
 
-// Todas as falas da narradora. Ver audio/voz/ROTEIRO.md
+// Todas as falas da narradora, agrupadas pelo momento (a chave é "<momento>-<n>"). Ver audio/voz/ROTEIRO.md
 export const FALAS = {
-  'inicio': 'Vamos começar… meus amores?',
-  'boas-vindas': 'Bem-vindos à Noite a Dois. Respirem fundo… a subida até o Pico do Amor começa agora.',
-  'comeca': 'Você começa… sem pressa.',
+  'inicio-1': 'Vamos começar… meus amores?',
+  'inicio-2': 'Prontos?… Então vem.',
+  'inicio-3': 'Hoje a noite é de vocês…',
+  'comeca-1': 'Você começa…',
+  'comeca-2': 'Primeiro… você.',
   'vez-1': 'Sua vez…',
   'vez-2': 'Agora é com você.',
-  'vez-3': 'Pode rolar o dado… devagar.',
-  'vez-4': 'É a sua vez… vem.',
-  'fase-1': 'Aquecimento. Olhares, segredos… e toques leves.',
-  'fase-2': 'Provocação. Agora os beijos ficam mais demorados.',
-  'fase-3': 'Fogo. Pele com pele… sem pressa nenhuma.',
-  'fase-4': 'Clímax. O pico está logo ali. Sem freios.',
-  'verdade': 'Hora da verdade…',
-  'desafio': 'Um desafio… pra você.',
-  'pena': 'Uma pena… faça com carinho.',
-  'armadilha': 'Cuidado… uma armadilha.',
-  'sorte': 'A sorte sorriu pra você.',
-  'pico': 'Vocês alcançaram o Pico do Amor.',
-  'desejo': 'Agora escolha o seu desejo… com carinho.',
-  'recusou': 'Hoje não? Tudo bem… mas você volta duas casas.',
-  'vencedor': 'Ebaa! Temos um vencedor!',
-  'vencedora': 'Ebaa! Temos uma vencedora!',
-  // reações espontâneas (cartas cumpridas, dado alto)
-  'reacao-uau': 'Uau!',
-  'reacao-gostosinho': 'Hmm… que gostosinho…',
-  'reacao-delicia': 'Ai… que delícia…',
-  'reacao-eu-amo': 'Eu amo!',
-  'reacao-olha-so': 'Olha só…',
-  'reacao-assim-gosto': 'Hmm… assim eu gosto.',
-  'reacao-continua': 'Isso… continua assim.',
+  'vez-3': 'Joga pra mim…',
+  'vez-4': 'Vem… sua vez.',
+  'vez-5': 'Sua vez, amor…',
+  'vez-6': 'E agora… você.',
+  'vez-7': 'Sua vez… capricha.',
+  'fase1-1': 'Aquecimento…',
+  'fase1-2': 'Devagar… aquecimento.',
+  'fase2-1': 'Provocação…',
+  'fase2-2': 'Agora… provocação.',
+  'fase3-1': 'Fogo…',
+  'fase3-2': 'Tá esquentando… fogo.',
+  'fase4-1': 'Clímax…',
+  'fase4-2': 'Chegou a hora… clímax.',
+  'verdade-1': 'Verdade…',
+  'verdade-2': 'Hora da verdade…',
+  'verdade-3': 'Sem mentir pra mim…',
+  'desafio-1': 'Desafio…',
+  'desafio-2': 'Um desafio…',
+  'desafio-3': 'Quero ver você fazer…',
+  'pena-1': 'Pena…',
+  'pena-2': 'Com a pena…',
+  'pena-3': 'Bem de leve…',
+  'armadilha-1': 'Ops… armadilha.',
+  'armadilha-2': 'Ihh… caiu.',
+  'armadilha-3': 'Cuidado…',
+  'sorte-1': 'Que sorte…',
+  'sorte-2': 'Hoje é seu dia…',
+  'sorte-3': 'A sorte gosta de você…',
+  'recusou-1': 'Hoje não?… Duas casas pra trás.',
+  'recusou-2': 'Fugiu?… Volta duas.',
+  'recusou-3': 'Tudo bem… mas tem um preço.',
+  'passe-1': 'Passe livre… dessa vez passa.',
+  'tempo-1': 'Valendo…',
+  'tempo-2': 'Começou…',
+  'fimtempo-1': 'Tempo!',
+  'fimtempo-2': 'Acabou o tempo…',
+  'dadoalto-1': 'Uau!',
+  'dadoalto-2': 'Olha só…',
+  'dadoalto-3': 'Isso!',
+  'dadobaixo-1': 'Devagarinho…',
+  'dadobaixo-2': 'Sem pressa…',
+  'quase-1': 'Tá quase lá…',
+  'quase-2': 'Falta pouco…',
+  // reações a uma carta cumprida: suaves no começo, quentes no Fogo e no Clímax
+  'suave-1': 'Que fofos…',
+  'suave-2': 'Hmm…',
+  'suave-3': 'Que lindo…',
+  'suave-4': 'Eu amo!',
+  'suave-5': 'Gostei…',
+  'quente-1': 'Ai… que delícia…',
+  'quente-2': 'Hmm… que gostosinho…',
+  'quente-3': 'Hmm… assim eu gosto.',
+  'quente-4': 'Isso… continua assim.',
+  'quente-5': 'Não para…',
+  'quente-6': 'Que calor…',
+  'pico-1': 'O Pico do Amor…',
+  'desejo-1': 'Escolha seu desejo…',
+  'desejo-2': 'Agora… escolhe com vontade.',
+  'vencedor-1': 'Ebaa! Temos um vencedor!',
+  'vencedora-1': 'Ebaa! Temos uma vencedora!',
 };
+
+// falas que também servem em outro momento
+const EXTRA = { quente: ['dadoalto-1'], suave: ['dadoalto-2'] };
+const GRUPOS = {};
+for (const k of Object.keys(FALAS)) (GRUPOS[k.replace(/-\d+$/, '')] ??= []).push(k);
+for (const [g, ks] of Object.entries(EXTRA)) GRUPOS[g].push(...ks);
 
 export class Narrator {
   constructor(audio) {
@@ -65,9 +112,26 @@ export class Narrator {
     this.audio.duck(false);
   }
 
+  // próxima fala do momento: sorteio sem repetir até todas saírem (o "saco" fica salvo entre partidas),
+  // e nunca a mesma que acabou de tocar quando o saco recomeça
+  next(momento) {
+    const todas = (GRUPOS[momento] ?? []).filter(k => this.files.has(k));
+    if (!todas.length) return null;
+    const sacos = store.get('falas', {});
+    let saco = (sacos[momento] ?? []).filter(k => todas.includes(k));
+    if (!saco.length) saco = todas.filter(k => k !== this.ultima || todas.length === 1);
+    const k = saco.splice(rnd(saco.length), 1)[0];
+    sacos[momento] = saco; store.set('falas', sacos);
+    return k;
+  }
+
+  // fala de um momento do jogo
+  fala(momento) { const k = this.next(momento); return k ? this.say(k) : Promise.resolve(); }
+
   // fala em fila (uma de cada vez)
   say(key) {
     if (!this.enabled || !this.files.has(key)) return Promise.resolve();
+    this.ultima = key;
     this.queue = this.queue.then(() => this.#play(key)).catch(() => {});
     return this.queue;
   }
