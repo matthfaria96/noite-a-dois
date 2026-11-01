@@ -200,6 +200,11 @@ function showCard({ cat, text, secs = 0, who, fase, refusable = true, falar = tr
 // ------------------------------------------------------------ 3D, dado e qualidade
 const board = new Board3D($('#stage'));
 const dice = new DiceStage($('#dice-layer'));
+// iPhone: ao voltar para o app ou quando a área visível muda, a altura real da tela pode mudar; a cena acompanha
+const remedir = () => { board.resize(); dice.resize(); };
+window.addEventListener('pageshow', remedir);
+window.visualViewport?.addEventListener('resize', remedir);
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') setTimeout(remedir, 250); });
 function setGraficos(mode) {
   cfg.graficos = mode;
   const q = mode === 'leve' ? 'leve' : 'alta';

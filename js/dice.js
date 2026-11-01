@@ -156,7 +156,8 @@ export class DiceStage {
   }
 
   resize() {
-    const w = window.innerWidth, h = window.innerHeight;
+    // mede o próprio palco quando ele está na tela (no iPhone ele é mais alto que a janela); senão, a janela
+    const w = this.host.clientWidth || window.innerWidth, h = this.host.clientHeight || window.innerHeight;
     this.renderer.setSize(w, h);
     this.camera.aspect = w / h;
     this.camera.fov = w / h < 1 ? 44 : 30; // no celular a câmera fecha mais para a pedra não ficar pequena
@@ -186,6 +187,7 @@ export class DiceStage {
       const L = this.layer;
       L.classList.remove('hidden', 'out');
       void L.offsetWidth;
+      this.resize();
       L.classList.add('in');
       const caption = L.querySelector('.dice-caption');
       caption.classList.remove('show');

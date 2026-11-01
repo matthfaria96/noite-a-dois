@@ -131,14 +131,6 @@
   <div id="hud" class="hidden">
     <div class="topbar">
       <div class="chip ele" id="chip-ele"><span class="sym" aria-label="Ele"><svg class="gen" viewBox="0 0 24 24" aria-hidden="true"><circle cx="10" cy="14" r="5.5"/><path d="M14 10 19.5 4.5M14.5 4.5h5v5"/></svg></span><span class="nm"></span><span class="pos"></span></div>
-      <div class="mid-btns">
-        <button class="icon-btn" id="btn-menu" aria-label="Menu">
-          <svg viewBox="0 0 24 24"><path d="M5 8h14M5 12h14M5 16h14"/></svg>
-        </button>
-        <button class="icon-btn" id="btn-map" aria-label="Ver o mapa">
-          <svg viewBox="0 0 24 24"><path d="M9 4 3 6.5v13L9 17l6 2.5 6-2.5V4l-6 2.5L9 4Zm0 0v13m6-10.5v13"/></svg>
-        </button>
-      </div>
       <div class="chip ela" id="chip-ela"><span class="sym" aria-label="Ela"><svg class="gen" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="9" r="5.5"/><path d="M12 14.5V21M9 18h6"/></svg></span><span class="nm"></span><span class="pos"></span></div>
     </div>
     <div class="track">
@@ -146,15 +138,25 @@
       <div class="fase" id="fase-label"></div>
     </div>
     <div class="bottom">
-      <div class="turn" id="turn-label"></div>
-      <button class="roll" id="btn-roll"><span class="die-ico">6</span><span>Rolar o dado</span></button>
-    </div>
-    <!-- último lance: a própria pedra, em painel fixo no canto (estilo RPG) -->
-    <div id="dado-hud" class="rpg hidden" aria-live="polite">
-      <small>Último lance</small>
-      <div class="pedra"><img alt=""></div>
-      <b></b>
-      <span class="quem"></span>
+      <div class="lado esq">
+        <button class="icon-btn" id="btn-menu" aria-label="Menu">
+          <svg viewBox="0 0 24 24"><path d="M5 8h14M5 12h14M5 16h14"/></svg>
+        </button>
+        <button class="icon-btn" id="btn-map" aria-label="Ver o mapa">
+          <svg viewBox="0 0 24 24"><path d="M9 4 3 6.5v13L9 17l6 2.5 6-2.5V4l-6 2.5L9 4Zm0 0v13m6-10.5v13"/></svg>
+        </button>
+      </div>
+      <div class="centro">
+        <div class="turn" id="turn-label"></div>
+        <button class="roll" id="btn-roll"><span class="die-ico">6</span><span>Rolar o dado</span></button>
+      </div>
+      <div class="lado dir">
+        <!-- último lance: a própria pedra num medalhão, com o número e quem tirou -->
+        <div id="dado-hud" class="hidden" aria-live="polite" aria-label="Último lance">
+          <div class="medalhao"><img alt=""></div>
+          <span class="legenda"><b></b><span class="quem"></span></span>
+        </div>
+      </div>
     </div>
     <div id="test-badge" class="hidden"><b>Modo de teste</b><button>Parar</button></div>
   </div>

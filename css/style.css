@@ -616,33 +616,21 @@ svg.gen { width: 1.15em; height: 1.15em; fill: none; stroke: currentColor; strok
 .names label span { display: inline-flex; align-items: center; }
 
 /* =====================================================================
-   Painéis estilo RPG: último lance e avisos laterais
+   Avisos laterais estilo RPG
    moldura dupla em ouro-rosé, cantos em losango, rótulo em versalete
    ===================================================================== */
-.rpg, .side {
+.side {
   --ouro: rgba(232, 168, 150, .55);
   background: linear-gradient(170deg, rgba(36, 8, 24, .9), rgba(10, 2, 8, .92));
   border: 1px solid var(--ouro); border-radius: 10px;
   box-shadow: inset 0 0 0 3px rgba(10, 2, 8, .9), inset 0 0 0 4px rgba(232, 120, 150, .22), 0 0 26px rgba(200, 30, 80, .25), 0 12px 30px rgba(0, 0, 0, .6);
   -webkit-backdrop-filter: var(--blur); backdrop-filter: var(--blur);
 }
-.rpg::before, .rpg::after, .side::before, .side::after { content: ''; position: absolute; width: 7px; height: 7px; transform: rotate(45deg);
+.side::before, .side::after { content: ''; position: absolute; width: 7px; height: 7px; transform: rotate(45deg);
   background: #e8a896; box-shadow: 0 0 8px rgba(255, 110, 150, .8); }
-.rpg::before, .side::before { top: -4px; left: 50%; margin-left: -3.5px; }
-.rpg::after, .side::after { bottom: -4px; left: 50%; margin-left: -3.5px; }
+.side::before { top: -4px; left: 50%; margin-left: -3.5px; }
+.side::after { bottom: -4px; left: 50%; margin-left: -3.5px; }
 
-#dado-hud { position: fixed; z-index: 6; left: max(12px, env(safe-area-inset-left)); bottom: calc(max(20px, env(safe-area-inset-bottom)) + 4px);
-  width: 86px; padding: 8px 6px 9px; display: flex; flex-direction: column; align-items: center; gap: 2px; text-align: center; pointer-events: none; }
-#dado-hud small { font-size: 8px; font-weight: 700; letter-spacing: .1em; white-space: nowrap; text-transform: uppercase; color: #e8a896; }
-#dado-hud .pedra { position: relative; width: 64px; height: 64px; display: grid; place-items: center; }
-#dado-hud img { position: absolute; inset: -8px; width: 80px; height: 80px; object-fit: contain; filter: drop-shadow(0 0 10px rgba(255, 80, 130, .55)); }
-#dado-hud b { line-height: 1; margin-top: -2px; font: italic 700 20px var(--serif); color: #fff3f6; text-shadow: 0 0 10px rgba(255, 60, 110, .9); }
-#dado-hud .quem { font-size: 11px; font-weight: 600; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-#dado-hud .quem i { font-style: normal; }
-#dado-hud.novo { animation: lance .7s var(--ease); }
-#dado-hud.novo img { animation: brilhoLance 1.4s ease-out; }
-@keyframes lance { from { transform: translateX(-24px) scale(.9); opacity: 0 } }
-@keyframes brilhoLance { 0% { filter: drop-shadow(0 0 22px rgba(255, 90, 140, 1)) brightness(1.4) } 100% { filter: drop-shadow(0 0 10px rgba(255, 80, 130, .55)) } }
 
 /* avisos laterais no mesmo estilo */
 .side { border-radius: 10px; padding: 10px 16px; }
@@ -651,10 +639,6 @@ svg.gen { width: 1.15em; height: 1.15em; fill: none; stroke: currentColor; strok
 .side-ico { border-color: var(--ouro); box-shadow: 0 0 12px color-mix(in srgb, var(--c) 50%, transparent); }
 
 @media (max-width: 640px) {
-  #dado-hud { width: 72px; padding: 7px 5px 8px; }
-  #dado-hud .pedra { width: 54px; height: 54px; }
-  #dado-hud img { inset: -6px; width: 66px; height: 66px; }
-  #dado-hud b { font-size: 18px; }
 }
 
 /* aviso de versão nova: pílula de vidro discreta embaixo, no estilo do resto */
@@ -749,3 +733,51 @@ body.carta-aberta .side, body.carta-aberta #dado-hud { opacity: 0 !important; }
 @media (min-width: 900px) { #catalogo .sheet { width: min(860px, 100%); } }
 @media (max-width: 640px) { .cat-topo { top: calc(max(16px, env(safe-area-inset-top) + 8px) + 54px); background: rgba(20, 5, 18, .85); margin: 0 -20px; padding: 6px 20px 10px; } }
 #btn-catalogo-limites { align-self: center; margin-top: 4px; }
+
+/* =====================================================================
+   Placar do jogo: nomes em cima; embaixo, controles à esquerda, rolagem no centro
+   e o último lance à direita. No desktop nada estica: tudo num bloco central confortável.
+   ===================================================================== */
+/* iPhone (app na tela inicial): a altura "100%" deixa de fora a faixa da barra de gestos e sobrava um vão.
+   O tabuleiro e o placar usam a altura física da tela, e o fundo da página é o mesmo escuro da cena. */
+html, body { background: #070106; }
+#stage, #hud { top: 0; bottom: auto; height: 100vh; height: 100lvh; }
+.topbar { gap: 10px; }
+.topbar .chip { flex: 1 1 0; }
+.bottom { display: grid; grid-template-columns: 1fr auto 1fr; align-items: end; gap: 10px; width: 100%; }
+.bottom .centro { display: flex; flex-direction: column; align-items: center; gap: 12px; }
+.bottom .lado { display: flex; align-items: flex-end; min-width: 0; }
+.bottom .lado.esq { flex-direction: column; gap: 10px; justify-self: start; align-items: flex-start; }
+.bottom .lado.dir { justify-self: end; }
+.bottom .icon-btn { width: 46px; height: 46px; }
+
+/* último lance: medalhão escuro com a pedra preenchendo, e uma legenda curta numa linha */
+#dado-hud { display: flex; flex-direction: column; align-items: center; gap: 6px; pointer-events: none; }
+#dado-hud .medalhao { position: relative; width: 58px; height: 58px; border-radius: 50%; overflow: hidden;
+  background: radial-gradient(circle at 50% 45%, #4a0820 0%, #1c030c 70%, #0c0106 100%);
+  border: 1px solid rgba(255, 110, 150, .3); box-shadow: 0 0 22px rgba(220, 30, 80, .35), inset 0 0 14px rgba(0, 0, 0, .6); }
+#dado-hud img { position: absolute; left: 50%; top: 50%; width: 118%; height: 118%; transform: translate(-50%, -50%); object-fit: contain; }
+#dado-hud .legenda { display: flex; align-items: baseline; gap: 5px; max-width: 96px; white-space: nowrap; }
+#dado-hud .legenda b { font: italic 700 17px var(--serif); color: #fff1f5; text-shadow: 0 0 10px rgba(255, 60, 110, .8); }
+#dado-hud .quem { font-size: 11px; font-weight: 600; color: var(--ink-2); overflow: hidden; text-overflow: ellipsis; }
+#dado-hud .quem::before { content: '· '; color: var(--ink-3); }
+#dado-hud .quem i { font-style: normal; }
+#dado-hud.novo .medalhao { animation: medalhao .9s var(--ease); }
+@keyframes medalhao { 0% { transform: scale(.6); opacity: 0; box-shadow: 0 0 40px rgba(255, 80, 130, 1) } 60% { transform: scale(1.08); opacity: 1 } }
+
+/* desktop e tablet: bloco central com largura confortável, controles perto da rolagem */
+@media (min-width: 700px) {
+  .topbar { width: min(620px, 100%); margin: 0 auto; }
+  .topbar .chip { max-width: 300px; }
+  .track { width: min(560px, 100%); margin-left: auto; margin-right: auto; }
+  .bottom { width: min(620px, 100%); margin-left: auto; margin-right: auto; }
+}
+@media (max-width: 380px) {
+  .bottom .icon-btn { width: 42px; height: 42px; }
+  .roll { padding-right: 22px; font-size: 16px; }
+}
+/* a faixa de baixo não captura toques nos vãos: só os botões recebem */
+.bottom { pointer-events: none; }
+.bottom .lado > *, .bottom .centro > * { pointer-events: auto; }
+#dado-hud { pointer-events: none; }
+#dice-layer { top: 0; bottom: auto; height: 100vh; height: 100lvh; }
