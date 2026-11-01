@@ -1,6 +1,6 @@
 # Noite a Dois — jogo de tabuleiro 3D para casais
 
-### ▶ Jogar agora: **https://matthfaria96.github.io/noite-a-dois/**
+### ▶ Jogar agora: **https://noiteadois.witchmymac.com/**
 
 > +18 · funciona no celular e no computador · dá para instalar na tela inicial (Compartilhar → Adicionar à Tela de Início)
 
@@ -63,7 +63,7 @@ O jogo usa um **projeto Supabase separado**, com um banco só dele.
 
 1. Crie um projeto novo em supabase.com (ex.: `noite-a-dois`).
 2. No **SQL Editor**, rode `supabase/migrations/20261101120000_inicial.sql`. Ele cria a tabela `perfis` com RLS: cada um só lê e altera o próprio perfil.
-3. Em **Authentication → URL Configuration**, coloque `https://matthfaria96.github.io/noite-a-dois/` como Site URL e Redirect URL.
+3. Em **Authentication → URL Configuration**, coloque `https://noiteadois.witchmymac.com/` como Site URL e Redirect URL.
 4. Em **Project Settings → API**, copie a *Project URL* e a *anon public key* para `js/config.js`.
 
 Com isso, o jogo exige login (com "esqueci a senha" por e-mail), e os nomes, as configurações e as estatísticas ficam salvos na nuvem.
