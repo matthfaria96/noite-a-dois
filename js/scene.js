@@ -9,7 +9,6 @@ import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js'
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 import { CATEGORIAS, FASES } from './data.js';
 import { drawIcon } from './icons.js';
-import { makeDie, faceUp } from './dice.js';
 
 const PIECE_COLORS = { ele: 0x8a9cff, ela: 0xff7ab0 };
 const FOG = 0x2a1238;   // névoa rosa-violeta
@@ -171,13 +170,6 @@ export class Board3D {
     this.#makeEmbers();
     this.#makePetals();
 
-    this.die = makeDie(this.env);
-    this.die.scale.setScalar(0.8);
-    this.die.traverse(o => { if (o.material?.envMapIntensity) o.material.envMapIntensity *= 0.45; });
-    this.die.visible = false;
-    this.scene.add(this.die);
-    this.dieLight = new THREE.PointLight(0xff1a2e, 10, 5, 1.5);
-    this.scene.add(this.dieLight);
 
     window.addEventListener('resize', () => this.resize());
     this.resize();
@@ -607,7 +599,6 @@ export class Board3D {
 
     this.center = new THREE.Vector3(0, sp.H * 0.45, 0);
     this.embers.position.set(0, 0, 0);
-    this.placeDie(1 + rnd(6), 'ele');
     this.camDir.copy(this.dirs[0]);
     this.camPos.set(sp.R0 * 1.6, sp.H + 18, sp.R0 * 1.6);
     this.camLook.copy(this.center);
@@ -661,17 +652,6 @@ export class Board3D {
       onStep?.(i + dir);
     }
     piece.userData.idx = to;
-  }
-
-  // deixa o dado do tabuleiro pousado ao lado da peça, com o resultado para cima
-  placeDie(value, who) {
-    const idx = this.pieces[who]?.userData.idx ?? 0;
-    const d = this.dirs[idx], o = this.outward[idx];
-    const p = this.path[idx].clone().addScaledVector(d, 1.3).addScaledVector(o, 0.75);
-    p.y += 0.47; // o dado se apoia na ponta da lapidação da face de baixo
-    this.die.position.copy(p);
-    this.die.quaternion.copy(faceUp(value, Math.random() * TAU));
-    this.die.visible = true;
   }
 
   resize() {
@@ -768,7 +748,6 @@ export class Board3D {
         if (f.s) f.s.scale.set(0.3 * fl, 0.46 * fl, 1);
         if (f.l) f.l.intensity = 6 * fl;
       }
-      this.dieLight.position.copy(this.die.position).setY(this.die.position.y - 0.3);
       this.heartBig.rotation.y = t * 0.8;
       this.heartBig.scale.setScalar(1.6 + Math.pow(Math.max(0, Math.sin(t * 3.2)), 8) * 0.2);
 

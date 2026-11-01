@@ -623,3 +623,45 @@ svg.gen { width: 1.15em; height: 1.15em; fill: none; stroke: currentColor; strok
 .names label span { display: inline-flex; align-items: center; }
 /* rolagem: fundo bem escuro e sensual, sem halo claro */
 .dice-dim { background: radial-gradient(ellipse 55% 50% at 50% 50%, rgba(36, 0, 12, .7) 0%, rgba(4, 0, 3, .95) 62%, #000 100%); }
+
+/* =====================================================================
+   Painéis estilo RPG: último lance e avisos laterais
+   moldura dupla em ouro-rosé, cantos em losango, rótulo em versalete
+   ===================================================================== */
+.rpg, .side {
+  --ouro: rgba(232, 168, 150, .55);
+  background: linear-gradient(170deg, rgba(36, 8, 24, .9), rgba(10, 2, 8, .92));
+  border: 1px solid var(--ouro); border-radius: 10px;
+  box-shadow: inset 0 0 0 3px rgba(10, 2, 8, .9), inset 0 0 0 4px rgba(232, 120, 150, .22), 0 0 26px rgba(200, 30, 80, .25), 0 12px 30px rgba(0, 0, 0, .6);
+  -webkit-backdrop-filter: var(--blur); backdrop-filter: var(--blur);
+}
+.rpg::before, .rpg::after, .side::before, .side::after { content: ''; position: absolute; width: 7px; height: 7px; transform: rotate(45deg);
+  background: #e8a896; box-shadow: 0 0 8px rgba(255, 110, 150, .8); }
+.rpg::before, .side::before { top: -4px; left: 50%; margin-left: -3.5px; }
+.rpg::after, .side::after { bottom: -4px; left: 50%; margin-left: -3.5px; }
+
+#dado-hud { position: fixed; z-index: 6; left: max(12px, env(safe-area-inset-left)); bottom: calc(max(20px, env(safe-area-inset-bottom)) + 4px);
+  width: 86px; padding: 8px 6px 9px; display: flex; flex-direction: column; align-items: center; gap: 2px; text-align: center; pointer-events: none; }
+#dado-hud small { font-size: 8px; font-weight: 700; letter-spacing: .1em; white-space: nowrap; text-transform: uppercase; color: #e8a896; }
+#dado-hud .pedra { position: relative; width: 64px; height: 64px; display: grid; place-items: center; }
+#dado-hud img { position: absolute; inset: -8px; width: 80px; height: 80px; object-fit: contain; filter: drop-shadow(0 0 10px rgba(255, 80, 130, .55)); }
+#dado-hud b { line-height: 1; margin-top: -2px; font: italic 700 20px var(--serif); color: #fff3f6; text-shadow: 0 0 10px rgba(255, 60, 110, .9); }
+#dado-hud .quem { font-size: 11px; font-weight: 600; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+#dado-hud .quem i { font-style: normal; }
+#dado-hud.novo { animation: lance .7s var(--ease); }
+#dado-hud.novo img { animation: brilhoLance 1.4s ease-out; }
+@keyframes lance { from { transform: translateX(-24px) scale(.9); opacity: 0 } }
+@keyframes brilhoLance { 0% { filter: drop-shadow(0 0 22px rgba(255, 90, 140, 1)) brightness(1.4) } 100% { filter: drop-shadow(0 0 10px rgba(255, 80, 130, .55)) } }
+
+/* avisos laterais no mesmo estilo */
+.side { border-radius: 10px; padding: 10px 16px; }
+.side small { color: #e8a896; letter-spacing: .18em; }
+.side b { color: #fff0f4; text-shadow: 0 0 12px var(--c); }
+.side-ico { border-color: var(--ouro); box-shadow: 0 0 12px color-mix(in srgb, var(--c) 50%, transparent); }
+
+@media (max-width: 640px) {
+  #dado-hud { width: 72px; padding: 7px 5px 8px; }
+  #dado-hud .pedra { width: 54px; height: 54px; }
+  #dado-hud img { inset: -6px; width: 66px; height: 66px; }
+  #dado-hud b { font-size: 18px; }
+}

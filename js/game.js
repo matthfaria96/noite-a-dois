@@ -274,6 +274,7 @@ function startGame(teste = false) {
   ['#setup', '#final', '#menu', '#settings'].forEach(hide);
   show('#hud');
   hide('#instalar');
+  $('#dado-hud').classList.add('hidden');
   manterTelaAcesa(true);
   $('#test-badge').classList.toggle('hidden', !TESTE.on);
   $('#test-badge b').textContent = `Modo de teste · ${TESTE.vel}×`;
@@ -300,6 +301,15 @@ async function move(who, to) {
   if (!p.quase && p.pos >= G.N - 6 && p.pos < G.N - 1) { p.quase = true; fala('quase'); }
 }
 
+// painel do último lance: a pedra fotografada quando parou, o número e quem tirou
+function ultimoLance(v, who, foto) {
+  const el = $('#dado-hud');
+  if (foto) el.querySelector('img').src = foto;
+  el.querySelector('b').textContent = v;
+  el.querySelector('.quem').innerHTML = `<i style="color:var(--${who})">${G.players[who].name}</i>`;
+  el.style.setProperty('--c', `var(--${who})`);
+  el.classList.remove('hidden', 'novo'); void el.offsetWidth; el.classList.add('novo');
+}
 async function roll() {
   if (G.busy) return;
   G.busy = true; updateHUD();
@@ -309,9 +319,9 @@ async function roll() {
   const v = 1 + rnd(6);
   audio.roll();
   board.paused = true; // o palco do dado cobre a tela: o 3D do tabuleiro descansa
-  await dice.roll(v, () => { audio.land(); vibrar(25); });
+  const foto = await dice.roll(v, () => { audio.land(); vibrar(25); });
   board.paused = false;
-  board.placeDie(v, who);
+  ultimoLance(v, who, foto);
   if (v >= 5) talvez('dadoalto', 0.5);
   else if (v === 1) talvez('dadobaixo', 0.5);
   await pause(250);
