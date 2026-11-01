@@ -1,5 +1,5 @@
-// Cena 3D: mapa sinuoso de blocos de obsidiana, ilhas à luz de velas, pétalas,
-// lua de sangue, peças (Ele / Ela), dado de cristal vermelho e câmera imersiva.
+// Cena 3D: montanha cósmica de rocha cristalina com trilha em espiral até o Clímax,
+// céu de nebulosa hipnótico, cristais venenosos, degraus e peças de vidro e câmera imersiva.
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
@@ -9,17 +9,19 @@ import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js'
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 import { CATEGORIAS, FASES } from './data.js';
 import { drawIcon } from './icons.js';
+import { makeDie, TOP } from './dice.js';
 
 const PIECE_COLORS = { ele: 0x2a6bff, ela: 0xff1f55 };
-const CELL = 2.05;   // tamanho da célula do mapa
-const RISE = 0.11;   // subida por degrau
+const SPACING = 2.15;  // distância entre casas ao longo da trilha
+const LEDGE = 1.7;     // meia-largura do terraço da trilha
 const SERIF = '"Playfair Display", Georgia, serif';
 const SANS = '-apple-system, BlinkMacSystemFont, "SF Pro Display", Inter, system-ui, sans-serif';
-const GOLD = '#e8c27a';
+const TAU = Math.PI * 2;
 
 const ease = t => 1 - Math.pow(1 - t, 3);
-const wait = ms => new Promise(r => setTimeout(r, ms));
 const rnd = n => Math.floor(Math.random() * n);
+const smooth = t => t * t * (3 - 2 * t);
+const clamp01 = t => Math.max(0, Math.min(1, t));
 
 function canvas(w, h = w) {
   const cv = document.createElement('canvas'); cv.width = w; cv.height = h;
@@ -30,7 +32,7 @@ function tex(cv) {
   t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 4;
   return t;
 }
-function shade(hex, amt) { // clareia (+) ou escurece (-)
+function shade(hex, amt) {
   const c = new THREE.Color(hex);
   return amt > 0 ? c.lerp(new THREE.Color(0xffffff), amt) : c.lerp(new THREE.Color(0x000000), -amt);
 }
@@ -41,6 +43,61 @@ function glowTexture(inner = '#ffffff') {
   g.fillStyle = rg; g.fillRect(0, 0, 128, 128);
   return tex(cv);
 }
+// ruído suave 2D (para a rocha)
+function hash(x, y) { const s = Math.sin(x * 127.1 + y * 311.7) * 43758.5453; return s - Math.floor(s); }
+function noise(x, y) {
+  const xi = Math.floor(x), yi = Math.floor(y), xf = x - xi, yf = y - yi;
+  const u = smooth(xf), v = smooth(yf);
+  const a = hash(xi, yi), b = hash(xi + 1, yi), c = hash(xi, yi + 1), d = hash(xi + 1, yi + 1);
+  return a + (b - a) * u + (c - a) * v + (a - b - c + d) * u * v;
+}
+const fbm = (x, y) => noise(x, y) * 0.55 + noise(x * 2.1, y * 2.1) * 0.3 + noise(x * 4.3, y * 4.3) * 0.15;
+
+// ---------------------------------------------------------------- céu de nebulosa
+const SKY_VERT = /* glsl */`
+varying vec3 vDir;
+void main() {
+  vDir = normalize(position);
+  vec4 p = modelViewMatrix * vec4(position, 1.0);
+  gl_Position = projectionMatrix * p;
+  gl_Position.z = gl_Position.w; // sempre no fundo
+}`;
+const SKY_FRAG = /* glsl */`
+uniform float uTime;
+varying vec3 vDir;
+float h3(vec3 p) { p = fract(p * 0.3183099 + 0.1); p *= 17.0; return fract(p.x * p.y * p.z * (p.x + p.y + p.z)); }
+float n3(vec3 x) {
+  vec3 i = floor(x), f = fract(x); f = f * f * (3.0 - 2.0 * f);
+  return mix(mix(mix(h3(i), h3(i + vec3(1,0,0)), f.x), mix(h3(i + vec3(0,1,0)), h3(i + vec3(1,1,0)), f.x), f.y),
+             mix(mix(h3(i + vec3(0,0,1)), h3(i + vec3(1,0,1)), f.x), mix(h3(i + vec3(0,1,1)), h3(i + vec3(1,1,1)), f.x), f.y), f.z);
+}
+float fbm(vec3 p) { float a = 0.5, s = 0.0; for (int k = 0; k < 5; k++) { s += a * n3(p); p = p * 2.03 + 1.7; a *= 0.5; } return s; }
+void main() {
+  vec3 d = normalize(vDir);
+  // redemoinho lento em torno do zênite: hipnótico
+  float ang = atan(d.z, d.x), el = d.y;
+  float sw = ang + uTime * 0.015 + (1.0 - el) * 1.6;
+  vec3 q = vec3(cos(sw), el * 1.4, sin(sw)) * 2.2;
+  float n1 = fbm(q + vec3(0.0, uTime * 0.01, 0.0));
+  float n2 = fbm(q * 1.7 + vec3(5.2, -uTime * 0.008, 1.3) + n1);
+  float n3v = fbm(q * 3.1 - n2 * 1.5);
+  vec3 col = mix(vec3(0.012, 0.006, 0.03), vec3(0.03, 0.01, 0.07), smoothstep(-0.3, 0.8, el));
+  col += vec3(0.30, 0.05, 0.55) * smoothstep(0.42, 0.85, n1) * 0.55;             // violeta
+  col += vec3(0.85, 0.06, 0.32) * smoothstep(0.5, 0.9, n2) * 0.55;               // magenta
+  col += vec3(1.0, 0.15, 0.12) * pow(smoothstep(0.55, 1.0, n2 * n1 * 1.8), 2.0) * 0.6; // carmim quente
+  col += vec3(0.05, 0.95, 0.65) * smoothstep(0.78, 0.98, n3v) * 0.22 * smoothstep(0.0, 0.6, el); // veneno
+  // braços de galáxia em volta do zênite
+  float arms = sin(ang * 2.0 - log(max(0.02, 1.0 - el)) * 4.0 + uTime * 0.03) * 0.5 + 0.5;
+  col += vec3(0.6, 0.15, 0.5) * pow(arms, 6.0) * smoothstep(0.45, 0.95, el) * 0.35;
+  // estrelas cintilando
+  vec3 sp = floor(d * 320.0);
+  float st = h3(sp);
+  float tw = 0.6 + 0.4 * sin(uTime * 2.0 + st * 60.0);
+  col += vec3(1.0, 0.9, 0.95) * step(0.9965, st) * tw * smoothstep(-0.2, 0.3, el);
+  // brilho no horizonte
+  col += vec3(0.5, 0.05, 0.12) * pow(1.0 - abs(el), 6.0) * 0.5;
+  gl_FragColor = vec4(col, 1.0);
+}`;
 
 export class Board3D {
   constructor(container) {
@@ -48,41 +105,47 @@ export class Board3D {
     const r = this.renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
     r.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     r.toneMapping = THREE.ACESFilmicToneMapping;
-    r.toneMappingExposure = 1.0;
+    r.toneMappingExposure = 1.05;
     r.shadowMap.enabled = true;
     r.shadowMap.type = THREE.PCFSoftShadowMap;
     container.appendChild(r.domElement);
 
     this.scene = new THREE.Scene();
-    this.scene.background = this.#skyTexture();
-    this.scene.fog = new THREE.Fog(0x16040a, 22, 78);
+    this.scene.fog = new THREE.Fog(0x0b0414, 34, 120);
+    this.sky = new THREE.Mesh(new THREE.SphereGeometry(300, 48, 32), new THREE.ShaderMaterial({
+      vertexShader: SKY_VERT, fragmentShader: SKY_FRAG, uniforms: { uTime: { value: 0 } },
+      side: THREE.BackSide, depthWrite: false, fog: false,
+    }));
+    this.sky.renderOrder = -1;
+    this.scene.add(this.sky);
 
-    const pm = new THREE.PMREMGenerator(r);
-    this.env = pm.fromScene(new RoomEnvironment(), 0.04).texture;
+    this.env = new THREE.PMREMGenerator(r).fromScene(new RoomEnvironment(), 0.04).texture;
 
-    this.camera = new THREE.PerspectiveCamera(55, 1, 0.1, 400);
-    this.camPos = new THREE.Vector3(0, 30, 25);
-    this.camLook = new THREE.Vector3(0, 0, -20);
+    this.camera = new THREE.PerspectiveCamera(55, 1, 0.1, 700);
+    this.camPos = new THREE.Vector3(0, 40, 40);
+    this.camLook = new THREE.Vector3(0, 4, 0);
     this.camDir = new THREE.Vector3(0, 0, -1);
     this.wantPos = new THREE.Vector3();
     this.wantLook = new THREE.Vector3();
     this.quality = 'alta';
     this.mode = 'orbit'; // 'orbit' (tela inicial) | 'follow' | 'overview' | 'free'
 
-    // Iluminação de pouca luz: ambiente baixo + "luz de vela" seguindo a peça
-    this.scene.add(new THREE.HemisphereLight(0x6a4a8a, 0x2a0508, 0.45));
-    this.key = new THREE.SpotLight(0xffb27a, 55, 40, 0.62, 0.75, 1.2);
+    this.scene.add(new THREE.HemisphereLight(0x7a52b0, 0x1a0410, 0.55));
+    this.key = new THREE.SpotLight(0xffc29a, 55, 40, 0.62, 0.75, 1.2);
     this.key.castShadow = true;
     this.key.shadow.mapSize.set(1024, 1024);
     this.key.shadow.bias = -0.002;
     this.scene.add(this.key, this.key.target);
-    this.rim = new THREE.PointLight(0xff1a3a, 30, 22, 1.5);
-    this.blue = new THREE.PointLight(0x3550ff, 20, 18, 1.6);
+    const moonLight = new THREE.DirectionalLight(0xb070ff, 1.1); moonLight.position.set(-30, 40, -20);
+    const venom = new THREE.DirectionalLight(0xff3a7a, 0.7); venom.position.set(30, 18, 25);
+    this.scene.add(moonLight, venom);
+    this.rim = new THREE.PointLight(0xff1a5a, 30, 22, 1.5);
+    this.blue = new THREE.PointLight(0x5a3dff, 22, 18, 1.6);
     this.scene.add(this.rim, this.blue);
 
     this.composer = new EffectComposer(r);
     this.composer.addPass(new RenderPass(this.scene, this.camera));
-    this.bloom = new UnrealBloomPass(new THREE.Vector2(256, 256), 0.7, 0.55, 0.8);
+    this.bloom = new UnrealBloomPass(new THREE.Vector2(256, 256), 0.75, 0.6, 0.72);
     this.composer.addPass(this.bloom);
     this.composer.addPass(new OutputPass());
 
@@ -96,7 +159,13 @@ export class Board3D {
     this.glowTex = glowTexture('#ff9a4a');
     this.#makeEmbers();
     this.#makePetals();
-    this.#makeDie();
+
+    this.die = makeDie(this.env);
+    this.die.scale.setScalar(0.85);
+    this.die.visible = false;
+    this.scene.add(this.die);
+    this.dieLight = new THREE.PointLight(0xff1a2e, 10, 5, 1.5);
+    this.scene.add(this.dieLight);
 
     window.addEventListener('resize', () => this.resize());
     this.resize();
@@ -104,20 +173,7 @@ export class Board3D {
   }
 
   // ================================================================ texturas
-  #skyTexture() {
-    const [cv, g] = canvas(8, 1024);
-    const gr = g.createLinearGradient(0, 0, 0, 1024);
-    gr.addColorStop(0, '#04040f');
-    gr.addColorStop(0.3, '#0b0a26');
-    gr.addColorStop(0.55, '#24061a');
-    gr.addColorStop(0.78, '#4a0712');
-    gr.addColorStop(1, '#7a1a0a');
-    g.fillStyle = gr; g.fillRect(0, 0, 8, 1024);
-    return tex(cv);
-  }
-
   #tileTexture(tile, i) {
-    // camada transparente que fica sobre o bloco de vidro
     const S = 256, [cv, g] = canvas(S);
     const fase = FASES[tile.fase];
     g.textAlign = 'center'; g.textBaseline = 'middle';
@@ -126,7 +182,7 @@ export class Board3D {
     const cat = CATEGORIAS[tile.tipo];
     if (cat) {
       g.fillStyle = 'rgba(10,2,8,.35)';
-      g.beginPath(); g.arc(S / 2, S / 2, 72, 0, Math.PI * 2); g.fill();
+      g.beginPath(); g.arc(S / 2, S / 2, 72, 0, TAU); g.fill();
       g.strokeStyle = 'rgba(255,255,255,.4)'; g.lineWidth = 2; g.stroke();
       drawIcon(g, tile.tipo, S / 2, S / 2, 46, cat.cor);
       g.font = `600 26px ${SANS}`;
@@ -139,16 +195,6 @@ export class Board3D {
       g.fillStyle = '#fff';
       g.fillText(fim ? 'Clímax' : 'Início', S / 2, S / 2 + 4);
     }
-    return tex(cv);
-  }
-
-  #sideTexture(color) {
-    // lateral escura com um filete de luz na borda superior
-    const [cv, g] = canvas(16, 64);
-    g.fillStyle = '#000'; g.fillRect(0, 0, 16, 64);
-    const gr = g.createLinearGradient(0, 0, 0, 64);
-    gr.addColorStop(0, color); gr.addColorStop(0.12, color); gr.addColorStop(0.3, '#00000000');
-    g.fillStyle = gr; g.fillRect(0, 0, 16, 64);
     return tex(cv);
   }
 
@@ -166,25 +212,14 @@ export class Board3D {
     return tex(cv);
   }
 
-  #numberTexture(n) {
-    const [cv, g] = canvas(256);
-    g.textAlign = 'center'; g.textBaseline = 'middle';
-    g.font = `700 190px ${SERIF}`;
-    const gr = g.createLinearGradient(0, 40, 0, 220);
-    gr.addColorStop(0, '#fff1b0'); gr.addColorStop(0.45, '#f0c040'); gr.addColorStop(1, '#a26a00');
-    g.fillStyle = gr;
-    g.fillText(String(n), 128, 140);
-    if (n === 6) g.fillRect(88, 238, 80, 10);
-    return tex(cv);
-  }
-
   // ================================================================ atmosfera
   #makeEmbers() {
-    const N = 700, pos = new Float32Array(N * 3), col = new Float32Array(N * 3);
-    const palette = [0xff5a1a, 0xff2a2a, 0xffb347, 0xffe0a0, 0x6a7bff].map(c => new THREE.Color(c));
+    const N = 800, pos = new Float32Array(N * 3), col = new Float32Array(N * 3);
+    const palette = [0xff3a6a, 0xb04dff, 0xff2a2a, 0xffb0d0, 0x2affb8].map(c => new THREE.Color(c));
     for (let i = 0; i < N; i++) {
-      pos.set([(Math.random() - 0.5) * 80, Math.random() * 36 - 12, 20 - Math.random() * 110], i * 3);
-      const c = palette[i % 17 === 0 ? 4 : rnd(4)];
+      const a = Math.random() * TAU, rr = 4 + Math.random() * 40;
+      pos.set([Math.cos(a) * rr, Math.random() * 40 - 14, Math.sin(a) * rr], i * 3);
+      const c = palette[i % 13 === 0 ? 4 : rnd(4)];
       col.set([c.r, c.g, c.b], i * 3);
     }
     const geo = new THREE.BufferGeometry();
@@ -198,7 +233,6 @@ export class Board3D {
   }
 
   #makePetals() {
-    // pétalas de rosa caindo devagar ao redor da peça da vez
     const s = new THREE.Shape();
     s.moveTo(0, -0.5);
     s.bezierCurveTo(0.45, -0.3, 0.4, 0.35, 0, 0.5);
@@ -206,56 +240,16 @@ export class Board3D {
     const geo = new THREE.ShapeGeometry(s, 6);
     geo.scale(0.22, 0.3, 0.22);
     const mat = new THREE.MeshStandardMaterial({ color: 0xb0001c, emissive: 0x3a0006, roughness: 0.5, side: THREE.DoubleSide });
-    const N = 140;
+    const N = 120;
     this.petals = new THREE.InstancedMesh(geo, mat, N);
     this.petalData = Array.from({ length: N }, () => ({
-      x: (Math.random() - 0.5) * 26, y: Math.random() * 14, z: (Math.random() - 0.5) * 26,
+      x: (Math.random() - 0.5) * 24, y: Math.random() * 14, z: (Math.random() - 0.5) * 24,
       rx: Math.random() * 6, ry: Math.random() * 6, sp: 0.3 + Math.random() * 0.5, sw: Math.random() * 6,
     }));
     this.petals.frustumCulled = false;
     this.scene.add(this.petals);
     this.petalCenter = new THREE.Vector3();
     this.tmpObj = new THREE.Object3D();
-  }
-
-  #makeDie() {
-    // Dado de cristal lapidado (cantos chanfrados) com números dourados.
-    const geo = new RoundedBoxGeometry(1, 1, 1, 1, 0.2);
-    const crystal = new THREE.MeshPhysicalMaterial({
-      color: 0xe8001f, emissive: 0x5a0008, emissiveIntensity: 0.35,
-      roughness: 0.04, metalness: 0, transmission: 0.55, thickness: 1.2, ior: 1.75,
-      attenuationColor: new THREE.Color(0xa0000e), attenuationDistance: 0.7,
-      clearcoat: 1, clearcoatRoughness: 0.03, specularIntensity: 1,
-      envMap: this.env, envMapIntensity: 2.2, flatShading: true,
-    });
-    this.die = new THREE.Group();
-    const body = new THREE.Mesh(geo, crystal);
-    body.castShadow = true;
-    this.die.add(body);
-    const core = new THREE.Mesh(new THREE.OctahedronGeometry(0.33, 0),
-      new THREE.MeshBasicMaterial({ color: 0xc8001c, transparent: true, opacity: 0.5 }));
-    this.die.add(core);
-    // +x:3  -x:4  +y:1  -y:6  +z:2  -z:5
-    const faces = [
-      [3, [0.501, 0, 0], [0, Math.PI / 2, 0]], [4, [-0.501, 0, 0], [0, -Math.PI / 2, 0]],
-      [1, [0, 0.501, 0], [-Math.PI / 2, 0, 0]], [6, [0, -0.501, 0], [Math.PI / 2, 0, 0]],
-      [2, [0, 0, 0.501], [0, 0, 0]], [5, [0, 0, -0.501], [0, Math.PI, 0]],
-    ];
-    for (const [n, p, rot] of faces) {
-      const map = this.#numberTexture(n);
-      const m = new THREE.Mesh(new THREE.PlaneGeometry(0.58, 0.58), new THREE.MeshStandardMaterial({
-        map, transparent: true, metalness: 0.85, roughness: 0.3, envMap: this.env, envMapIntensity: 1.6,
-        emissive: 0xffb02e, emissiveMap: map, emissiveIntensity: 0.25, depthWrite: false,
-      }));
-      m.position.set(...p); m.rotation.set(...rot);
-      this.die.add(m);
-    }
-    this.die.rotation.order = 'YXZ';
-    this.die.scale.setScalar(1.15);
-    this.dieLight = new THREE.PointLight(0xff1a2e, 18, 6, 1.5);
-    this.scene.add(this.dieLight);
-    this.die.visible = false;
-    this.scene.add(this.die);
   }
 
   #pawn(color, symbol) {
@@ -278,11 +272,11 @@ export class Board3D {
     coreH.position.y = 1.1;
     const band = new THREE.Mesh(new THREE.TorusGeometry(0.43, 0.025, 8, 48), silver);
     band.rotation.x = Math.PI / 2; band.position.y = 0.04;
+    body.castShadow = head.castShadow = true;
     const l = new THREE.PointLight(color, 4, 3, 1.6); l.position.y = 0.6;
     g.add(coreB, coreH, body, head, band, l);
-    // medalhão flutuante com o símbolo
     const [cv, c2] = canvas(128);
-    c2.beginPath(); c2.arc(64, 64, 56, 0, Math.PI * 2); c2.fillStyle = 'rgba(255,255,255,.16)'; c2.fill();
+    c2.beginPath(); c2.arc(64, 64, 56, 0, TAU); c2.fillStyle = 'rgba(255,255,255,.16)'; c2.fill();
     c2.lineWidth = 3; c2.strokeStyle = 'rgba(255,255,255,.75)'; c2.stroke();
     const hex = '#' + new THREE.Color(color).getHexString();
     c2.fillStyle = '#fff'; c2.shadowColor = hex; c2.shadowBlur = 18;
@@ -315,13 +309,13 @@ export class Board3D {
     const g = new THREE.Group();
     const wax = new THREE.MeshStandardMaterial({ color: 0xf1dcc0, roughness: 0.55, emissive: 0x3a1a08 });
     for (let k = 0; k < n; k++) {
-      const h = 0.35 + Math.random() * 0.5;
-      const c = new THREE.Mesh(new THREE.CylinderGeometry(0.11, 0.12, h, 14), wax);
-      const a = (k / n) * Math.PI * 2 + Math.random() * 0.5, r = k === 0 ? 0 : 0.32 + Math.random() * 0.15;
+      const h = 0.3 + Math.random() * 0.45;
+      const c = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.11, h, 12), wax);
+      const a = (k / n) * TAU + Math.random() * 0.5, r = k === 0 ? 0 : 0.28 + Math.random() * 0.12;
       c.position.set(Math.cos(a) * r, h / 2, Math.sin(a) * r);
       const flame = new THREE.Sprite(new THREE.SpriteMaterial({ map: this.glowTex, blending: THREE.AdditiveBlending, depthWrite: false, color: 0xffb36b }));
-      flame.scale.set(0.32, 0.5, 1);
-      flame.position.set(c.position.x, h + 0.16, c.position.z);
+      flame.scale.set(0.3, 0.46, 1);
+      flame.position.set(c.position.x, h + 0.15, c.position.z);
       g.add(c, flame);
       this.flames.push({ s: flame, ph: Math.random() * 10 });
     }
@@ -333,40 +327,138 @@ export class Board3D {
     return g;
   }
 
-  #island(radius, color) {
-    const g = new THREE.Group();
-    const topMat = new THREE.MeshPhysicalMaterial({ color: shade(color, 0.5), transmission: 1, roughness: 0.35, thickness: 0.6, ior: 1.4,
-      attenuationColor: new THREE.Color(color), attenuationDistance: 1.2, clearcoat: 1, envMap: this.env, envMapIntensity: 0.9 });
-    const rockMat = new THREE.MeshStandardMaterial({ color: 0x0e0406, roughness: 0.9, flatShading: true });
-    const top = new THREE.Mesh(new THREE.CylinderGeometry(radius, radius * 0.96, 0.4, 10), topMat);
-    const rock = new THREE.Mesh(new THREE.ConeGeometry(radius * 0.95, radius * 1.9, 10, 2), rockMat);
-    rock.rotation.x = Math.PI; rock.position.y = -0.2 - radius * 0.95;
-    const rim = new THREE.Mesh(new THREE.TorusGeometry(radius * 0.99, 0.035, 6, 48),
-      new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.55 }));
-    rim.rotation.x = Math.PI / 2; rim.position.y = 0.2;
-    const glowDisc = new THREE.Mesh(new THREE.CircleGeometry(radius * 0.7, 32), new THREE.MeshBasicMaterial({ color }));
-    glowDisc.rotation.x = -Math.PI / 2; glowDisc.position.y = -0.1;
-    g.add(glowDisc);
-    top.receiveShadow = true;
-    g.add(top, rock, rim);
-    return g;
+  // ================================================================ montanha
+  // Espiral: ângulo θ ∈ [0, Θ]; o raio diminui e a altura sobe até o cume.
+  #spiral(N) {
+    const L = (N - 1) * SPACING;
+    const turns = 1.3 + N / 80;
+    const Θ = TAU * turns;
+    const R1 = 2.8;
+    const R0 = Math.max(R1 + 6, 2 * (L / Θ) - R1);
+    const H = 8 + N * 0.08;
+    const R = th => R0 - (R0 - R1) * (th / Θ);
+    const Y = th => H * (th / Θ);
+    // amostra a espiral por comprimento de arco
+    const samples = [{ th: 0, s: 0 }];
+    let s = 0, th = 0;
+    const dth = 0.002;
+    while (th < Θ) {
+      const r = R(th), dr = (R0 - R1) / Θ;
+      s += Math.sqrt(r * r + dr * dr) * dth; th += dth;
+      samples.push({ th, s });
+    }
+    const total = s;
+    const thAt = target => {
+      let lo = 0, hi = samples.length - 1;
+      while (hi - lo > 1) { const m = (lo + hi) >> 1; (samples[m].s < target ? lo = m : hi = m); }
+      return samples[lo].th;
+    };
+    const pts = [];
+    for (let i = 0; i < N; i++) {
+      const t = thAt((i / (N - 1)) * total);
+      pts.push({ th: t, r: R(t), y: Y(t) });
+    }
+    return { pts, R, Y, Θ, R0, R1, H };
   }
 
-  // ================================================================ mapa
-  #genCells(N) {
-    // Caminho sinuoso: avança, vira para um lado, avança, vira para o outro...
-    const cells = [[0, 0]];
-    let x = 0, z = 0, first = true;
-    const run = (dx, dz, len) => { for (let k = 0; k < len && cells.length < N; k++) { x += dx; z += dz; cells.push([x, z]); } };
-    while (cells.length < N) {
-      run(0, -1, first ? 3 : 2 + rnd(2));
-      first = false;
-      if (cells.length >= N) break;
-      const side = x >= 2 ? -1 : x <= -2 ? 1 : (Math.random() < 0.5 ? -1 : 1);
-      const room = side > 0 ? 5 - x : x + 5;
-      run(side, 0, Math.max(2, Math.min(room, 2 + rnd(4))));
+  #terrainHeight(r, phi, sp) {
+    const { R, Y, Θ, H } = sp;
+    const p0 = ((phi % TAU) + TAU) % TAU;
+    const roads = [];
+    for (let k = 0; ; k++) {
+      const th = p0 + TAU * k;
+      if (th > Θ) break;
+      roads.push({ r: R(th), y: Y(th) - 0.3 });
     }
-    return cells;
+    const nx = Math.cos(phi) * r, nz = Math.sin(phi) * r;
+    const rock = fbm(nx * 0.35, nz * 0.35);
+    if (!roads.length) roads.push({ r: R(Θ), y: Y(Θ) - 0.3 });
+    const first = roads[0];
+    if (r > first.r + LEDGE) { // encosta externa descendo para o vazio
+      const d = r - first.r - LEDGE;
+      return { y: first.y - d * 1.25 - rock * d * 0.5, wall: 1, t: 0.6, outer: Math.min(1, d / 3) };
+    }
+    for (let k = 0; k < roads.length; k++) {
+      const a = roads[k];
+      if (Math.abs(r - a.r) <= LEDGE) return { y: a.y + (rock - 0.5) * 0.04, wall: 0 };
+      const b = roads[k + 1];
+      if (b && r < a.r - LEDGE && r > b.r + LEDGE) {
+        const t = clamp01((a.r - LEDGE - r) / ((a.r - LEDGE) - (b.r + LEDGE)));
+        return { y: a.y + (b.y - a.y) * smooth(t) + Math.sin(t * Math.PI) * (rock - 0.35) * 1.4, wall: 1, t };
+      }
+    }
+    const last = roads[roads.length - 1];
+    // núcleo: sobe até o pico no centro
+    const t = clamp01((last.r - LEDGE - r) / Math.max(0.5, last.r - LEDGE));
+    return { y: last.y + (H + 2.2 - last.y) * smooth(t) + (rock - 0.4) * t * 0.8, wall: 1, t };
+  }
+
+  #buildMountain(sp) {
+    const NR = 120, NA = 240, RMAX = sp.R0 + 14;
+    const pos = [], col = [], idx = [];
+    const cLedge = new THREE.Color(0x2a1236), cLow = new THREE.Color(0x1c0b3a), cHigh = new THREE.Color(0x6a1658), cVein = new THREE.Color(0xd0349a);
+    const tmp = new THREE.Color();
+    this.wallSpots = [];
+    for (let i = 0; i <= NR; i++) {
+      const r = RMAX * Math.pow(i / NR, 1.15);
+      for (let j = 0; j < NA; j++) {
+        const phi = (j / NA) * TAU;
+        const h = this.#terrainHeight(r, phi, sp);
+        // penhascos irregulares: empurra a rocha para dentro/fora entre os terraços
+        const crag = h.wall ? (fbm(phi * 7 + 3, h.y * 0.7) - 0.5) * 2.2 * (h.outer ?? Math.sin(Math.PI * (h.t ?? 0))) : 0;
+        const rr = Math.max(0, r + crag);
+        pos.push(Math.cos(phi) * rr, h.y, Math.sin(phi) * rr);
+        const hn = clamp01((h.y + 6) / (sp.H + 8));
+        tmp.copy(cLow).lerp(cHigh, hn);
+        if (h.wall) tmp.multiplyScalar(0.4 + 0.6 * (h.t ?? 0.6)); // sombra na base de cada paredão
+        const v = fbm(Math.cos(phi) * r * 0.9, Math.sin(phi) * r * 0.9);
+        if (h.wall && v > 0.62) tmp.lerp(cVein, (v - 0.62) * 2.2);
+        if (!h.wall) tmp.copy(cLedge);
+        col.push(tmp.r, tmp.g, tmp.b);
+        if (h.wall && r > 1.5 && i % 3 === 0 && j % 5 === 0) this.wallSpots.push(new THREE.Vector3(Math.cos(phi) * r, h.y, Math.sin(phi) * r));
+      }
+    }
+    for (let i = 0; i < NR; i++) for (let j = 0; j < NA; j++) {
+      const a = i * NA + j, b = i * NA + (j + 1) % NA, c = (i + 1) * NA + j, d = (i + 1) * NA + (j + 1) % NA;
+      idx.push(a, b, c, b, d, c);
+    }
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+    geo.setAttribute('color', new THREE.Float32BufferAttribute(col, 3));
+    geo.setIndex(idx);
+    geo.computeVertexNormals();
+    const mat = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.82, metalness: 0.15, flatShading: true,
+      envMap: this.env, envMapIntensity: 0.45, emissive: 0x1a0626, emissiveIntensity: 0.8 });
+    const mesh = new THREE.Mesh(geo, mat);
+    mesh.receiveShadow = true;
+    this.world.add(mesh);
+
+    // cristais venenosos brotando das paredes
+    const crystalCols = [0xff2d95, 0x9b30ff, 0xff1a3a, 0x1fffb0];
+    const geoC = new THREE.OctahedronGeometry(1, 0); geoC.scale(0.16, 0.75, 0.16); geoC.translate(0, 0.55, 0);
+    const o = new THREE.Object3D();
+    const spots = this.wallSpots.sort(() => Math.random() - 0.5).slice(0, 90);
+    crystalCols.forEach((cc, ci) => {
+      const count = ci === 3 ? 10 : 26;
+      const im = new THREE.InstancedMesh(geoC, new THREE.MeshStandardMaterial({
+        color: cc, emissive: cc, emissiveIntensity: ci === 3 ? 1.1 : 0.9, roughness: 0.15, metalness: 0.2, flatShading: true }), count * 3);
+      let n = 0;
+      for (let k = 0; k < count; k++) {
+        const p = spots[(ci * 26 + k) % spots.length];
+        if (!p) break;
+        const out = new THREE.Vector3(p.x, 0, p.z).normalize();
+        for (let m = 0; m < 3; m++) {
+          o.position.copy(p).addScaledVector(out, 0.1 + Math.random() * 0.2).add(new THREE.Vector3((Math.random() - 0.5) * 0.5, 0, (Math.random() - 0.5) * 0.5));
+          o.lookAt(o.position.clone().add(out).add(new THREE.Vector3(0, 1.4 + Math.random(), 0)));
+          o.rotateX(Math.PI / 2);
+          o.scale.setScalar(0.5 + Math.random() * 0.9);
+          o.updateMatrix();
+          im.setMatrixAt(n++, o.matrix);
+        }
+      }
+      im.count = n;
+      this.world.add(im);
+    });
   }
 
   build(tiles) {
@@ -375,12 +467,24 @@ export class Board3D {
     this.flames = [];
     this.tiles = tiles;
     const N = tiles.length;
-    const cells = this.#genCells(N);
-    this.path = cells.map(([x, z], i) => new THREE.Vector3(x * CELL, i * RISE, z * CELL));
+    const sp = this.sp = this.#spiral(N);
+    this.path = sp.pts.map(p => new THREE.Vector3(Math.cos(p.th) * p.r, p.y, Math.sin(p.th) * p.r));
     this.dirs = this.path.map((p, i) => {
-      const a = i < N - 1 ? p : this.path[i - 1], b = i < N - 1 ? this.path[i + 1] : p;
+      const a = this.path[Math.max(0, i - 1)], b = this.path[Math.min(N - 1, i + 1)];
       return b.clone().sub(a).setY(0).normalize();
     });
+    this.outward = this.path.map(p => new THREE.Vector3(p.x, 0, p.z).normalize());
+
+    this.#buildMountain(sp);
+
+    // ---- trilha luminosa na borda externa
+    const rail = this.path.map((p, i) => p.clone().addScaledVector(this.outward[i], 1.25).setY(p.y - 0.22));
+    const curve = new THREE.CatmullRomCurve3(rail);
+    this.world.add(new THREE.Mesh(new THREE.TubeGeometry(curve, N * 10, 0.035, 6, false),
+      new THREE.MeshBasicMaterial({ color: 0xff3d8a })));
+    const rail2 = this.path.map((p, i) => p.clone().addScaledVector(this.outward[i], -1.25).setY(p.y - 0.25));
+    this.world.add(new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(rail2), N * 10, 0.02, 6, false),
+      new THREE.MeshBasicMaterial({ color: 0x9b4dff, transparent: true, opacity: 0.7 })));
 
     // ---- degraus de vidro com núcleo de luz
     const geo = new RoundedBoxGeometry(1.86, 0.5, 1.86, 4, 0.16);
@@ -409,95 +513,66 @@ export class Board3D {
       g.add(block, core, top);
       if (tile.tipo === 'inicio' || tile.tipo === 'fim') g.scale.set(1.25, 1, 1.25);
       this.world.add(g);
-      if (i % 3 === 0) {
-        const pil = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 7, 8),
-          new THREE.MeshBasicMaterial({ color: shade(fase.cor, 0.2), transparent: true, opacity: 0.35 }));
-        pil.position.copy(this.path[i]).setY(this.path[i].y - 4);
-        this.world.add(pil);
+      // velas na beira do penhasco
+      if (i % 4 === 2) {
+        const c = this.#candles(2 + rnd(2), false);
+        c.position.copy(this.path[i]).addScaledVector(this.outward[i], 1.5).setY(this.path[i].y - 0.3);
+        this.world.add(c);
       }
     });
-
     this.glassMats = Object.values(glassCache);
 
-    // ---- utilidades de espaço livre
-    const freeAt = (p, r) => this.path.every(q => Math.hypot(q.x - p.x, q.z - p.z) > r);
-    const findSpot = (i, r) => {
-      const d = this.dirs[i], perp = new THREE.Vector3(-d.z, 0, d.x);
-      for (const dist of [4.5, 5.5, 6.5, 8]) for (const s of [1, -1]) {
-        const p = this.path[i].clone().addScaledVector(perp, dist * s);
-        if (freeAt(p, r)) return p;
-      }
-      return null;
-    };
-
-    // ---- ilhas de cada fase: placa, velas e coração
+    // ---- placas de cada fase
     FASES.forEach((fase, f) => {
       const i = tiles.findIndex(t => t.fase === f && t.tipo !== 'inicio');
-      const p = findSpot(Math.max(1, i), 3.4);
-      if (!p) return;
-      const isl = this.#island(2.4, fase.cor);
-      isl.position.copy(p).setY(this.path[i].y - 0.8);
-      const sign = new THREE.Mesh(new THREE.PlaneGeometry(3.6, 1.05),
+      if (i < 0) return;
+      const base = this.path[i].clone().addScaledVector(this.outward[i], 2.1).addScaledVector(this.dirs[i], 0.8);
+      const grp = new THREE.Group();
+      grp.position.copy(base).setY(this.path[i].y - 0.3);
+      const sign = new THREE.Mesh(new THREE.PlaneGeometry(2.2, 0.64),
         new THREE.MeshBasicMaterial({ map: this.#signTexture(fase.nome, fase.cor), transparent: true, side: THREE.DoubleSide }));
-      sign.position.y = 2.6;
-      const post = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 2.3, 6),
+      sign.position.y = 1.9;
+      const post = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 1.6, 6),
         new THREE.MeshStandardMaterial({ color: 0xf2e6e0, metalness: 1, roughness: 0.2, envMap: this.env }));
-      post.position.y = 1.2;
-      const cand = this.#candles(5, true);
-      cand.position.set(-1.2, 0.2, 0.5);
-      const h = this.#heart(fase.cor, 0.5, 0.6);
-      h.position.set(1.3, 1.0, 0.4);
-      isl.add(post, sign, cand, h);
-      this.world.add(isl);
-      this.animated.push({ o: isl, base: isl.position.y, sp: 0.7 + f * 0.1, amp: 0.2, sign, heart: h });
+      post.position.y = 0.8;
+      const cand = this.#candles(4, true);
+      cand.position.set(0.5, 0, 0.3);
+      grp.add(post, sign, cand);
+      this.world.add(grp);
+      this.animated.push({ o: sign, base: sign.position.y, sp: 0.9, amp: 0.06, sign });
     });
 
-    // ---- ilhotas com velas e discos flutuantes
-    for (let k = 0; k < 22; k++) {
-      const i = rnd(N);
-      const d = this.dirs[i], perp = new THREE.Vector3(-d.z, 0, d.x);
-      const p = this.path[i].clone().addScaledVector(perp, (Math.random() < 0.5 ? -1 : 1) * (3.2 + Math.random() * 9));
-      p.z += (Math.random() - 0.5) * 4;
-      if (!freeAt(p, 2.2)) continue;
-      let o;
-      if (Math.random() < 0.5) {
-        const fc = FASES[tiles[i].fase].cor;
-        o = new THREE.Mesh(new RoundedBoxGeometry(1, 0.12, 1, 2, 0.05), new THREE.MeshPhysicalMaterial({
-          color: shade(fc, 0.5), transmission: 1, roughness: 0.25, thickness: 0.3, attenuationColor: new THREE.Color(fc),
-          attenuationDistance: 0.5, clearcoat: 1, envMap: this.env }));
-        o.rotation.y = Math.random() * 3;
-      } else {
-        o = this.#island(0.8 + Math.random() * 0.7, FASES[tiles[i].fase].cor);
-        o.add(this.#candles(2 + rnd(3), false));
-      }
-      o.position.copy(p).setY(this.path[i].y - 1 - Math.random() * 2.5);
-      this.world.add(o);
-      this.animated.push({ o, base: o.position.y, sp: 0.5 + Math.random() * 0.8, amp: 0.25 + Math.random() * 0.3 });
-    }
-
-    // ---- lua de sangue ao fundo
+    // ---- cume: coração do Clímax
     const end = this.path[N - 1];
+    this.heartBig = this.#heart(0xff1a3a, 1.6, 0.9);
+    this.heartBig.position.set(0, sp.H + 4.6, 0);
+    const hl = new THREE.PointLight(0xff1a3a, 40, 16, 1.4);
+    this.heartBig.add(hl);
+    const halo = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTexture('#ff2a5a'), blending: THREE.AdditiveBlending, depthWrite: false, opacity: 0.7 }));
+    halo.scale.setScalar(9);
+    this.heartBig.add(halo);
+    this.world.add(this.heartBig);
+    // anel de luz em volta do cume
+    const ring = new THREE.Mesh(new THREE.TorusGeometry(3.2, 0.03, 8, 96), new THREE.MeshBasicMaterial({ color: 0xff5a9a }));
+    ring.rotation.x = Math.PI / 2; ring.position.set(0, sp.H + 3, 0);
+    this.world.add(ring);
+    this.animated.push({ o: ring, base: ring.position.y, sp: 0.6, amp: 0.4, spin: 0.2 });
+
+    // ---- lua de sangue ao longe
     const [mcv, mg] = canvas(256);
     const mgr = mg.createRadialGradient(100, 96, 10, 128, 128, 128);
-    mgr.addColorStop(0, '#ff9a5a'); mgr.addColorStop(0.5, '#d0301a'); mgr.addColorStop(1, '#5a0808');
+    mgr.addColorStop(0, '#ff9a8a'); mgr.addColorStop(0.5, '#c0203a'); mgr.addColorStop(1, '#40061a');
     mg.fillStyle = mgr; mg.fillRect(0, 0, 256, 256);
-    for (let k = 0; k < 30; k++) { // crateras suaves
-      mg.fillStyle = `rgba(60,0,0,${0.08 + Math.random() * 0.12})`;
-      mg.beginPath(); mg.arc(Math.random() * 256, Math.random() * 256, 4 + Math.random() * 22, 0, Math.PI * 2); mg.fill();
+    for (let k = 0; k < 30; k++) {
+      mg.fillStyle = `rgba(50,0,20,${0.08 + Math.random() * 0.12})`;
+      mg.beginPath(); mg.arc(Math.random() * 256, Math.random() * 256, 4 + Math.random() * 22, 0, TAU); mg.fill();
     }
-    const moon = new THREE.Mesh(new THREE.SphereGeometry(13, 48, 32), new THREE.MeshBasicMaterial({ map: tex(mcv), fog: false }));
-    moon.position.set(end.x - 30, end.y + 22, end.z - 60);
-    const halo = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTexture('#ff3a1a'), blending: THREE.AdditiveBlending, depthWrite: false, fog: false, opacity: 0.8 }));
-    halo.scale.setScalar(70);
-    moon.add(halo);
+    const moon = new THREE.Mesh(new THREE.SphereGeometry(14, 48, 32), new THREE.MeshBasicMaterial({ map: tex(mcv), fog: false }));
+    moon.position.set(-70, sp.H + 30, -110);
+    const mhalo = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTexture('#ff2a4a'), blending: THREE.AdditiveBlending, depthWrite: false, fog: false, opacity: 0.7 }));
+    mhalo.scale.setScalar(80);
+    moon.add(mhalo);
     this.world.add(moon);
-
-    // ---- coração do Clímax
-    this.heartBig = this.#heart(0xff1a3a, 1.5, 0.9);
-    this.heartBig.position.copy(end).setY(end.y + 2.6);
-    const hl = new THREE.PointLight(0xff1a3a, 20, 12, 1.5);
-    this.heartBig.add(hl);
-    this.world.add(this.heartBig);
 
     // ---- peças
     for (const who of ['ele', 'ela']) {
@@ -507,23 +582,16 @@ export class Board3D {
       this.place(who, 0);
     }
 
-    // ---- enquadramento
-    const box = new THREE.Box3().setFromPoints(this.path);
-    this.center = box.getCenter(new THREE.Vector3());
-    this.size = box.getSize(new THREE.Vector3());
-    this.embers.position.set(this.center.x, 0, this.center.z + 40);
-    this.die.position.copy(this.path[0]).add(new THREE.Vector3(1.5, 0.8, -1.6));
-    this.die.rotation.set(0.3, 0.6, 0);
-    this.die.visible = true;
-    this.dieFocus = null;
-    this.camDir.set(0, 0, -1);
-    this.camPos.copy(this.path[0]).add(new THREE.Vector3(0, 16, 14));
-    this.camLook.copy(this.path[Math.min(N - 1, 6)]);
+    this.center = new THREE.Vector3(0, sp.H * 0.45, 0);
+    this.embers.position.set(0, 0, 0);
+    this.placeDie(1 + rnd(6), 'ele');
+    this.camDir.copy(this.dirs[0]);
+    this.camPos.set(sp.R0 * 1.6, sp.H + 18, sp.R0 * 1.6);
+    this.camLook.copy(this.center);
     this.setQuality(this.quality);
     this.fps = { t0: 0, frames: 0, done: false };
   }
 
-  // 'alta' = vidro com refração, bloom e sombras; 'leve' = para celulares mais simples
   setQuality(q) {
     this.quality = q;
     const hi = q !== 'leve';
@@ -561,7 +629,7 @@ export class Board3D {
     const piece = this.pieces[who];
     for (let i = from; i !== to; i += dir) {
       const a = this.#spot(who, i), b = this.#spot(who, i + dir);
-      const T = 320, t0 = performance.now();
+      const T = 340, t0 = performance.now();
       await new Promise(res => {
         const step = () => {
           const t = Math.min(1, (performance.now() - t0) / T);
@@ -577,42 +645,17 @@ export class Board3D {
     piece.userData.idx = to;
   }
 
-  async rollDie(value, who) {
-    const idx = this.pieces[who].userData.idx;
-    const d = this.camDir.clone();
-    const perp = new THREE.Vector3(-d.z, 0, d.x);
-    const land = this.path[idx].clone().addScaledVector(d, 1.9).addScaledVector(perp, who === 'ele' ? 0.9 : -0.9);
-    land.y += 0.8;
-    const start = land.clone().addScaledVector(d, -2.5); start.y += 4.5;
-    const tgt = { 1: [0, 0], 6: [Math.PI, 0], 2: [-Math.PI / 2, 0], 5: [Math.PI / 2, 0], 3: [0, Math.PI / 2], 4: [0, -Math.PI / 2] }[value];
-    const sx = Math.random() * 6, sz = Math.random() * 6, yaw = Math.atan2(-d.x, -d.z) + (Math.random() - 0.5) * 0.8;
-    const ex = tgt[0] + Math.PI * 2 * 3, ez = tgt[1] + Math.PI * 2 * 2;
+  // deixa o dado do tabuleiro pousado ao lado da peça, com o resultado para cima
+  placeDie(value, who) {
+    const idx = this.pieces[who]?.userData.idx ?? 0;
+    const d = this.dirs[idx], o = this.outward[idx];
+    const p = this.path[idx].clone().addScaledVector(d, 1.3).addScaledVector(o, 0.75);
+    p.y += 0.36;
+    this.die.position.copy(p);
+    const [rx, rz] = TOP[value];
+    this.die.rotation.set(rx, Math.random() * TAU, rz);
     this.die.visible = true;
-    this.dieFocus = land.clone();
-    const T = 1400, t0 = performance.now();
-    await new Promise(res => {
-      const step = () => {
-        const t = Math.min(1, (performance.now() - t0) / T);
-        const e = ease(t);
-        const fall = Math.min(1, t * 1.7);
-        this.die.position.lerpVectors(start, land, ease(fall));
-        const bt = Math.max(0, t * 1.7 - 1);
-        this.die.position.y = fall < 1
-          ? start.y + (land.y - start.y) * fall * fall
-          : land.y + Math.abs(Math.sin(bt * Math.PI * 1.7)) * 0.55 * (1 - bt / 0.7);
-        this.die.rotation.set(sx + (ex - sx) * e, yaw, sz + (ez - sz) * e);
-        this.dieLight.intensity = 22 + Math.sin(t * 30) * 8;
-        if (t < 1) requestAnimationFrame(step); else res();
-      };
-      step();
-    });
-    this.die.position.y = land.y;
-    this.die.rotation.set(tgt[0], yaw, tgt[1]);
-    this.dieLight.intensity = 26;
-    await wait(700);
   }
-
-  hideDie() { this.dieFocus = null; this.dieLight.intensity = 12; }
 
   resize() {
     const w = this.container.clientWidth, h = this.container.clientHeight;
@@ -628,7 +671,7 @@ export class Board3D {
   #tick() {
     const dt = Math.min(0.1, this.clock.getDelta());
     const t = this.clock.elapsedTime;
-    // mede o FPS nos primeiros segundos da partida; se estiver baixo, avisa para trocar para o modo leve
+    this.sky.material.uniforms.uTime.value = t;
     if (this.fps && !this.fps.done && this.mode === 'follow' && this.quality !== 'leve') {
       if (!this.fps.t0) this.fps.t0 = performance.now();
       this.fps.frames++;
@@ -643,38 +686,38 @@ export class Board3D {
       const idx = p.userData.idx ?? 0;
       const N = this.path.length;
       const pos = p.position;
+      const sp = this.sp;
 
       if (this.mode === 'follow') {
-        const ahead = this.path[Math.min(N - 1, idx + 3)], behind = this.path[Math.max(0, idx - 1)];
+        const ahead = this.path[Math.min(N - 1, idx + 2)], behind = this.path[Math.max(0, idx - 1)];
         const want = ahead.clone().sub(behind).setY(0);
         if (want.lengthSq() > 0.01) this.camDir.lerp(want.normalize(), 1 - Math.exp(-dt * 2)).normalize();
-        const back = this.portrait ? 5.6 : 6.4, up = this.portrait ? 6.8 : 5.6;
-        this.wantPos.copy(pos).addScaledVector(this.camDir, -back).setY(pos.y + up);
-        this.wantLook.copy(pos).addScaledVector(this.camDir, this.portrait ? 2.2 : 2.8);
-        if (this.dieFocus) this.wantLook.lerp(this.dieFocus, 0.45);
+        const out = new THREE.Vector3(pos.x, 0, pos.z).normalize();
+        const back = this.portrait ? 5.6 : 6.2, up = this.portrait ? 5.4 : 4.4;
+        this.wantPos.copy(pos).addScaledVector(this.camDir, -back).addScaledVector(out, 3.0).setY(pos.y + up);
+        this.wantLook.copy(pos).addScaledVector(this.camDir, this.portrait ? 2.0 : 2.6).addScaledVector(out, -0.4);
       } else if (this.mode !== 'free') {
-        const L = Math.max(this.size.z, this.size.x);
-        const ang = this.mode === 'orbit' ? t * 0.07 : (this.portrait ? 0 : Math.PI / 2);
-        const dist = this.portrait ? L * 0.7 : L * 0.68;
-        const c = this.center;
-        this.wantLook.copy(c);
-        this.wantPos.set(c.x + Math.sin(ang) * dist * 0.75, c.y + dist * (this.portrait ? 1.25 : 0.95), c.z + Math.cos(ang) * dist * 0.75);
+        // visão da montanha inteira (órbita lenta e hipnótica na tela inicial)
+        const D = sp.R0 * (this.portrait ? 2.5 : 1.75);
+        const ang = this.mode === 'orbit' ? t * 0.05 : Math.atan2(pos.z, pos.x);
+        this.wantLook.copy(this.center);
+        this.wantPos.set(Math.cos(ang) * D, sp.H + D * 0.62, Math.sin(ang) * D);
       }
-      const k = 1 - Math.exp(-dt * (this.mode === 'follow' ? 2.8 : 1.6));
+      const k = 1 - Math.exp(-dt * (this.mode === 'follow' ? 2.6 : 1.4));
       this.camPos.lerp(this.wantPos, k);
       this.camLook.lerp(this.wantLook, k);
       this.camera.position.copy(this.camPos);
       this.camera.lookAt(this.camLook);
+      this.sky.position.copy(this.camera.position);
 
-      // luz de vela acima da peça + contraluz carmim e um toque de azul
       const focus = this.mode === 'follow' ? pos : this.center;
       this.key.position.copy(focus).add(new THREE.Vector3(2.5, 11, 4));
       this.key.target.position.copy(focus);
-      this.key.angle = this.mode === 'follow' ? 0.62 : 1.0;
-      this.key.intensity = (this.mode === 'follow' ? 55 : 90) * (0.96 + Math.sin(t * 7) * 0.02 + Math.sin(t * 13) * 0.02);
-      this.key.distance = this.mode === 'follow' ? 40 : 90;
+      this.key.angle = this.mode === 'follow' ? 0.62 : 1.05;
+      this.key.intensity = (this.mode === 'follow' ? 55 : 110) * (0.96 + Math.sin(t * 7) * 0.02 + Math.sin(t * 13) * 0.02);
+      this.key.distance = this.mode === 'follow' ? 40 : 120;
       this.rim.position.copy(pos).addScaledVector(this.camDir, 6).setY(pos.y + 2.5);
-      this.blue.position.copy(pos).addScaledVector(this.camDir, -3).add(new THREE.Vector3(-4, 3, 0));
+      this.blue.position.copy(pos).addScaledVector(this.camDir, -3).add(new THREE.Vector3(0, 3, 0));
 
       for (const k2 in this.pieces) {
         const pc = this.pieces[k2];
@@ -684,25 +727,24 @@ export class Board3D {
       }
       const tmp = new THREE.Vector3();
       for (const a of this.animated) {
-        a.o.position.y = a.base + Math.sin(t * a.sp + a.o.position.x) * a.amp;
+        a.o.position.y = a.base + Math.sin(t * a.sp) * a.amp;
+        if (a.spin) a.o.rotation.z = t * a.spin;
         if (a.sign) a.sign.lookAt(this.camera.position.x, a.sign.getWorldPosition(tmp).y, this.camera.position.z);
-        if (a.heart) a.heart.rotation.y = t * 1.2;
       }
       for (const f of this.flames) {
         const fl = 1 + Math.sin(t * 11 + f.ph) * 0.12 + Math.sin(t * 23 + f.ph * 2) * 0.08;
-        if (f.s) f.s.scale.set(0.32 * fl, 0.5 * fl, 1);
+        if (f.s) f.s.scale.set(0.3 * fl, 0.46 * fl, 1);
         if (f.l) f.l.intensity = 6 * fl;
       }
-      this.dieLight.position.copy(this.die.position).setY(this.die.position.y - 0.35);
-      this.heartBig.rotation.y = t * 1.1;
-      this.heartBig.scale.setScalar(1.5 + Math.pow(Math.max(0, Math.sin(t * 3.2)), 8) * 0.18); // batimento
+      this.dieLight.position.copy(this.die.position).setY(this.die.position.y - 0.3);
+      this.heartBig.rotation.y = t * 0.8;
+      this.heartBig.scale.setScalar(1.6 + Math.pow(Math.max(0, Math.sin(t * 3.2)), 8) * 0.2);
 
-      // pétalas ao redor do foco
       this.petalCenter.lerp(this.mode === 'follow' ? pos : this.center, 1 - Math.exp(-dt));
       const o = this.tmpObj;
       this.petalData.forEach((d, i) => {
         d.y -= dt * d.sp; d.rx += dt * 0.8; d.ry += dt * 0.6;
-        if (d.y < -3) { d.y = 12; d.x = (Math.random() - 0.5) * 26; d.z = (Math.random() - 0.5) * 26; }
+        if (d.y < -3) { d.y = 12; d.x = (Math.random() - 0.5) * 24; d.z = (Math.random() - 0.5) * 24; }
         o.position.set(this.petalCenter.x + d.x + Math.sin(t * 0.7 + d.sw) * 0.6, this.petalCenter.y + d.y, this.petalCenter.z + d.z);
         o.rotation.set(d.rx, d.ry, 0);
         o.updateMatrix();
@@ -710,11 +752,14 @@ export class Board3D {
       });
       this.petals.instanceMatrix.needsUpdate = true;
     }
+    // brasas sobem em espiral em volta da montanha (hipnótico)
     const pa = this.embers.geometry.attributes.position;
+    const ca = Math.cos(dt * 0.05), sa = Math.sin(dt * 0.05);
     for (let i = 0; i < pa.count; i++) {
-      let y = pa.getY(i) + dt * 0.45;
-      if (y > 24) y = -12;
-      pa.setY(i, y);
+      let y = pa.getY(i) + dt * 0.35;
+      if (y > 26) y = -14;
+      const x = pa.getX(i), z = pa.getZ(i);
+      pa.setXYZ(i, x * ca - z * sa, y, x * sa + z * ca);
     }
     pa.needsUpdate = true;
     this.composer.render();

@@ -26,6 +26,14 @@ O visual segue a linguagem de vidro da Apple (macOS/iOS) com uma paleta noturna 
 > Em celulares de 2020 para cá deve rodar bem. Se algum aparelho travar, o primeiro ajuste é trocar
 > `transmission` dos degraus por transparência simples em `js/scene.js`.
 
+## Montanha cósmica e dado em destaque
+- **Tabuleiro:** é uma **montanha de rocha cristalina** com uma trilha em **espiral** que sobe em terraços até o **cume**, onde fica o Clímax com o coração pulsando.
+  Cristais venenosos (magenta, violeta, carmim e verde-ácido) brotam dos penhascos. Velas acesas marcam a beira da trilha, e dois trilhos de luz guiam o caminho.
+- **Céu:** uma nebulosa gerada em tempo real que gira devagar em redemoinho, com braços de galáxia, estrelas cintilando e a lua de sangue ao longe.
+- **Dado:** ao rolar, o tabuleiro escurece e desfoca, e um **dado de cristal lapidado** (cantos facetados, números dourados aparecendo refratados por dentro) gira em câmera lenta no centro da tela.
+  Ele desacelera, pousa no número com um brilho atravessando o cristal e um som de taça de cristal, e só então a peça anda.
+- O tamanho da montanha se ajusta à duração escolhida (Rápida, Normal ou Longa).
+
 ## Instalar como app
 - **iPhone (Safari):** abra o link, toque em **Compartilhar → Adicionar à Tela de Início**.
 - **Android (Chrome):** abra o link, toque no menu **⋮ → Instalar app**.
@@ -55,7 +63,8 @@ Não precisa de build e o Three.js já vem junto em `vendor/`, então funciona s
 index.html        telas (início, regras, HUD, carta, final, pausa)
 css/style.css     visual Liquid Glass: vidro fosco, borda especular, componentes iOS
 js/data.js        TODO o conteúdo: fases, categorias, perguntas, desafios, desejos
-js/scene.js       3D: degraus e peças de vidro, velas, pétalas, lua, dado de cristal, câmera
+js/scene.js       3D: montanha em espiral, nebulosa, cristais, degraus e peças de vidro, câmera
+js/dice.js        dado de cristal lapidado e o palco do dado (giro em destaque)
 js/icons.js       ícones vetoriais das categorias (3D e interface)
 js/game.js        regras, turnos, baralhos, efeitos, tela final, sons
 fonts/            Playfair Display, Great Vibes, Inter (locais)

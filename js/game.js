@@ -2,6 +2,7 @@
 import { Board3D } from './scene.js';
 import { FASES, CATEGORIAS, VERDADE, DESAFIO, PENA, ARMADILHA, SORTE, DESEJOS } from './data.js';
 import { iconURL } from './icons.js';
+import { DiceStage } from './dice.js';
 
 const $ = s => document.querySelector(s);
 const wait = ms => new Promise(r => setTimeout(r, ms));
@@ -26,7 +27,8 @@ function beep(freq = 440, dur = 0.08, type = 'sine', vol = 0.08) {
   } catch {}
 }
 const sfx = {
-  roll() { for (let i = 0; i < 7; i++) setTimeout(() => beep(900 + rnd(500), 0.05, 'sine', 0.025), i * 120); },
+  roll() { for (let i = 0; i < 10; i++) setTimeout(() => beep(1400 + rnd(900), 0.25, 'sine', 0.018 * (1 - i / 12)), i * 170 + i * i * 6); },
+  land() { beep(1318, 1.4, 'sine', 0.05); setTimeout(() => beep(1976, 1.2, 'sine', 0.03), 40); beep(659, 1.6, 'sine', 0.03); },
   hop() { beep(196, 0.18, 'sine', 0.05); },
   card() { beep(392, 0.5, 'sine', 0.05); setTimeout(() => beep(587, 0.7, 'sine', 0.04), 140); },
   trap() { beep(98, 0.6, 'triangle', 0.07); },
@@ -159,18 +161,20 @@ function showCard({ cat, text, secs = 0, who, fase, refusable = true }) {
 
 // ------------------------------------------------------------ fluxo
 const board = new Board3D($('#stage'));
+const dice = new DiceStage($('#dice-layer'));
 let quality = store.get('quality', 'auto'); // 'auto' | 'alta' | 'leve'
 const qualityLabel = () => { $('#btn-quality').textContent = 'Gráficos: ' + (board.quality === 'leve' ? 'Leve' : 'Alta'); };
 board.setQuality(quality === 'leve' ? 'leve' : 'alta');
+dice.setQuality(board.quality);
 board.onLowFps = () => {
   if (quality !== 'auto') return;
-  board.setQuality('leve'); qualityLabel();
+  board.setQuality('leve'); dice.setQuality('leve'); qualityLabel();
   toast('Gráficos ajustados para o modo leve');
 };
 $('#btn-quality').onclick = () => {
   quality = board.quality === 'leve' ? 'alta' : 'leve';
   store.set('quality', quality);
-  board.setQuality(quality); qualityLabel();
+  board.setQuality(quality); dice.setQuality(quality); qualityLabel();
 };
 qualityLabel();
 if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
@@ -215,10 +219,9 @@ async function roll() {
   const who = G.turn, p = G.players[who];
   const v = 1 + rnd(6);
   sfx.roll();
-  await board.rollDie(v, who);
-  bigNumber(v);
-  await wait(350);
-  board.hideDie();
+  await dice.roll(v, () => sfx.land());
+  board.placeDie(v, who);
+  await wait(250);
   await move(who, p.pos + v);
   if (p.pos >= G.N - 1) return finish(who);
   await wait(250);
@@ -353,4 +356,4 @@ Promise.all(['italic 700 40px "Playfair Display"', '700 40px "Playfair Display"'
   board.build(G.tiles);
   board.setMode('orbit');
 });
-window.__G = G; window.__B = board; // depuração
+window.__G = G; window.__B = board; window.__D = dice; // depuração

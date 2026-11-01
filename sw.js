@@ -1,6 +1,6 @@
 // Service worker: deixa o jogo abrir offline e instalável como app.
 // Ao mudar qualquer arquivo, aumente a VERSAO para os aparelhos baixarem a nova.
-const VERSAO = 'nad-v2';
+const VERSAO = 'nad-v3';
 const ARQUIVOS = [
   './',
   'index.html',
@@ -15,6 +15,7 @@ const ARQUIVOS = [
   'icons/icon-192.png',
   'icons/icon-512.png',
   'js/data.js',
+  'js/dice.js',
   'js/game.js',
   'js/icons.js',
   'js/scene.js',
@@ -30,6 +31,7 @@ const ARQUIVOS = [
   'vendor/three/addons/geometries/SDFGeometryGenerator.js',
   'vendor/three/addons/geometries/TeapotGeometry.js',
   'vendor/three/addons/geometries/TextGeometry.js',
+  'vendor/three/addons/math/ConvexHull.js',
   'vendor/three/addons/postprocessing/AfterimagePass.js',
   'vendor/three/addons/postprocessing/BloomPass.js',
   'vendor/three/addons/postprocessing/BokehPass.js',
