@@ -40,9 +40,9 @@ Os textos ficam em `FALAS`, em `js/voice.js`. Para variar mais, basta gravar `<m
 | desafio-3 | Quero ver você fazer… |
 | pena-1 | Pena… |
 | pena-2 | Com a pena… |
-| pena-3 | Bem de leve… |
+| pena-3 | Suavinho… |
 | armadilha-1 | Ops… armadilha. |
-| armadilha-2 | Ihh… caiu. |
+| armadilha-2 | Opa… caiu. |
 | armadilha-3 | Cuidado… |
 | sorte-1 | Que sorte… |
 | sorte-2 | Hoje é seu dia… |
