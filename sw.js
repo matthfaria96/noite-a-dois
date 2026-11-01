@@ -1,6 +1,6 @@
 // Service worker: deixa o jogo abrir offline e instalável como app.
 // Ao mudar qualquer arquivo, aumente a VERSAO para os aparelhos baixarem a nova.
-const VERSAO = 'nad-v13';
+const VERSAO = 'nad-v14';
 const ARQUIVOS = [
   './',
   'index.html',
@@ -12,6 +12,9 @@ const ARQUIVOS = [
   'audio/voz/comeca-2.mp3',
   'audio/voz/dadoalto-1.mp3',
   'audio/voz/dadoalto-2.mp3',
+  'audio/voz/dadoalto-3.mp3',
+  'audio/voz/dadobaixo-1.mp3',
+  'audio/voz/dadobaixo-2.mp3',
   'audio/voz/desafio-1.mp3',
   'audio/voz/desafio-2.mp3',
   'audio/voz/desafio-3.mp3',
@@ -24,6 +27,8 @@ const ARQUIVOS = [
   'audio/voz/fase3-2.mp3',
   'audio/voz/fase4-1.mp3',
   'audio/voz/fase4-2.mp3',
+  'audio/voz/fimtempo-1.mp3',
+  'audio/voz/fimtempo-2.mp3',
   'audio/voz/inicio-1.mp3',
   'audio/voz/inicio-2.mp3',
   'audio/voz/inicio-3.mp3',
@@ -31,6 +36,8 @@ const ARQUIVOS = [
   'audio/voz/pena-1.mp3',
   'audio/voz/pena-2.mp3',
   'audio/voz/pico-1.mp3',
+  'audio/voz/quase-1.mp3',
+  'audio/voz/quase-2.mp3',
   'audio/voz/quente-1.mp3',
   'audio/voz/quente-2.mp3',
   'audio/voz/quente-3.mp3',

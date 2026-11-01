@@ -547,3 +547,72 @@ button, .tile-btn, .limite, .wish { -webkit-user-select: none; user-select: none
   .screen:not(#card):not(#menu) { display: block; }
   .screen:not(#card):not(#menu) > .panel:not(.sheet) { min-height: 100%; }
 }
+
+/* =====================================================================
+   Direção "veneno": vidro fumê escuro, fios de luz rosa-sangue, veludo carmim.
+   Sem reflexo branco e sem aspecto de borracha: mistério em vez de brilho.
+   ===================================================================== */
+:root {
+  --ink: #f6e8ee;
+  --ink-2: rgba(246, 222, 232, .62);
+  --ink-3: rgba(246, 210, 225, .38);
+  --hair: rgba(255, 110, 150, .16);
+  --fio: rgba(255, 120, 160, .26);      /* contorno fino quente */
+  --fumê: rgba(16, 3, 12, .58);         /* vidro escuro */
+  --veludo: linear-gradient(160deg, #8e1236 0%, #5a0a24 55%, #2e0412 100%);
+  --rubi: 0 0 0 1px rgba(255, 70, 110, .35), 0 0 28px rgba(200, 20, 60, .35);
+}
+.chip, .icon-btn, .track-bar, .turn, #toast, .panel, .card, .seg, .ghost, .wish, input, select, textarea {
+  background: linear-gradient(160deg, rgba(40, 8, 28, .62) 0%, var(--fumê) 55%, rgba(30, 5, 20, .6) 100%);
+  border: 1px solid var(--hair);
+  box-shadow: inset 0 1px 0 rgba(255, 140, 170, .07), 0 14px 40px rgba(0, 0, 0, .5);
+}
+/* o contorno "líquido" vira um fio de luz quente, sem branco */
+.panel::after, .card::after, .roll::after, .chip::after, .cta::after, .wish::after, #toast::after {
+  background: linear-gradient(140deg, rgba(255, 120, 160, .45), rgba(255, 80, 120, .06) 30%, transparent 55%, rgba(170, 40, 90, .2) 85%, rgba(255, 120, 160, .32));
+}
+.panel { box-shadow: inset 0 1px 0 rgba(255, 140, 170, .08), 0 30px 90px rgba(0, 0, 0, .65), 0 0 90px rgba(150, 10, 50, .18); }
+.panel.duo, .panel.sheet, .panel.wide { background-color: rgba(10, 2, 8, .55); }
+@media (max-width: 640px) { .screen > .panel { background-color: rgba(8, 1, 6, .5); } }
+
+/* botões principais: veludo carmim com brasa por dentro */
+.cta, .roll {
+  background: var(--veludo); border-color: rgba(255, 90, 130, .35);
+  box-shadow: inset 0 1px 0 rgba(255, 150, 175, .22), inset 0 -10px 22px rgba(30, 0, 10, .55), 0 0 30px rgba(190, 15, 55, .38), 0 12px 30px rgba(0, 0, 0, .5);
+  text-shadow: 0 1px 8px rgba(60, 0, 20, .6);
+}
+@keyframes breathe { 50% { box-shadow: inset 0 1px 0 rgba(255, 150, 175, .22), inset 0 -10px 22px rgba(30, 0, 10, .55), 0 0 52px rgba(210, 20, 65, .6), 0 12px 30px rgba(0, 0, 0, .5); } }
+.ghost { color: var(--ink); }
+.ghost:hover, .tile-btn:hover { border-color: rgba(255, 110, 150, .32); }
+
+/* seletores e interruptores: vinho com luz de rubi, sem pílula branca */
+.seg { background: rgba(0, 0, 0, .35); box-shadow: inset 0 1px 4px rgba(0, 0, 0, .5); border-color: rgba(255, 110, 150, .1); }
+.seg button.on { color: #fff; background: linear-gradient(160deg, rgba(150, 20, 60, .75), rgba(80, 8, 34, .8));
+  box-shadow: inset 0 1px 0 rgba(255, 150, 180, .2), 0 0 16px rgba(200, 20, 60, .35); }
+.switch i { background: rgba(0, 0, 0, .4); box-shadow: inset 0 0 0 1px rgba(255, 110, 150, .16); }
+.switch i::after { background: linear-gradient(160deg, #f4d3dc, #c98a9c); box-shadow: 0 2px 6px rgba(0, 0, 0, .5); }
+.switch input:checked + i { background: linear-gradient(135deg, #a3123d, #5c0822); box-shadow: inset 0 0 0 1px rgba(255, 90, 130, .4), 0 0 14px rgba(200, 20, 60, .4); }
+input, textarea { background: rgba(0, 0, 0, .32); box-shadow: inset 0 1px 4px rgba(0, 0, 0, .45); }
+input:focus, textarea:focus { border-color: rgba(255, 90, 130, .55); box-shadow: inset 0 1px 4px rgba(0, 0, 0, .45), 0 0 0 4px rgba(170, 15, 55, .3); }
+.row input[type=range] { accent-color: #c4164c; }
+.check input { accent-color: #c4164c; }
+.icon-btn.on { background: linear-gradient(160deg, rgba(150, 20, 60, .8), rgba(80, 8, 34, .85)); }
+.icon-btn.on svg { stroke: #fff; }
+.tile-btn, .group, .limite, .memoria-grid div, .lista-cartas li, .badges span, .fase-tag {
+  background: rgba(0, 0, 0, .26); border-color: rgba(255, 110, 150, .12); }
+.group h3, .limite b { color: #f8dce6; }
+/* títulos com brilho de brasa, não de neon branco */
+h2 { color: #f8e1e9; text-shadow: 0 0 24px rgba(200, 20, 60, .35); }
+.logo .l1 { background: linear-gradient(180deg, #fbe6ec 0%, #f0a8bb 55%, #b8355d 100%); -webkit-background-clip: text; background-clip: text;
+  filter: drop-shadow(0 2px 18px rgba(170, 10, 50, .55)); }
+.logo .l2 { color: #ffd9e3; text-shadow: 0 0 12px rgba(220, 20, 70, .9), 0 0 30px rgba(150, 0, 45, .8), 0 2px 10px rgba(30, 0, 10, .9); }
+.card { box-shadow: inset 0 1px 0 rgba(255, 140, 170, .1), 0 0 70px color-mix(in srgb, var(--c) 28%, transparent), 0 40px 90px rgba(0, 0, 0, .7); }
+.vignette { background: radial-gradient(ellipse 78% 72% at 50% 55%, transparent 40%, rgba(6, 0, 6, .82) 100%); }
+#instalar { background: linear-gradient(160deg, rgba(40, 8, 28, .92), rgba(12, 2, 10, .94)); border-color: var(--hair); box-shadow: 0 20px 60px rgba(0, 0, 0, .6); }
+/* número do dado em ouro velho com brasa (sem neon branco) e fundo mais escuro durante a rolagem */
+.dice-caption { color: #f0d49a; text-shadow: 0 0 18px rgba(200, 20, 60, .9), 0 0 50px rgba(120, 0, 40, .8); }
+.dice-dim { background: radial-gradient(ellipse 60% 55% at 50% 50%, rgba(50, 0, 16, .6) 0%, rgba(6, 0, 4, .92) 60%, rgba(0, 0, 0, .97) 100%); }
+/* logo: o itálico do "Noite" e os floreios do "a Dois" passam da caixa do texto; o degradê recortado (background-clip)
+   cortava essas pontas. A folga lateral deixa as letras inteiras, e a margem negativa mantém o logo no lugar. */
+.logo .l1 { padding: 0 .16em .06em; margin-inline: -.16em; margin-bottom: -.06em; }
+.logo .l2 { padding-inline: .2em; margin-inline: -.2em; }
