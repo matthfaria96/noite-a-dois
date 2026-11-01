@@ -357,7 +357,27 @@
       </header>
       <p class="lead">Desliguem o que não vale hoje: as cartas com isso saem do baralho. Dá para mudar a qualquer momento, até no meio do jogo.</p>
       <div class="limites" id="limites-lista"></div>
+      <button class="link destaque" id="btn-catalogo-limites">Ver e desligar carta por carta</button>
       <div class="sheet-foot"><button class="cta" data-close>Combinado</button></div>
+    </div>
+  </section>
+
+  <!-- TODAS AS CARTAS: catálogo para ligar/desligar carta por carta -->
+  <section id="catalogo" class="screen hidden">
+    <div class="panel scroll sheet">
+      <header class="sheet-head">
+        <h2>Todas as cartas</h2>
+        <button class="icon-btn close" data-close aria-label="Fechar"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+      </header>
+      <div class="cat-topo">
+        <div class="cat-abas" id="cat-abas" role="tablist"></div>
+        <div class="cat-busca">
+          <input id="cat-busca" type="search" placeholder="Buscar uma carta…" autocomplete="off" enterkeyhint="search">
+          <span id="cat-contagem"></span>
+        </div>
+      </div>
+      <div class="cat-lista" id="cat-lista"></div>
+      <div class="sheet-foot"><button class="ghost" id="cat-ligar">Ligar todas</button><button class="cta" data-close>Pronto</button></div>
     </div>
   </section>
 
@@ -418,6 +438,11 @@
       </div>
       </div>
       <div class="col">
+      <div class="group">
+        <h3>Cartas</h3>
+        <p class="fine" id="catalogo-resumo">Todas as cartas ligadas.</p>
+        <button class="ghost" id="btn-catalogo">Ver todas as cartas</button>
+      </div>
       <div class="group" id="conta">
         <h3>Conta</h3>
         <p class="fine conta-user"></p>

@@ -7,36 +7,21 @@
 Web, responsivo (celular e computador), sem instalação. Junta **dado + tabuleiro + cartas**:
 um mapa 3D de blocos que serpenteia entre ilhas flutuantes e sobe até o **Clímax**, com a câmera atrás da peça da vez.
 
-## Direção visual: Liquid Glass sensual
-O visual segue a linguagem de vidro da Apple (macOS/iOS) com uma paleta noturna e sensual.
+## Direção visual: veneno
+Escuro, sensual e misterioso: vinho quase preto, carmim e fios de luz rosa-sangue. Nada de reflexo branco.
 
-- **Interface de vidro:** todos os painéis, cartas, botões e chips são **vidro fosco translúcido** (`backdrop-filter: blur + saturate`).
-  Têm reflexo especular na borda superior, um contorno de luz em gradiente, cantos bem arredondados e sombras suaves.
-  Os botões principais usam vidro com tinta vermelho-rosada e brilho pulsante.
-- **Componentes no estilo iOS:** controle segmentado com "pílula" de vidro, campos de texto de vidro, avisos que descem do topo como notificações e animações com mola (`cubic-bezier(.2,.9,.25,1)`).
-- **Tipografia:** fonte do sistema da Apple (SF Pro) nos iPhones e Macs, com *Inter* como reserva nos outros aparelhos.
-  Para o toque sensual, *Playfair Display* itálico nos títulos e cartas e *Great Vibes* no "a Dois".
-- **3D de vidro:** os degraus são **blocos de vidro fosco** tingidos pela cor da fase, com um **núcleo de luz** por dentro.
-  As peças são de vidro safira (Ele) e rubi (Ela), com núcleo brilhante e aro de prata. As ilhas e as placas também são de vidro.
-- **Atmosfera:** céu do azul-meia-noite ao vinho e à brasa, lua de sangue, velas tremulando, pétalas de rosa e brasas.
-- **Dado:** cristal vermelho lapidado com números dourados.
-- O botão de mapa alterna entre a câmera imersiva e a visão geral do caminho.
+- **Interface:** vidro fumê escuro, contornos finos em rosa-sangue, botões de veludo carmim, seletores e interruptores em vinho e rubi.
+  Componentes no jeito iOS (controle segmentado, avisos que descem do topo, animações com mola).
+- **Tipografia:** SF Pro nos aparelhos Apple (Inter como reserva); *Playfair Display* itálico nos títulos e cartas e *Great Vibes* no "a Dois".
+- **Tabuleiro:** montanha em espiral até o **Pico do Amor**, em névoa vinho; céu com véus carmim, cristais rubi, lua de sangue, velas e pétalas.
+  As fases vão do rosa-vinho (Aquecimento) ao carmim (Clímax). Só os degraus perto da peça da vez se acendem; o botão de mapa mostra a montanha inteira.
+- **Dado:** pedra filosofal de rubi (romboedro lapidado). Surge do escuro no centro, gira em torno do próprio eixo e para de frente,
+  com glow rosé e números claros. A foto da pedra parada vai para o painel **"Último lance"**, no canto, em estilo RPG.
+- **Cartas:** chegam de costas (verso ornamentado) e viram para revelar; enquanto estão abertas, avisos e painel saem de cena.
+- **Avisos laterais** em moldura RPG (borda dupla ouro-rosé, losangos nas pontas).
 
-> Desempenho: vidro com refração (transmission) e desfoque de fundo pesam mais na placa de vídeo.
-> Em celulares de 2020 para cá deve rodar bem. Se algum aparelho travar, o primeiro ajuste é trocar
-> `transmission` dos degraus por transparência simples em `js/scene.js`.
-
-## Rumo ao Pico do Amor
-O casal sobe uma montanha envolta em névoa rosa-violeta até o **Pico do Amor**.
-
-- **Mistério e imaginação:** a névoa fica densa na trilha. Só os degraus perto da peça da vez se acendem; o que está à frente vai se revelando aos poucos.
-  Na visão de mapa, a névoa se abre e a montanha inteira aparece.
-- **Paleta:** tudo em lilás, violeta e rosa, com rocha suave e sem arestas duras. O **vermelho fica reservado aos pontos de foco**:
-  o dado, o anel da peça da vez, o farol do Pico do Amor (coração pulsando com um feixe de luz que atravessa a névoa) e o botão de rolar.
-- **Foco suave:** as bordas da tela ficam levemente desfocadas, como num sonho. Isso é desligado no modo Leve.
-- **Dado em destaque:** ao rolar, o tabuleiro escurece e um dado de cristal lapidado gira em câmera lenta no centro, com os números dourados refratados por dentro. Ele pousa no número e só então a peça anda.
-- **Mais leve:** sem refração de vidro no tabuleiro, sem sombras e com menos luzes, partículas e polígonos.
-  A refração de verdade ficou só no dado, que é o momento de destaque.
+> Desempenho: o único vidro com refração é a pedra, no palco do dado (só durante a rolagem). Os módulos baixam em paralelo
+> (`modulepreload`) e a abertura aparece no primeiro quadro, antes de qualquer arquivo.
 
 ## Instalar como app
 - **iPhone (Safari):** abra o link, toque em **Compartilhar → Adicionar à Tela de Início**.
@@ -46,13 +31,14 @@ O jogo abre em tela cheia com ícone próprio e funciona **offline** depois da p
 Ao publicar mudanças, aumente `VERSAO` em `sw.js`. O jogo confere a cada minuto (e quando o app volta para a frente): a versão nova baixa em segundo plano e aparece um aviso discreto **"Versão nova da noite pronta · Atualizar"**. Ele nunca aparece no meio de uma partida, só nas telas iniciais.
 
 ## Configurações (⚙️ na tela inicial ou ☰ → Configurações)
-- **Som:** volume da música e dos efeitos.
+- **Som:** volume da música e dos efeitos, e vibração (Android).
 - **Narração:** liga/desliga a narradora, escolhe o volume e tem um botão para ouvir.
 - **Gráficos:** Automático, Alta ou Leve.
   - **Alta:** brilho (bloom) e foco suave nas bordas.
   - **Leve:** sem bloom e com resolução menor.
   - **Automático:** começa em Alta e troca para Leve sozinho se o aparelho não aguentar.
-- **Conta:** criar conta e senha, alterar senha, sair.
+- **Cartas:** **Todas as cartas** mostra o baralho inteiro (verdades, desafios, penas, armadilhas, sortes, desejos e as de vocês), por tipo e fase, com busca e um interruptor em cada carta. O que for desligado sai do baralho.
+- **Conta:** criar conta e senha, alterar senha, sair. Visitantes podem entrar a qualquer momento para salvar na nuvem.
 - **Modo de teste:** o jogo se joga sozinho com os dois jogadores automáticos, em 1×, 2× ou 4×. Também tem um atalho na tela inicial.
   Rola o dado, cumpre as cartas (às vezes recusa, para testar a penalidade), escolhe o desejo e mostra no fim quantas rodadas e quanto tempo levou.
 - As configurações ficam salvas no aparelho e, com login na nuvem, no perfil da conta.
@@ -95,18 +81,20 @@ Não precisa de build e o Three.js já vem junto em `vendor/`, então funciona s
 ## Estrutura
 ```
 index.html        telas (login, início, configurações, regras, HUD, carta, final, pausa)
-css/style.css     visual Liquid Glass: vidro fosco, borda especular, componentes iOS
+css/style.css     visual "veneno": vidro fumê, veludo carmim, painéis RPG, abertura e transições
 js/data.js        TODO o conteúdo: fases, categorias, perguntas, desafios, desejos
-js/scene.js       3D: montanha em espiral, nebulosa, cristais, degraus e peças de vidro, câmera
-js/dice.js        dado de cristal lapidado e o palco do dado (giro em destaque)
+js/scene.js       3D: montanha em espiral, céu, cristais, degraus e peças, câmera
+js/dice.js        pedra filosofal (dado de rubi) e o palco da rolagem; foto para o painel do último lance
 js/icons.js       ícones vetoriais das categorias (3D e interface)
 js/game.js        regras, turnos, cartas, configurações, login, modo de teste
-js/audio.js       música ambiente gerada em tempo real + efeitos sonoros
-js/voice.js       narradora (voz do aparelho ou falas gravadas)
+js/audio.js       trilha lounge gerada em tempo real (fixa) + efeitos sonoros
+js/voice.js       narradora: 66 falas gravadas, sorteadas sem repetir por momento do jogo
+js/cartas.js      baralho da noite: limites, catálogo (ligar/desligar), cartas do casal, ritmo
+js/lembranca.js   resumo da noite e imagem para guardar
 js/auth.js        login: Supabase (nuvem) ou conta local
 js/config.js      chaves públicas do Supabase (vazio = conta local)
 js/util.js        utilidades e armazenamento local
-audio/            lista.json, voz/ROTEIRO.md (falas para gravar)
+audio/            lista.json e voz/ (66 falas em MP3 + ROTEIRO.md)
 supabase/         migração SQL do banco do jogo
 fonts/            Playfair Display, Great Vibes, Inter (locais)
 vendor/three/     Three.js r160 minificado, só os módulos usados
@@ -149,11 +137,8 @@ Abra `js/data.js`. Cada carta é `c('texto', para, segundos)`:
 Para mudar quantas vezes cada casa aparece, ajuste `peso` em `CATEGORIAS`, com um valor por fase.
 
 ## Próximos passos sugeridos
-- Tela para o casal cadastrar as próprias cartas, salvas no aparelho
-- Modo "intensidade" (suave / picante / sem limites) para filtrar as cartas
 - Casais do mesmo gênero: hoje o jogo assume ele + ela, e isso só afeta o filtro `para` e a concordância
-- Trilha sonora ambiente e vibração no celular ao cair em armadilha
-- PWA (instalar na tela inicial e jogar offline)
+- Narração das cartas (gravar versões genéricas, sem nomes) quando o conteúdo estiver fechado
 
 ## Sobre a Godot
 Comecei com Three.js em vez de Godot de propósito. A exportação web da Godot 4 gera uns 30 a 40 MB, demora para carregar

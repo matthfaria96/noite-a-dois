@@ -34,17 +34,15 @@ const SHAPE = (() => {
     for (let i = 0; i < 3; i++) { const c = v.slice(); c[i] *= 1 - 2 * CHAMFER; pts.push(new THREE.Vector3(...c).applyMatrix4(A)); }
   }
   for (const f of faces) pts.push(f.center.clone().addScaledVector(f.normal, CROWN));
-  return { faces, pts, tipY: tip.y };
+  return { faces, pts };
 })();
 
-// quaternion que leva a face `n` para a direção `dir`, com o número em pé (`up` vira +y, ou -z se a face olhar para cima)
-function faceTo(n, toFront) {
+// quaternion que vira a face `n` para a câmera (+z), com o número em pé
+function faceToCamera(n) {
   const f = SHAPE.faces.find(x => x.n === n);
   const right = new THREE.Vector3().crossVectors(f.up, f.normal);
-  const q = new THREE.Quaternion().setFromRotationMatrix(new THREE.Matrix4().makeBasis(right, f.up, f.normal).transpose());
-  return toFront ? q : new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), -Math.PI / 2).multiply(q);
+  return new THREE.Quaternion().setFromRotationMatrix(new THREE.Matrix4().makeBasis(right, f.up, f.normal).transpose());
 }
-const faceToCamera = n => faceTo(n, true);
 
 // "caixa de joalheria": fundo escuro com faixas de luz fortes, como os softboxes de vitrine.
 // É o que dá reflexos nítidos e contraste nas facetas.

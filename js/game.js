@@ -2,7 +2,7 @@
 import { Board3D } from './scene.js';
 import { DiceStage } from './dice.js';
 import { FASES, CATEGORIAS } from './data.js';
-import { LIMITES, limitesAtivos, baralho, armadilhas, sortes, desejos, faseDaCasa, pesoNoRitmo } from './cartas.js';
+import { LIMITES, limitesAtivos, catalogo, baralho, armadilhas, sortes, desejos, faseDaCasa, pesoNoRitmo } from './cartas.js';
 import * as lembranca from './lembranca.js';
 
 window.progresso?.(0.74, 'Preparando o tabuleiro…');
@@ -13,7 +13,7 @@ import { Narrator } from './voice.js';
 import { auth } from './auth.js';
 
 // ------------------------------------------------------------ configurações (salvas no aparelho e na nuvem)
-const CFG_DEFAULT = { musica: 0.6, efeitos: 0.7, voz: 1, narracao: true, vibrar: true, graficos: 'auto', dur: 40, start: 'ela', ritmo: 'provocante', testeVel: 2, limites: {}, cartas: [] };
+const CFG_DEFAULT = { musica: 0.6, efeitos: 0.7, voz: 1, narracao: true, vibrar: true, graficos: 'auto', dur: 40, start: 'ela', ritmo: 'provocante', testeVel: 2, limites: {}, cartas: [], desligadas: [] };
 const cfg = { ...CFG_DEFAULT, ...store.get('cfg', {}) };
 let saveT;
 function saveCfg() {
@@ -381,7 +381,7 @@ async function resolveTile(who) {
 
   if (tile.tipo === 'armadilha') {
     audio.trap();
-    const card = draw('armadilha', armadilhas(cfg.limites), who);
+    const card = draw('armadilha', armadilhas(cfg), who);
     G.diario.armadilha++;
     vibrar([40, 60, 40]);
     fala('armadilha');
@@ -403,7 +403,7 @@ async function resolveTile(who) {
   }
 
   if (tile.tipo === 'sorte') {
-    const card = draw('sorte', sortes(cfg.limites), who);
+    const card = draw('sorte', sortes(cfg), who);
     G.diario.sorte++;
     fala('sorte');
     await showCard({ cat, text: fill(card.t, who), who, fase: f, refusable: false, falar: false });
@@ -446,7 +446,7 @@ function finish(winner) {
   }
   $('#final-title').innerHTML = `<span style="color:var(--${winner})">${w.name}</span> chegou ao Pico do Amor!`;
   $('#final-sub').textContent = `Escolha a dedo 1 desejo para ${l.name} realizar:`;
-  const opts = shuffle(desejos(winner, cfg.limites)).slice(0, 3);
+  const opts = shuffle(desejos(winner, cfg)).slice(0, 3);
   const box = $('#wishes'); box.innerHTML = '';
   hide('#wish-chosen'); box.classList.remove('hidden');
   const choose = t => {
@@ -606,6 +606,60 @@ $('#nova-carta').onsubmit = e => {
   toast('Carta adicionada ao baralho');
 };
 resumoNoite();
+
+// ------------------------------------------------------------ catálogo: todas as cartas, ligar/desligar uma a uma
+const ABAS = [['verdade', 'Verdades'], ['desafio', 'Desafios'], ['pena', 'Penas'], ['armadilha', 'Armadilhas'], ['sorte', 'Sortes'], ['desejo', 'Desejos'], ['nossas', 'De vocês']];
+let catAba = 'verdade';
+const legivel = t => t.replace(/\{par\}/g, 'seu par').replace(/\{eu\}/g, 'você').replace(/\{(?:par:)?([^|{}]*)\|([^{}]*)\}/g, '$1/$2');
+function resumoCatalogo() {
+  const n = cfg.desligadas.length;
+  $('#catalogo-resumo').textContent = n ? `${n} ${n === 1 ? 'carta desligada' : 'cartas desligadas'}.` : 'Todas as cartas ligadas.';
+}
+function abrirCatalogo() {
+  $('#cat-busca').value = '';
+  ['#settings', '#limites', '#menu'].forEach(hide);
+  desenharCatalogo(); show('#catalogo');
+}
+function desenharCatalogo() {
+  const cat = catalogo(cfg), off = new Set(cfg.desligadas), busca = $('#cat-busca').value.trim().toLowerCase();
+  if (catAba === 'nossas' && !cat.nossas.length) catAba = 'verdade';
+  $('#cat-abas').innerHTML = ABAS.filter(([k]) => k !== 'nossas' || cat.nossas.length).map(([k, nome]) => {
+    const l = cat[k], ligadas = l.filter(c => !off.has(c.id)).length;
+    return `<button role="tab" data-k="${k}" class="${k === catAba ? 'on' : ''}">${nome}<small>${ligadas}/${l.length}</small></button>`;
+  }).join('');
+  $('#cat-abas').querySelectorAll('button').forEach(b => b.onclick = () => { catAba = b.dataset.k; desenharCatalogo(); });
+  const lista = cat[catAba].filter(c => !busca || legivel(c.t).toLowerCase().includes(busca));
+  const contar = () => {
+    const offAgora = new Set(cfg.desligadas), toda = catalogo(cfg)[catAba];
+    $('#cat-contagem').textContent = `${lista.filter(c => !offAgora.has(c.id)).length} de ${lista.length} ligadas`;
+    const sm = $(`#cat-abas [data-k="${catAba}"] small`); if (sm) sm.textContent = `${toda.filter(c => !offAgora.has(c.id)).length}/${toda.length}`;
+  };
+  let fase = -1, html = '';
+  for (const c of lista) {
+    if (c.f !== null && c.f !== fase) { fase = c.f; html += `<h4>${FASES[c.f].nome}</h4>`; }
+    const meta = [c.nossa && 'de vocês', c.p !== 'ambos' && `só quando ${c.p} joga`, c.s && (c.s < 60 ? c.s + 's' : c.s / 60 + ' min'), c.limite && 'fora pelos limites de hoje'].filter(Boolean).join(' · ');
+    html += `<label class="cat-carta${off.has(c.id) ? ' off' : ''}${c.limite ? ' limite' : ''}"><span><p></p>${meta ? `<small>${meta}</small>` : ''}</span>
+      <span class="switch"><input type="checkbox" data-id="${c.id}" ${off.has(c.id) ? '' : 'checked'}><i></i></span></label>`;
+  }
+  const el = $('#cat-lista');
+  el.innerHTML = html || '<p class="lead">Nenhuma carta encontrada.</p>';
+  el.querySelectorAll('.cat-carta p').forEach((p, i) => { p.textContent = legivel(lista[i].t); });
+  el.querySelectorAll('input').forEach(i => i.onchange = () => {
+    cfg.desligadas = i.checked ? cfg.desligadas.filter(x => x !== i.dataset.id) : [...new Set([...cfg.desligadas, i.dataset.id])];
+    i.closest('.cat-carta').classList.toggle('off', !i.checked);
+    saveCfg(); resumoCatalogo(); contar();
+  });
+  contar();
+}
+$('#cat-busca').oninput = desenharCatalogo;
+$('#cat-ligar').onclick = () => {
+  const ids = new Set(catalogo(cfg)[catAba].map(c => c.id));
+  cfg.desligadas = cfg.desligadas.filter(x => !ids.has(x));
+  saveCfg(); resumoCatalogo(); desenharCatalogo();
+};
+$('#btn-catalogo').onclick = abrirCatalogo;
+$('#btn-catalogo-limites').onclick = abrirCatalogo;
+resumoCatalogo();
 $('#btn-settings-menu').onclick = openSettings;
 $('#btn-proteger').onclick = () => { hide('#settings'); openLock('criar'); };
 $('#btn-sair').onclick = async () => { await auth.logout(); hide('#settings'); hide('#hud'); hide('#setup'); openLock('entrar'); };
@@ -702,7 +756,7 @@ async function afterLogin() {
     if (prof.nome_ela) $('#name-ela').value = prof.nome_ela;
     applyCfg(); setGraficos(cfg.graficos);
     G.N = cfg.dur; G.starter = cfg.start; segSet('#seg-dur', G.N); segSet('#seg-start', G.starter); segSet('#seg-ritmo', cfg.ritmo);
-    $('#cfg-vibrar').checked = cfg.vibrar; resumoNoite();
+    $('#cfg-vibrar').checked = cfg.vibrar; resumoNoite(); resumoCatalogo();
   }
   show('#setup');
   board.setMode('orbit');

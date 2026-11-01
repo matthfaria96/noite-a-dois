@@ -39,7 +39,7 @@ button { font: inherit; color: inherit; cursor: pointer; border: 0; background: 
 body.leve .dreamblur { display: none; }
 
 /* ---------- material de vidro reutilizável ---------- */
-.chip, .icon-btn, .track-bar, .turn, .roll, #toast, .panel, .card, .seg, .cta, .ghost, .wish, input, select {
+.chip, .icon-btn, .track-bar, .turn, .roll, #toast, .panel, .card, .seg, .cta, .ghost, .wish, input {
   position: relative;
   background: linear-gradient(135deg, rgba(255,255,255,.16) 0%, rgba(255,255,255,.05) 45%, rgba(255,255,255,.09) 100%);
   -webkit-backdrop-filter: var(--blur); backdrop-filter: var(--blur);
@@ -121,7 +121,7 @@ body.leve .dreamblur { display: none; }
 /* ---------- Palco do dado ---------- */
 #dice-layer { position: fixed; inset: 0; z-index: 8; pointer-events: auto; }
 .dice-dim { position: absolute; inset: 0; opacity: 0; transition: opacity .55s ease, backdrop-filter .55s ease;
-  background: radial-gradient(ellipse 60% 55% at 50% 50%, rgba(60, 0, 18, .55) 0%, rgba(8, 0, 6, .88) 60%, rgba(0, 0, 0, .95) 100%);
+  background: radial-gradient(ellipse 55% 50% at 50% 50%, rgba(36, 0, 12, .7) 0%, rgba(4, 0, 3, .95) 62%, #000 100%);
   -webkit-backdrop-filter: blur(0px) saturate(100%); backdrop-filter: blur(0px) saturate(100%); }
 #dice-layer.in .dice-dim { opacity: 1; -webkit-backdrop-filter: blur(14px) saturate(140%); backdrop-filter: blur(14px) saturate(140%); }
 #dice-layer.out .dice-dim, #dice-layer.out #dice-stage, #dice-layer.out .dice-caption { opacity: 0; transition: opacity .45s ease; }
@@ -129,8 +129,8 @@ body.leve .dreamblur { display: none; }
 #dice-layer.in #dice-stage { opacity: 1; }
 #dice-stage canvas { display: block; width: 100%; height: 100%; }
 .dice-caption { position: absolute; left: 0; right: 0; bottom: 18%; text-align: center; pointer-events: none;
-  font: italic 600 64px var(--serif); color: #fff; opacity: 0; transform: translateY(14px);
-  text-shadow: 0 0 24px rgba(255, 40, 80, .9), 0 0 60px rgba(255, 20, 60, .6); transition: opacity .5s ease, transform .6s var(--ease); }
+  font: italic 600 64px var(--serif); color: #f0d49a; opacity: 0; transform: translateY(14px);
+  text-shadow: 0 0 18px rgba(200, 20, 60, .9), 0 0 50px rgba(120, 0, 40, .8); transition: opacity .5s ease, transform .6s var(--ease); }
 .dice-caption.show { opacity: 1; transform: none; }
 
 /* ---------- Telas ---------- */
@@ -188,9 +188,7 @@ ol { padding-left: 22px; line-height: 1.6; margin: 0; color: rgba(255,255,255,.8
 /* ---------- Carta ---------- */
 .card { --c: #ff3324; width: min(390px, 100%); border-radius: var(--r-lg); overflow: hidden;
   background: linear-gradient(160deg, color-mix(in srgb, var(--c) 30%, rgba(255,255,255,.18)) 0%, rgba(255,255,255,.06) 45%, color-mix(in srgb, var(--c) 18%, rgba(255,255,255,.06)) 100%);
-  box-shadow: inset 0 1px 0 rgba(255,255,255,.55), inset 0 0 50px rgba(255,255,255,.05), 0 0 80px color-mix(in srgb, var(--c) 40%, transparent), 0 40px 80px rgba(0,0,0,.55);
-  animation: reveal .7s var(--ease); }
-@keyframes reveal { from { transform: translateY(40px) scale(.9) rotateX(18deg); opacity: 0; filter: blur(10px) } }
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.55), inset 0 0 50px rgba(255,255,255,.05), 0 0 80px color-mix(in srgb, var(--c) 40%, transparent), 0 40px 80px rgba(0,0,0,.55); }
 .card-head { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 26px 18px 4px; text-align: center; }
 .card-head .ico { width: 72px; height: 72px; border-radius: 50%; background-position: center; background-repeat: no-repeat; background-size: 58%, 100%;
   border: 1px solid rgba(255,255,255,.35); box-shadow: inset 0 1px 0 rgba(255,255,255,.6), 0 0 30px color-mix(in srgb, var(--c) 60%, transparent); }
@@ -251,8 +249,6 @@ ol { padding-left: 22px; line-height: 1.6; margin: 0; color: rgba(255,255,255,.8
 .row { display: flex; align-items: center; justify-content: space-between; gap: 14px; font-size: 14px; color: var(--ink-2); }
 .row.col { flex-direction: column; align-items: stretch; gap: 6px; }
 .row input[type=range] { flex: 1; max-width: 60%; accent-color: #ff4f7e; }
-select { width: 100%; padding: 10px 12px; border-radius: var(--r-sm); color: #fff; font: 500 15px var(--sf); -webkit-appearance: none; appearance: none; }
-select option { color: #000; }
 .switch { position: relative; width: 50px; height: 30px; flex: none; }
 .switch input { position: absolute; opacity: 0; inset: 0; margin: 0; cursor: pointer; z-index: 1; }
 .switch i { position: absolute; inset: 0; border-radius: 999px; background: rgba(255,255,255,.18); transition: background .3s; }
@@ -562,7 +558,7 @@ button, .tile-btn, .limite, .wish { -webkit-user-select: none; user-select: none
   --veludo: linear-gradient(160deg, #8e1236 0%, #5a0a24 55%, #2e0412 100%);
   --rubi: 0 0 0 1px rgba(255, 70, 110, .35), 0 0 28px rgba(200, 20, 60, .35);
 }
-.chip, .icon-btn, .track-bar, .turn, #toast, .panel, .card, .seg, .ghost, .wish, input, select, textarea {
+.chip, .icon-btn, .track-bar, .turn, #toast, .panel, .card, .seg, .ghost, .wish, input, textarea {
   background: linear-gradient(160deg, rgba(40, 8, 28, .62) 0%, var(--fumê) 55%, rgba(30, 5, 20, .6) 100%);
   border: 1px solid var(--hair);
   box-shadow: inset 0 1px 0 rgba(255, 140, 170, .07), 0 14px 40px rgba(0, 0, 0, .5);
@@ -609,9 +605,6 @@ h2 { color: #f8e1e9; text-shadow: 0 0 24px rgba(200, 20, 60, .35); }
 .card { box-shadow: inset 0 1px 0 rgba(255, 140, 170, .1), 0 0 70px color-mix(in srgb, var(--c) 28%, transparent), 0 40px 90px rgba(0, 0, 0, .7); }
 .vignette { background: radial-gradient(ellipse 78% 72% at 50% 55%, transparent 40%, rgba(6, 0, 6, .82) 100%); }
 #instalar { background: linear-gradient(160deg, rgba(40, 8, 28, .92), rgba(12, 2, 10, .94)); border-color: var(--hair); box-shadow: 0 20px 60px rgba(0, 0, 0, .6); }
-/* número do dado em ouro velho com brasa (sem neon branco) e fundo mais escuro durante a rolagem */
-.dice-caption { color: #f0d49a; text-shadow: 0 0 18px rgba(200, 20, 60, .9), 0 0 50px rgba(120, 0, 40, .8); }
-.dice-dim { background: radial-gradient(ellipse 60% 55% at 50% 50%, rgba(50, 0, 16, .6) 0%, rgba(6, 0, 4, .92) 60%, rgba(0, 0, 0, .97) 100%); }
 /* logo: o itálico do "Noite" e os floreios do "a Dois" passam da caixa do texto; o degradê recortado (background-clip)
    cortava essas pontas. A folga lateral deixa as letras inteiras, e a margem negativa mantém o logo no lugar. */
 .logo .l1 { padding: 0 .16em .06em; margin-inline: -.16em; margin-bottom: -.06em; }
@@ -621,8 +614,6 @@ svg.gen { width: 1.15em; height: 1.15em; fill: none; stroke: currentColor; strok
   vertical-align: -.2em; margin-right: .3em; flex: none; }
 .chip .sym svg.gen { width: 19px; height: 19px; margin: 0; vertical-align: 0; display: block; }
 .names label span { display: inline-flex; align-items: center; }
-/* rolagem: fundo bem escuro e sensual, sem halo claro */
-.dice-dim { background: radial-gradient(ellipse 55% 50% at 50% 50%, rgba(36, 0, 12, .7) 0%, rgba(4, 0, 3, .95) 62%, #000 100%); }
 
 /* =====================================================================
    Painéis estilo RPG: último lance e avisos laterais
@@ -733,3 +724,28 @@ body.carta-aberta .side, body.carta-aberta #dado-hud { opacity: 0 !important; }
   .passo { padding: 24px 22px 8px; }
   .ap-rodape { padding: 18px 22px 0; }
 }
+
+/* catálogo de cartas */
+.cat-topo { position: sticky; top: 74px; z-index: 2; display: flex; flex-direction: column; gap: 10px; padding: 4px 0 10px; }
+.cat-abas { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; padding-bottom: 2px; -webkit-mask-image: linear-gradient(90deg, #000 92%, transparent); mask-image: linear-gradient(90deg, #000 92%, transparent); }
+.cat-abas::-webkit-scrollbar { display: none; }
+.cat-abas button { flex: none; display: flex; align-items: baseline; gap: 6px; padding: 8px 12px; border-radius: 999px; font-size: 14px; font-weight: 600; color: var(--ink-2);
+  background: rgba(0, 0, 0, .3); border: 1px solid rgba(255, 110, 150, .12); }
+.cat-abas button small { font-size: 11px; font-weight: 500; opacity: .75; }
+.cat-abas button.on { color: #fff; background: linear-gradient(160deg, rgba(150, 20, 60, .75), rgba(80, 8, 34, .8)); border-color: rgba(255, 90, 130, .35); }
+.cat-busca { display: flex; align-items: center; gap: 12px; }
+.cat-busca input { flex: 1; padding: 11px 14px; font-size: 15px; }
+.cat-busca span { flex: none; font-size: 12px; color: var(--ink-3); }
+.cat-lista { display: flex; flex-direction: column; gap: 8px; padding-bottom: 10px; }
+.cat-lista h4 { margin: 10px 2px 2px; font: italic 600 17px var(--serif); color: #f0b4c4; }
+.cat-carta { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 12px 14px; border-radius: var(--r-sm);
+  background: rgba(0, 0, 0, .26); border: 1px solid rgba(255, 110, 150, .1); cursor: pointer; transition: opacity .25s; }
+.cat-carta p { margin: 0; font: italic 500 15px/1.45 var(--serif); color: var(--ink); }
+.cat-carta small { display: block; margin-top: 4px; font-size: 11px; color: var(--ink-3); }
+.cat-carta.off { opacity: .45; }
+.cat-carta.limite small { color: #e8a896; }
+#catalogo .sheet-foot { flex-direction: row; gap: 10px; }
+#catalogo .sheet-foot > * { flex: 1; }
+@media (min-width: 900px) { #catalogo .sheet { width: min(860px, 100%); } }
+@media (max-width: 640px) { .cat-topo { top: calc(max(16px, env(safe-area-inset-top) + 8px) + 54px); background: rgba(20, 5, 18, .85); margin: 0 -20px; padding: 6px 20px 10px; } }
+#btn-catalogo-limites { align-self: center; margin-top: 4px; }
