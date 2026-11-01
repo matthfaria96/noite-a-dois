@@ -177,10 +177,17 @@ export class Board3D {
     g.beginPath(); g.roundRect(16, 16, S - 32, S - 32, 40); g.stroke();
     const cat = CATEGORIAS[tile.tipo];
     if (cat) {
-      g.fillStyle = 'rgba(10,2,8,.35)';
-      g.beginPath(); g.arc(S / 2, S / 2, 72, 0, TAU); g.fill();
-      g.strokeStyle = 'rgba(255,255,255,.4)'; g.lineWidth = 2; g.stroke();
-      drawIcon(g, tile.tipo, S / 2, S / 2, 46, cat.cor);
+      // ícone + nome da categoria: dá para saber o que é cada degrau à primeira vista
+      g.fillStyle = 'rgba(10,2,8,.4)';
+      g.beginPath(); g.arc(S / 2, S / 2 - 16, 64, 0, TAU); g.fill();
+      g.strokeStyle = cat.cor; g.globalAlpha = 0.7; g.lineWidth = 3; g.stroke(); g.globalAlpha = 1;
+      drawIcon(g, tile.tipo, S / 2, S / 2 - 16, 42, cat.cor);
+      g.font = `700 25px ${SANS}`;
+      if ('letterSpacing' in g) g.letterSpacing = '3px';
+      g.fillStyle = '#fff'; g.shadowColor = cat.cor; g.shadowBlur = 10;
+      g.fillText(cat.nome.toUpperCase(), S / 2, S - 50);
+      g.shadowBlur = 0;
+      if ('letterSpacing' in g) g.letterSpacing = '0px';
       g.font = `600 26px ${SANS}`;
       g.fillStyle = 'rgba(255,255,255,.85)';
       g.fillText(String(i), 50, 52);

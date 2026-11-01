@@ -100,6 +100,22 @@ function updateHUD() {
   $('#btn-roll').disabled = G.busy || TESTE.on;
 }
 
+// Indicadores laterais: à esquerda o tipo da casa, à direita a ação que acontece
+const ACAO = {
+  verdade: 'Responda com sinceridade', desafio: 'Cumpra o desafio', pena: 'Carícia livre',
+  armadilha: 'Cuidado…', sorte: 'Um presente pra você',
+};
+let sideT;
+function sides(tipo, acao, { titulo = CATEGORIAS[tipo]?.nome, sub = 'Casa', subR = 'Acontece', ms = 2600 } = {}) {
+  const L = $('#side-l'), R = $('#side-r'), cor = CATEGORIAS[tipo]?.cor ?? '#ff8ab8';
+  for (const el of [L, R]) { el.style.setProperty('--c', cor); el.classList.remove('hidden', 'out'); el.style.animation = 'none'; void el.offsetWidth; el.style.animation = ''; }
+  L.querySelector('.side-ico').style.backgroundImage = `url(${iconURL(tipo, 96)}), linear-gradient(145deg, rgba(255,255,255,.25), rgba(255,255,255,.05))`;
+  L.querySelector('small').textContent = sub; L.querySelector('b').textContent = titulo;
+  R.querySelector('small').textContent = subR; R.querySelector('b').textContent = acao;
+  clearTimeout(sideT);
+  sideT = setTimeout(() => { L.classList.add('out'); R.classList.add('out'); setTimeout(() => { L.classList.add('hidden'); R.classList.add('hidden'); }, 450); }, ms / (TESTE.on ? TESTE.vel : 1));
+}
+
 // O 3D trabalha menos quando uma tela cobre o tabuleiro (economia de bateria e fluidez)
 const OVERLAYS = ['#setup', '#lock', '#card', '#menu', '#rules', '#final', '#settings'];
 const refreshThrottle = () => board.setThrottle(OVERLAYS.some(visible));
@@ -236,8 +252,9 @@ async function roll() {
 
 async function refusePenalty(who) {
   const p = G.players[who];
-  if (p.passe) { p.passe--; toast('Passe livre usado'); updateHUD(); return; }
-  toast(`${p.name} recusou: volta 2 casas`);
+  const tipo = G.tiles[p.pos].tipo in CATEGORIAS ? G.tiles[p.pos].tipo : 'armadilha';
+  if (p.passe) { p.passe--; sides(tipo, 'Usou o passe livre', { titulo: 'Recusou', sub: p.name, subR: 'Sem penalidade' }); updateHUD(); return; }
+  sides(tipo, 'Volta 2 casas', { titulo: 'Recusou', sub: p.name, subR: 'Penalidade' });
   say(FALAS.recusou, 'recusou');
   audio.trap();
   await move(who, p.pos - 2);
@@ -250,6 +267,8 @@ async function resolveTile(who) {
   const cat = CATEGORIAS[tile.tipo];
   if (!cat) return false;
   const f = tile.fase;
+  sides(tile.tipo, ACAO[tile.tipo]);
+  await pause(950);
 
   if (tile.tipo === 'verdade' || tile.tipo === 'desafio' || tile.tipo === 'pena') {
     const src = { verdade: VERDADE, desafio: DESAFIO, pena: PENA }[tile.tipo][f];
@@ -266,9 +285,10 @@ async function resolveTile(who) {
     const text = fill(card.t, who);
     const r = await showCard({ cat, text, who, fase: f, falar: false });
     if (r === 'recusou') { await refusePenalty(who); return false; }
-    if (card.e === 'voltar') await move(who, p.pos - card.n);
-    if (card.e === 'perde') { p.skip = true; toast(`${p.name} perde a próxima vez`); }
+    if (card.e === 'voltar') { sides('armadilha', `Volta ${card.n} casas`, { sub: 'Efeito', subR: p.name }); await move(who, p.pos - card.n); }
+    if (card.e === 'perde') { p.skip = true; sides('armadilha', 'Perde a próxima vez', { sub: 'Efeito', subR: p.name }); }
     if (card.e === 'trocar') {
+      sides('armadilha', 'Troca de lugar', { sub: 'Efeito', subR: 'Os dois' });
       const o = G.players[other(who)];
       const a = p.pos, b = o.pos;
       if (a !== b) {
@@ -283,9 +303,9 @@ async function resolveTile(who) {
     const card = draw('sorte', SORTE, who);
     say(FALAS.sorte, 'sorte');
     await showCard({ cat, text: fill(card.t, who), who, fase: f, refusable: false, falar: false });
-    if (card.e === 'avancar') await move(who, p.pos + card.n);
-    if (card.e === 'passe') { p.passe++; updateHUD(); }
-    if (card.e === 'denovo') { toast(`${p.name} joga de novo`); return true; }
+    if (card.e === 'avancar') { sides('sorte', `Avança ${card.n} casa${card.n > 1 ? 's' : ''}`, { sub: 'Efeito', subR: p.name }); await move(who, p.pos + card.n); }
+    if (card.e === 'passe') { p.passe++; updateHUD(); sides('sorte', 'Ganhou um passe livre', { sub: 'Efeito', subR: p.name }); }
+    if (card.e === 'denovo') { sides('sorte', 'Joga de novo', { sub: 'Efeito', subR: p.name }); return true; }
   }
   return false;
 }
@@ -295,7 +315,7 @@ function endTurn(again) {
   let next = again ? G.turn : other(G.turn);
   if (!again && G.players[next].skip) {
     G.players[next].skip = false;
-    toast(`${G.players[next].name} está pres${next === 'ele' ? 'o' : 'a'} — perde a vez`);
+    sides('armadilha', 'Perde esta vez', { titulo: G.players[next].name, sub: 'Presa na armadilha'.replace('Presa', next === 'ele' ? 'Preso' : 'Presa'), subR: 'Joga de novo: ' + G.players[G.turn].name });
     next = G.turn;
   }
   G.turn = next;

@@ -30,21 +30,20 @@ function numberTexture(n) {
   return t;
 }
 
-// Gema estilo "Asscher": cubo com arestas e cantos lapidados.
-function gemGeometry(c = 0.15) {
-  const a = 0.5, b = 0.5 - c, pts = [];
-  for (const sx of [-1, 1]) for (const sy of [-1, 1]) for (const sz of [-1, 1]) {
-    pts.push(new THREE.Vector3(sx * a, sy * b, sz * b));
-    pts.push(new THREE.Vector3(sx * b, sy * a, sz * b));
-    pts.push(new THREE.Vector3(sx * b, sy * b, sz * a));
-  }
+// Lapidação de joia: cada face vira um octógono e as arestas e cantos ganham várias facetas
+// (todas as permutações de ±a, ±b, ±d). Fica bem cristalino e continua sendo um cubo de 6 faces.
+function gemGeometry(a = 0.5, b = 0.36, d = 0.17) {
+  const pts = [];
+  const perms = [[a, b, d], [a, d, b], [b, a, d], [d, a, b], [b, d, a], [d, b, a]];
+  for (const [x, y, z] of perms) for (const sx of [-1, 1]) for (const sy of [-1, 1]) for (const sz of [-1, 1])
+    pts.push(new THREE.Vector3(sx * x, sy * y, sz * z));
   return new ConvexGeometry(pts);
 }
 
 export function makeDie(env) {
   const g = new THREE.Group();
   const crystal = new THREE.MeshPhysicalMaterial({
-    color: 0xff2a3a, roughness: 0.07, metalness: 0, transmission: 1, thickness: 1.2, ior: 2.0,
+    color: 0xff3a48, roughness: 0.03, metalness: 0, transmission: 1, thickness: 1.0, ior: 2.1,
     attenuationColor: new THREE.Color(0xff0a24), attenuationDistance: 1.1,
     clearcoat: 1, clearcoatRoughness: 0, specularIntensity: 1, specularColor: new THREE.Color(0xffffff),
     envMap: env, envMapIntensity: 2.6, emissive: 0x3a0006, emissiveIntensity: 0.4, flatShading: true,
@@ -58,7 +57,7 @@ export function makeDie(env) {
   for (const [n, nrm, rot] of FACES) {
     const map = numberTexture(n);
     // alphaTest + opaco: os números entram no "passe de refração" e aparecem por dentro do cristal
-    const m = new THREE.Mesh(new THREE.PlaneGeometry(0.56, 0.56), new THREE.MeshStandardMaterial({
+    const m = new THREE.Mesh(new THREE.PlaneGeometry(0.46, 0.46), new THREE.MeshStandardMaterial({
       map, alphaTest: 0.5, side: THREE.DoubleSide, metalness: 0.9, roughness: 0.32, envMap: env, envMapIntensity: 1.8,
       emissive: 0xffb437, emissiveMap: map, emissiveIntensity: 0.18,
     }));
@@ -101,7 +100,7 @@ export class DiceStage {
     this.speed = 1;
     this.host = layer.querySelector('#dice-stage');
     const r = this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-    r.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    r.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
     r.toneMapping = THREE.ACESFilmicToneMapping;
     r.toneMappingExposure = 1.15;
     r.setClearColor(0x000000, 0);
@@ -109,7 +108,7 @@ export class DiceStage {
     this.scene = new THREE.Scene();
     this.env = new THREE.PMREMGenerator(r).fromScene(new RoomEnvironment(), 0.02).texture;
     this.camera = new THREE.PerspectiveCamera(30, 1, 0.1, 50);
-    this.camera.position.set(0, 0.9, 4.6);
+    this.camera.position.set(0, 0.35, 4.4);
     this.camera.lookAt(0, -0.05, 0);
 
     const key = new THREE.SpotLight(0xfff1e8, 70, 20, 0.5, 0.6, 1);
@@ -127,8 +126,8 @@ export class DiceStage {
     const bcv = document.createElement('canvas'); bcv.width = 16; bcv.height = 512;
     const bg = bcv.getContext('2d');
     const gr = bg.createLinearGradient(0, 0, 0, 512);
-    gr.addColorStop(0, '#0a0006'); gr.addColorStop(0.36, '#3a0414'); gr.addColorStop(0.5, '#8a0a24');
-    gr.addColorStop(0.56, '#3a0212'); gr.addColorStop(0.75, '#0c0006'); gr.addColorStop(1, '#000000');
+    gr.addColorStop(0, '#0c0412'); gr.addColorStop(0.34, '#2a0c26'); gr.addColorStop(0.5, '#5a1a34');
+    gr.addColorStop(0.6, '#2a0a1c'); gr.addColorStop(0.8, '#0c040a'); gr.addColorStop(1, '#050205');
     bg.fillStyle = gr; bg.fillRect(0, 0, 16, 512);
     const btex = new THREE.CanvasTexture(bcv); btex.colorSpace = THREE.SRGBColorSpace;
     const dome = new THREE.Mesh(new THREE.SphereGeometry(14, 48, 32), new THREE.MeshBasicMaterial({ map: btex, side: THREE.BackSide }));
@@ -139,12 +138,28 @@ export class DiceStage {
     const pcv = document.createElement('canvas'); pcv.width = pcv.height = 128;
     const pg = pcv.getContext('2d');
     const prg = pg.createRadialGradient(64, 64, 0, 64, 64, 64);
-    prg.addColorStop(0, 'rgba(255,40,70,1)'); prg.addColorStop(0.45, 'rgba(220,0,40,.45)'); prg.addColorStop(1, 'rgba(120,0,20,0)');
+    prg.addColorStop(0, 'rgba(255,90,90,1)'); prg.addColorStop(0.45, 'rgba(230,40,60,.4)'); prg.addColorStop(1, 'rgba(120,0,20,0)');
     pg.fillStyle = prg; pg.fillRect(0, 0, 128, 128);
     const pool = new THREE.Mesh(new THREE.PlaneGeometry(2.6, 2.6), new THREE.MeshBasicMaterial({
       map: new THREE.CanvasTexture(pcv), transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false }));
     pool.rotation.x = -Math.PI / 2; pool.position.set(0.25, -0.79, 0.2);
     this.pool = pool; this.scene.add(pool);
+
+    // aura aconchegante atrás do dado (âmbar-rosado, respira devagar)
+    const acv = document.createElement('canvas'); acv.width = acv.height = 256;
+    const ag = acv.getContext('2d');
+    const arg = ag.createRadialGradient(128, 128, 0, 128, 128, 128);
+    arg.addColorStop(0, 'rgba(255,200,170,.9)'); arg.addColorStop(0.25, 'rgba(255,120,130,.45)');
+    arg.addColorStop(0.55, 'rgba(200,60,120,.14)'); arg.addColorStop(1, 'rgba(120,20,80,0)');
+    ag.fillStyle = arg; ag.fillRect(0, 0, 256, 256);
+    this.aura = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(acv), blending: THREE.AdditiveBlending, depthWrite: false, transparent: true, opacity: 0 }));
+    this.aura.position.set(0, 0.05, -1.2); this.aura.scale.setScalar(4.2);
+    this.scene.add(this.aura);
+    this.halo = new THREE.Mesh(new THREE.RingGeometry(1.25, 1.28, 96), new THREE.MeshBasicMaterial({ color: 0xffc0b0, transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false }));
+    this.halo.position.set(0, 0.05, -0.9);
+    this.scene.add(this.halo);
+    const warm = new THREE.PointLight(0xffb08a, 14, 8, 1.4); warm.position.set(0.8, 1.6, 2.2);
+    this.scene.add(warm);
 
     // brilhos cintilantes
     const star = starTexture();
@@ -170,7 +185,7 @@ export class DiceStage {
   }
 
   setQuality(q) {
-    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, q === 'leve' ? 1.25 : 1.75));
+    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, q === 'leve' ? 1 : 1.5));
     this.resize();
   }
 
@@ -184,7 +199,7 @@ export class DiceStage {
       const caption = L.querySelector('.dice-caption');
       caption.classList.remove('show');
 
-      const qT = new THREE.Quaternion().setFromEuler(new THREE.Euler(0.38, -0.52, 0, 'YXZ')).multiply(faceToCamera(value));
+      const qT = new THREE.Quaternion().setFromEuler(new THREE.Euler(0.16, -0.22, 0, 'YXZ')).multiply(faceToCamera(value));
       const axis = new THREE.Vector3(Math.random() - 0.5, Math.random() - 0.5, Math.random() - 0.5).normalize();
       const axis2 = new THREE.Vector3(Math.random() - 0.5, 1, Math.random() - 0.5).normalize();
       const spin = Math.PI * 2 * (5 + Math.random() * 2);
@@ -205,7 +220,12 @@ export class DiceStage {
         this.die.position.set(0, 2.6 * (1 - fall) + Math.sin(now / 600) * 0.03 * fall, -1.5 * (1 - fall));
         const sc = 0.55 + 0.6 * fall;
         this.die.scale.setScalar(sc * (t >= 1 ? 1 + Math.max(0, 0.06 - (now - t0 - T) / 3000) : 1));
-        this.pool.material.opacity = 0.85 * fall;
+        this.pool.material.opacity = 0.7 * fall;
+        this.aura.material.opacity = (0.75 + Math.sin(now / 700) * 0.12) * fall;
+        this.aura.scale.setScalar(4 + Math.sin(now / 900) * 0.2);
+        this.halo.material.opacity = 0.16 * fall;
+        this.halo.rotation.z = now / 4000;
+        this.halo.scale.setScalar(1 + Math.sin(now / 800) * 0.03);
         this.pool.scale.setScalar(0.6 + fall * 0.5);
         this.sparks.forEach(s => {
           const d = s.userData;
@@ -223,8 +243,8 @@ export class DiceStage {
         if (landed) { // brilho que atravessa o cristal ao pousar
           const g = Math.min(1, (now - t0 - T) / 700);
           this.glint.position.set(-0.6 + g * 1.2, 0.55 - g * 0.5, 0.75);
-          this.glint.material.opacity = Math.sin(g * Math.PI) * 0.95;
-          this.glint.scale.setScalar(0.25 + Math.sin(g * Math.PI) * 0.25);
+          this.glint.material.opacity = Math.sin(g * Math.PI) * 0.7;
+          this.glint.scale.setScalar(0.15 + Math.sin(g * Math.PI) * 0.18);
         }
         this.renderer.render(this.scene, this.camera);
         if (now - t0 < T + HOLD) requestAnimationFrame(frame);
