@@ -16,20 +16,20 @@ const c = (t, p = 'ambos', s = 0) => ({ t, p, s });
 
 // As 4 fases do tabuleiro: a intensidade sobe conforme vocês avançam.
 export const FASES = [
-  { nome: 'Aquecimento', cor: '#8a2a8c', desc: 'olhares, confissões e toques leves' },
-  { nome: 'Provocação',  cor: '#c0186a', desc: 'beijos, arrepios e as primeiras peças' },
-  { nome: 'Fogo',        cor: '#e0182c', desc: 'pele com pele, sem pressa' },
-  { nome: 'Clímax',      cor: '#ff5a14', desc: 'sem freios — até o final' },
+  { nome: 'Aquecimento', cor: '#7a5cff', desc: 'olhares, confissões e toques leves' },
+  { nome: 'Provocação',  cor: '#b45cff', desc: 'beijos, arrepios e as primeiras peças' },
+  { nome: 'Fogo',        cor: '#e05cd0', desc: 'pele com pele, sem pressa' },
+  { nome: 'Clímax',      cor: '#ff6aa8', desc: 'sem freios — até o final' },
 ];
 
 // Categorias de casa ("degraus") do tabuleiro.
 // peso[f] = chance relativa da categoria aparecer na fase f.
 export const CATEGORIAS = {
-  verdade:   { nome: 'Verdade',   icone: '💋', cor: '#ff5c8a', peso: [3.2, 2.2, 1.6, 1.2] },
-  desafio:   { nome: 'Desafio',   icone: '🔥', cor: '#ff3324', peso: [2.0, 3.0, 3.6, 4.2] },
-  pena:      { nome: 'Pena',      icone: '🪶', cor: '#c868ff', peso: [1.0, 1.2, 1.2, 1.0] },
-  armadilha: { nome: 'Armadilha', icone: '⛓️', cor: '#e8b552', peso: [1.0, 1.3, 1.5, 1.5] },
-  sorte:     { nome: 'Sorte',     icone: '✨', cor: '#ff9a4a', peso: [1.0, 0.9, 0.7, 0.5] },
+  verdade:   { nome: 'Verdade',   icone: '💋', cor: '#ff8ab8', peso: [3.2, 2.2, 1.6, 1.2] },
+  desafio:   { nome: 'Desafio',   icone: '🔥', cor: '#ff6a7a', peso: [2.0, 3.0, 3.6, 4.2] },
+  pena:      { nome: 'Pena',      icone: '🪶', cor: '#c89aff', peso: [1.0, 1.2, 1.2, 1.0] },
+  armadilha: { nome: 'Armadilha', icone: '⛓️', cor: '#e8c8a0', peso: [1.0, 1.3, 1.5, 1.5] },
+  sorte:     { nome: 'Sorte',     icone: '✨', cor: '#ffb8a0', peso: [1.0, 0.9, 0.7, 0.5] },
 };
 
 // ---------------------------------------------------------------- VERDADE

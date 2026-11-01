@@ -7,8 +7,8 @@
    Liquid Glass — vidro fosco translúcido, borda especular, cantos contínuos
    ===================================================================== */
 :root {
-  --ele: #5b9dff;
-  --ela: #ff4f7e;
+  --ele: #9aa8ff;
+  --ela: #ff8ab8;
   --red: #ff2d4a;
   --ink: rgba(255, 255, 255, .96);
   --ink-2: rgba(255, 255, 255, .62);
@@ -30,7 +30,13 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: #08020a; col
 button { font: inherit; color: inherit; cursor: pointer; border: 0; background: none; }
 
 .vignette { position: fixed; inset: 0; pointer-events: none; z-index: 1;
-  background: radial-gradient(ellipse 80% 75% at 50% 55%, transparent 55%, rgba(4, 0, 4, .6) 100%); }
+  background: radial-gradient(ellipse 80% 75% at 50% 55%, transparent 50%, rgba(20, 6, 30, .7) 100%); }
+/* foco suave: as bordas da cena ficam desfocadas, como um sonho */
+.dreamblur { position: fixed; inset: 0; pointer-events: none; z-index: 1;
+  -webkit-backdrop-filter: blur(7px); backdrop-filter: blur(7px);
+  -webkit-mask-image: radial-gradient(ellipse 62% 58% at 50% 56%, transparent 45%, #000 100%);
+  mask-image: radial-gradient(ellipse 62% 58% at 50% 56%, transparent 45%, #000 100%); }
+body.leve .dreamblur { display: none; }
 
 /* ---------- material de vidro reutilizável ---------- */
 .chip, .icon-btn, .track-bar, .turn, .roll, #toast, .panel, .card, .seg, .cta, .ghost, .wish, input, #big-number {
@@ -66,15 +72,15 @@ button { font: inherit; color: inherit; cursor: pointer; border: 0; background: 
   transition: transform .5s var(--ease), background .4s, box-shadow .4s; }
 .chip .sym { display: grid; place-items: center; width: 32px; height: 32px; flex: none; border-radius: 50%; font-size: 15px; color: #fff;
   box-shadow: inset 0 1px 0 rgba(255,255,255,.6), 0 2px 10px rgba(0,0,0,.3); }
-.chip.ele .sym { background: linear-gradient(160deg, #8ab8ff, #2d63e0); }
-.chip.ela .sym { background: linear-gradient(160deg, #ff9ab4, #e0154a); }
+.chip.ele .sym { background: linear-gradient(160deg, #b8c0ff, #6a6ae0); }
+.chip.ela .sym { background: linear-gradient(160deg, #ffb0d0, #e04a9a); }
 .chip .nm { font-size: 16px; font-weight: 600; letter-spacing: -.01em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; }
 .chip .pos { font-size: 12px; font-weight: 500; color: var(--ink-2); font-variant-numeric: tabular-nums; white-space: nowrap; }
 .chip.ela { flex-direction: row-reverse; text-align: right; padding: 6px 6px 6px 14px; }
 .chip:not(.on) { opacity: .78; }
 .chip.on { transform: scale(1.02); }
-.chip.on.ele { background: linear-gradient(135deg, rgba(110,160,255,.42), rgba(40,90,230,.2)); box-shadow: inset 0 1px 0 rgba(255,255,255,.5), 0 0 30px rgba(91,157,255,.4), 0 10px 30px rgba(0,0,0,.3); }
-.chip.on.ela { background: linear-gradient(135deg, rgba(255,120,155,.45), rgba(220,20,70,.22)); box-shadow: inset 0 1px 0 rgba(255,255,255,.5), 0 0 30px rgba(255,79,126,.45), 0 10px 30px rgba(0,0,0,.3); }
+.chip.on.ele { background: linear-gradient(135deg, rgba(150,160,255,.38), rgba(110,90,230,.18)); box-shadow: inset 0 1px 0 rgba(255,255,255,.5), 0 0 30px rgba(91,157,255,.4), 0 10px 30px rgba(0,0,0,.3); }
+.chip.on.ela { background: linear-gradient(135deg, rgba(255,140,190,.4), rgba(220,60,150,.2)); box-shadow: inset 0 1px 0 rgba(255,255,255,.5), 0 0 30px rgba(255,79,126,.45), 0 10px 30px rgba(0,0,0,.3); }
 .mid-btns { display: flex; gap: 6px; }
 .icon-btn { display: grid; place-items: center; width: 44px; height: 44px; border-radius: 50%; transition: transform .3s var(--ease); }
 .icon-btn:active { transform: scale(.9); }
@@ -85,10 +91,10 @@ button { font: inherit; color: inherit; cursor: pointer; border: 0; background: 
 .track { margin-top: 12px; padding: 0 4px; }
 .track-bar { height: 10px; border-radius: 999px; padding: 2px; }
 .track-bar::before { content: ''; position: absolute; inset: 2px; border-radius: 999px; opacity: .85;
-  background: linear-gradient(90deg, #a74aa8, #e0408a, #ff3b4e, #ff7a3a); box-shadow: 0 0 14px rgba(255, 60, 90, .55); }
+  background: linear-gradient(90deg, #7a5cff, #b45cff, #e05cd0, #ff6aa8); box-shadow: 0 0 14px rgba(200, 100, 255, .45); }
 .dot { position: absolute; top: 50%; width: 20px; height: 20px; margin: -10px 0 0 -10px; border-radius: 50%; transition: left .6s var(--ease);
   border: 2px solid #fff; box-shadow: 0 2px 10px rgba(0,0,0,.4), inset 0 1px 0 rgba(255,255,255,.6); }
-.dot.ele { background: linear-gradient(160deg, #8ab8ff, #2d63e0); } .dot.ela { background: linear-gradient(160deg, #ff9ab4, #e0154a); }
+.dot.ele { background: linear-gradient(160deg, #b8c0ff, #6a6ae0); } .dot.ela { background: linear-gradient(160deg, #ffb0d0, #e04a9a); }
 .fase { margin: 10px auto 0; text-align: center; font-size: 12px; font-weight: 500; color: var(--ink-2); text-shadow: 0 1px 8px rgba(0,0,0,.6); }
 .fase b { font: italic 600 17px var(--serif); color: #fff; }
 .fase i { font-style: normal; }

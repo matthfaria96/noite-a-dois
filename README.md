@@ -26,13 +26,17 @@ O visual segue a linguagem de vidro da Apple (macOS/iOS) com uma paleta noturna 
 > Em celulares de 2020 para cá deve rodar bem. Se algum aparelho travar, o primeiro ajuste é trocar
 > `transmission` dos degraus por transparência simples em `js/scene.js`.
 
-## Montanha cósmica e dado em destaque
-- **Tabuleiro:** é uma **montanha de rocha cristalina** com uma trilha em **espiral** que sobe em terraços até o **cume**, onde fica o Clímax com o coração pulsando.
-  Cristais venenosos (magenta, violeta, carmim e verde-ácido) brotam dos penhascos. Velas acesas marcam a beira da trilha, e dois trilhos de luz guiam o caminho.
-- **Céu:** uma nebulosa gerada em tempo real que gira devagar em redemoinho, com braços de galáxia, estrelas cintilando e a lua de sangue ao longe.
-- **Dado:** ao rolar, o tabuleiro escurece e desfoca, e um **dado de cristal lapidado** (cantos facetados, números dourados aparecendo refratados por dentro) gira em câmera lenta no centro da tela.
-  Ele desacelera, pousa no número com um brilho atravessando o cristal e um som de taça de cristal, e só então a peça anda.
-- O tamanho da montanha se ajusta à duração escolhida (Rápida, Normal ou Longa).
+## Rumo ao Pico do Amor
+O casal sobe uma montanha envolta em névoa rosa-violeta até o **Pico do Amor**.
+
+- **Mistério e imaginação:** a névoa fica densa na trilha. Só os degraus perto da peça da vez se acendem; o que está à frente vai se revelando aos poucos.
+  Na visão de mapa, a névoa se abre e a montanha inteira aparece.
+- **Paleta:** tudo em lilás, violeta e rosa, com rocha suave e sem arestas duras. O **vermelho fica reservado aos pontos de foco**:
+  o dado, o anel da peça da vez, o farol do Pico do Amor (coração pulsando com um feixe de luz que atravessa a névoa) e o botão de rolar.
+- **Foco suave:** as bordas da tela ficam levemente desfocadas, como num sonho. Isso é desligado no modo Leve.
+- **Dado em destaque:** ao rolar, o tabuleiro escurece e um dado de cristal lapidado gira em câmera lenta no centro, com os números dourados refratados por dentro. Ele pousa no número e só então a peça anda.
+- **Mais leve:** sem refração de vidro no tabuleiro, sem sombras e com menos luzes, partículas e polígonos.
+  A refração de verdade ficou só no dado, que é o momento de destaque.
 
 ## Instalar como app
 - **iPhone (Safari):** abra o link, toque em **Compartilhar → Adicionar à Tela de Início**.

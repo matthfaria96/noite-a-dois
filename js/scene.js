@@ -11,9 +11,11 @@ import { CATEGORIAS, FASES } from './data.js';
 import { drawIcon } from './icons.js';
 import { makeDie, TOP } from './dice.js';
 
-const PIECE_COLORS = { ele: 0x2a6bff, ela: 0xff1f55 };
+const PIECE_COLORS = { ele: 0x8a9cff, ela: 0xff7ab0 };
+const FOG = 0x2a1238;   // névoa rosa-violeta
+const FOCUS = 0xff2a4a; // vermelho dos pontos de foco (dado, peça da vez, pico)
 const SPACING = 2.15;  // distância entre casas ao longo da trilha
-const LEDGE = 1.7;     // meia-largura do terraço da trilha
+const LEDGE = 1.95;     // meia-largura do terraço da trilha
 const SERIF = '"Playfair Display", Georgia, serif';
 const SANS = '-apple-system, BlinkMacSystemFont, "SF Pro Display", Inter, system-ui, sans-serif';
 const TAU = Math.PI * 2;
@@ -64,6 +66,7 @@ void main() {
 }`;
 const SKY_FRAG = /* glsl */`
 uniform float uTime;
+uniform vec3 uFog;
 varying vec3 vDir;
 float h3(vec3 p) { p = fract(p * 0.3183099 + 0.1); p *= 17.0; return fract(p.x * p.y * p.z * (p.x + p.y + p.z)); }
 float n3(vec3 x) {
@@ -71,31 +74,22 @@ float n3(vec3 x) {
   return mix(mix(mix(h3(i), h3(i + vec3(1,0,0)), f.x), mix(h3(i + vec3(0,1,0)), h3(i + vec3(1,1,0)), f.x), f.y),
              mix(mix(h3(i + vec3(0,0,1)), h3(i + vec3(1,0,1)), f.x), mix(h3(i + vec3(0,1,1)), h3(i + vec3(1,1,1)), f.x), f.y), f.z);
 }
-float fbm(vec3 p) { float a = 0.5, s = 0.0; for (int k = 0; k < 5; k++) { s += a * n3(p); p = p * 2.03 + 1.7; a *= 0.5; } return s; }
+float fbm(vec3 p) { float a = 0.5, s = 0.0; for (int k = 0; k < 3; k++) { s += a * n3(p); p = p * 2.07 + 1.7; a *= 0.5; } return s; }
 void main() {
   vec3 d = normalize(vDir);
-  // redemoinho lento em torno do zênite: hipnótico
   float ang = atan(d.z, d.x), el = d.y;
-  float sw = ang + uTime * 0.015 + (1.0 - el) * 1.6;
-  vec3 q = vec3(cos(sw), el * 1.4, sin(sw)) * 2.2;
-  float n1 = fbm(q + vec3(0.0, uTime * 0.01, 0.0));
-  float n2 = fbm(q * 1.7 + vec3(5.2, -uTime * 0.008, 1.3) + n1);
-  float n3v = fbm(q * 3.1 - n2 * 1.5);
-  vec3 col = mix(vec3(0.012, 0.006, 0.03), vec3(0.03, 0.01, 0.07), smoothstep(-0.3, 0.8, el));
-  col += vec3(0.30, 0.05, 0.55) * smoothstep(0.42, 0.85, n1) * 0.55;             // violeta
-  col += vec3(0.85, 0.06, 0.32) * smoothstep(0.5, 0.9, n2) * 0.55;               // magenta
-  col += vec3(1.0, 0.15, 0.12) * pow(smoothstep(0.55, 1.0, n2 * n1 * 1.8), 2.0) * 0.6; // carmim quente
-  col += vec3(0.05, 0.95, 0.65) * smoothstep(0.78, 0.98, n3v) * 0.22 * smoothstep(0.0, 0.6, el); // veneno
-  // braços de galáxia em volta do zênite
-  float arms = sin(ang * 2.0 - log(max(0.02, 1.0 - el)) * 4.0 + uTime * 0.03) * 0.5 + 0.5;
-  col += vec3(0.6, 0.15, 0.5) * pow(arms, 6.0) * smoothstep(0.45, 0.95, el) * 0.35;
-  // estrelas cintilando
-  vec3 sp = floor(d * 320.0);
+  float sw = ang + uTime * 0.012 + (1.0 - el) * 1.4;
+  vec3 q = vec3(cos(sw), el * 1.3, sin(sw)) * 1.8;
+  float n1 = fbm(q + vec3(0.0, uTime * 0.008, 0.0));
+  float n2 = fbm(q * 1.6 + vec3(4.0, 0.0, 1.3) + n1);
+  vec3 top = vec3(0.035, 0.015, 0.07);
+  vec3 col = mix(uFog, top, smoothstep(0.0, 0.75, el));
+  col += vec3(0.55, 0.28, 0.85) * smoothstep(0.45, 0.85, n1) * 0.22;   // véu lilás
+  col += vec3(0.95, 0.38, 0.68) * smoothstep(0.55, 0.9, n2) * 0.16;    // véu rosa
+  vec3 sp = floor(d * 260.0);
   float st = h3(sp);
-  float tw = 0.6 + 0.4 * sin(uTime * 2.0 + st * 60.0);
-  col += vec3(1.0, 0.9, 0.95) * step(0.9965, st) * tw * smoothstep(-0.2, 0.3, el);
-  // brilho no horizonte
-  col += vec3(0.5, 0.05, 0.12) * pow(1.0 - abs(el), 6.0) * 0.5;
+  col += vec3(1.0, 0.92, 0.98) * step(0.998, st) * (0.5 + 0.5 * sin(uTime * 1.5 + st * 60.0)) * smoothstep(0.1, 0.5, el) * 0.8;
+  col = mix(col, uFog, pow(1.0 - clamp(el + 0.15, 0.0, 1.0), 4.0)); // horizonte some na névoa
   gl_FragColor = vec4(col, 1.0);
 }`;
 
@@ -106,14 +100,12 @@ export class Board3D {
     r.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     r.toneMapping = THREE.ACESFilmicToneMapping;
     r.toneMappingExposure = 1.05;
-    r.shadowMap.enabled = true;
-    r.shadowMap.type = THREE.PCFSoftShadowMap;
     container.appendChild(r.domElement);
 
     this.scene = new THREE.Scene();
-    this.scene.fog = new THREE.Fog(0x0b0414, 34, 120);
+    this.scene.fog = new THREE.FogExp2(FOG, 0.03);
     this.sky = new THREE.Mesh(new THREE.SphereGeometry(300, 48, 32), new THREE.ShaderMaterial({
-      vertexShader: SKY_VERT, fragmentShader: SKY_FRAG, uniforms: { uTime: { value: 0 } },
+      vertexShader: SKY_VERT, fragmentShader: SKY_FRAG, uniforms: { uTime: { value: 0 }, uFog: { value: new THREE.Color(FOG) } },
       side: THREE.BackSide, depthWrite: false, fog: false,
     }));
     this.sky.renderOrder = -1;
@@ -130,22 +122,19 @@ export class Board3D {
     this.quality = 'alta';
     this.mode = 'orbit'; // 'orbit' (tela inicial) | 'follow' | 'overview' | 'free'
 
-    this.scene.add(new THREE.HemisphereLight(0x7a52b0, 0x1a0410, 0.55));
-    this.key = new THREE.SpotLight(0xffc29a, 55, 40, 0.62, 0.75, 1.2);
-    this.key.castShadow = true;
-    this.key.shadow.mapSize.set(1024, 1024);
-    this.key.shadow.bias = -0.002;
+    this.scene.add(new THREE.HemisphereLight(0x9a7ad0, 0x2a1030, 0.75));
+    this.key = new THREE.SpotLight(0xffd0e0, 40, 40, 0.7, 0.9, 1.2);
     this.scene.add(this.key, this.key.target);
-    const moonLight = new THREE.DirectionalLight(0xb070ff, 1.1); moonLight.position.set(-30, 40, -20);
-    const venom = new THREE.DirectionalLight(0xff3a7a, 0.7); venom.position.set(30, 18, 25);
+    const moonLight = new THREE.DirectionalLight(0xb08aff, 0.8); moonLight.position.set(-30, 40, -20);
+    const venom = new THREE.DirectionalLight(0xff8ac0, 0.45); venom.position.set(30, 18, 25);
     this.scene.add(moonLight, venom);
-    this.rim = new THREE.PointLight(0xff1a5a, 30, 22, 1.5);
-    this.blue = new THREE.PointLight(0x5a3dff, 22, 18, 1.6);
+    this.rim = new THREE.PointLight(0xff5aa0, 16, 18, 1.5);
+    this.blue = new THREE.PointLight(0x7a5cff, 12, 16, 1.6);
     this.scene.add(this.rim, this.blue);
 
     this.composer = new EffectComposer(r);
     this.composer.addPass(new RenderPass(this.scene, this.camera));
-    this.bloom = new UnrealBloomPass(new THREE.Vector2(256, 256), 0.75, 0.6, 0.72);
+    this.bloom = new UnrealBloomPass(new THREE.Vector2(256, 256), 0.7, 0.8, 0.7);
     this.composer.addPass(this.bloom);
     this.composer.addPass(new OutputPass());
 
@@ -161,7 +150,8 @@ export class Board3D {
     this.#makePetals();
 
     this.die = makeDie(this.env);
-    this.die.scale.setScalar(0.85);
+    this.die.scale.setScalar(0.8);
+    this.die.traverse(o => { if (o.material?.envMapIntensity) o.material.envMapIntensity *= 0.45; });
     this.die.visible = false;
     this.scene.add(this.die);
     this.dieLight = new THREE.PointLight(0xff1a2e, 10, 5, 1.5);
@@ -214,8 +204,8 @@ export class Board3D {
 
   // ================================================================ atmosfera
   #makeEmbers() {
-    const N = 800, pos = new Float32Array(N * 3), col = new Float32Array(N * 3);
-    const palette = [0xff3a6a, 0xb04dff, 0xff2a2a, 0xffb0d0, 0x2affb8].map(c => new THREE.Color(c));
+    const N = 320, pos = new Float32Array(N * 3), col = new Float32Array(N * 3);
+    const palette = [0xffa0d0, 0xc08aff, 0xffd0e8, 0xff7ab0, 0xffffff].map(c => new THREE.Color(c));
     for (let i = 0; i < N; i++) {
       const a = Math.random() * TAU, rr = 4 + Math.random() * 40;
       pos.set([Math.cos(a) * rr, Math.random() * 40 - 14, Math.sin(a) * rr], i * 3);
@@ -226,7 +216,7 @@ export class Board3D {
     geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
     geo.setAttribute('color', new THREE.BufferAttribute(col, 3));
     this.embers = new THREE.Points(geo, new THREE.PointsMaterial({
-      size: 0.2, map: glowTexture('#ffffff'), vertexColors: true, transparent: true,
+      size: 0.16, map: glowTexture('#ffffff'), vertexColors: true, transparent: true, opacity: 0.7,
       depthWrite: false, blending: THREE.AdditiveBlending, fog: false,
     }));
     this.scene.add(this.embers);
@@ -239,8 +229,8 @@ export class Board3D {
     s.bezierCurveTo(-0.4, 0.35, -0.45, -0.3, 0, -0.5);
     const geo = new THREE.ShapeGeometry(s, 6);
     geo.scale(0.22, 0.3, 0.22);
-    const mat = new THREE.MeshStandardMaterial({ color: 0xb0001c, emissive: 0x3a0006, roughness: 0.5, side: THREE.DoubleSide });
-    const N = 120;
+    const mat = new THREE.MeshStandardMaterial({ color: 0xc23a6e, emissive: 0x2a0614, roughness: 0.6, side: THREE.DoubleSide, transparent: true, opacity: 0.8 });
+    const N = 60;
     this.petals = new THREE.InstancedMesh(geo, mat, N);
     this.petalData = Array.from({ length: N }, () => ({
       x: (Math.random() - 0.5) * 24, y: Math.random() * 14, z: (Math.random() - 0.5) * 24,
@@ -257,9 +247,8 @@ export class Board3D {
     const pts = [[0, 0], [0.44, 0], [0.46, 0.1], [0.32, 0.18], [0.18, 0.5], [0.14, 0.8], [0.27, 0.86], [0.11, 0.93], [0, 0.93]]
       .map(([x, y]) => new THREE.Vector2(x, y));
     const mat = new THREE.MeshPhysicalMaterial({
-      color: shade(color, 0.35), transmission: 1, roughness: 0.06, thickness: 0.9, ior: 1.5,
-      attenuationColor: new THREE.Color(color), attenuationDistance: 0.45,
-      clearcoat: 1, clearcoatRoughness: 0.03, envMap: this.env, envMapIntensity: 1.4, specularIntensity: 1,
+      color: shade(color, 0.2), roughness: 0.08, transparent: true, opacity: 0.7, emissive: color, emissiveIntensity: 0.25,
+      clearcoat: 1, clearcoatRoughness: 0.03, envMap: this.env, envMapIntensity: 1.2, specularIntensity: 1,
     });
     const glow = new THREE.MeshBasicMaterial({ color });
     const silver = new THREE.MeshStandardMaterial({ color: 0xf2e6e0, metalness: 1, roughness: 0.18, envMap: this.env, envMapIntensity: 1.3 });
@@ -272,9 +261,7 @@ export class Board3D {
     coreH.position.y = 1.1;
     const band = new THREE.Mesh(new THREE.TorusGeometry(0.43, 0.025, 8, 48), silver);
     band.rotation.x = Math.PI / 2; band.position.y = 0.04;
-    body.castShadow = head.castShadow = true;
-    const l = new THREE.PointLight(color, 4, 3, 1.6); l.position.y = 0.6;
-    g.add(coreB, coreH, body, head, band, l);
+    g.add(coreB, coreH, body, head, band);
     const [cv, c2] = canvas(128);
     c2.beginPath(); c2.arc(64, 64, 56, 0, TAU); c2.fillStyle = 'rgba(255,255,255,.16)'; c2.fill();
     c2.lineWidth = 3; c2.strokeStyle = 'rgba(255,255,255,.75)'; c2.stroke();
@@ -284,8 +271,10 @@ export class Board3D {
     c2.textAlign = 'center'; c2.textBaseline = 'middle'; c2.fillText(symbol, 64, 68);
     const spr = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex(cv), depthWrite: false, fog: false }));
     spr.scale.setScalar(0.55); spr.position.y = 1.75; g.add(spr);
-    const ring = new THREE.Mesh(new THREE.RingGeometry(0.55, 0.62, 48),
-      new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.9, side: THREE.DoubleSide }));
+    const ring = new THREE.Mesh(new THREE.RingGeometry(0.52, 0.64, 48),
+      new THREE.MeshBasicMaterial({ color: FOCUS, transparent: true, opacity: 0.9, side: THREE.DoubleSide }));
+    const aura = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTexture('#ff2a4a'), blending: THREE.AdditiveBlending, depthWrite: false, opacity: 0.5 }));
+    aura.scale.set(2.2, 2.2, 1); aura.position.y = 0.2; ring.add(aura);
     ring.rotation.x = -Math.PI / 2; ring.position.y = 0.03; g.add(ring);
     g.userData = { ring, sprite: spr };
     return g;
@@ -365,9 +354,11 @@ export class Board3D {
     const { R, Y, Θ, H } = sp;
     const p0 = ((phi % TAU) + TAU) % TAU;
     const roads = [];
-    for (let k = 0; ; k++) {
+    // k = -1: a trilha continua (virtual) para baixo, antes do Início, sumindo na névoa
+    for (let k = -1; ; k++) {
       const th = p0 + TAU * k;
       if (th > Θ) break;
+      if (th < -TAU * 0.9) continue;
       roads.push({ r: R(th), y: Y(th) - 0.3 });
     }
     const nx = Math.cos(phi) * r, nz = Math.sin(phi) * r;
@@ -394,9 +385,9 @@ export class Board3D {
   }
 
   #buildMountain(sp) {
-    const NR = 120, NA = 240, RMAX = sp.R0 + 14;
+    const NR = 90, NA = 180, RMAX = sp.R0 + 14;
     const pos = [], col = [], idx = [];
-    const cLedge = new THREE.Color(0x2a1236), cLow = new THREE.Color(0x1c0b3a), cHigh = new THREE.Color(0x6a1658), cVein = new THREE.Color(0xd0349a);
+    const cLedge = new THREE.Color(0x3a2050), cLow = new THREE.Color(0x24123e), cHigh = new THREE.Color(0x9a5a9a), cVein = new THREE.Color(0xd08ad0);
     const tmp = new THREE.Color();
     this.wallSpots = [];
     for (let i = 0; i <= NR; i++) {
@@ -405,7 +396,9 @@ export class Board3D {
         const phi = (j / NA) * TAU;
         const h = this.#terrainHeight(r, phi, sp);
         // penhascos irregulares: empurra a rocha para dentro/fora entre os terraços
-        const crag = h.wall ? (fbm(phi * 7 + 3, h.y * 0.7) - 0.5) * 2.2 * (h.outer ?? Math.sin(Math.PI * (h.t ?? 0))) : 0;
+        // (nos paredões internos a rocha só recua para dentro, nunca invade a trilha)
+        const nz = fbm(phi * 7 + 3, h.y * 0.7) - 0.5;
+        const crag = !h.wall ? 0 : h.outer != null ? nz * 2.0 * h.outer : -Math.abs(nz) * 1.6 * Math.sin(Math.PI * (h.t ?? 0));
         const rr = Math.max(0, r + crag);
         pos.push(Math.cos(phi) * rr, h.y, Math.sin(phi) * rr);
         const hn = clamp01((h.y + 6) / (sp.H + 8));
@@ -427,38 +420,31 @@ export class Board3D {
     geo.setAttribute('color', new THREE.Float32BufferAttribute(col, 3));
     geo.setIndex(idx);
     geo.computeVertexNormals();
-    const mat = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.82, metalness: 0.15, flatShading: true,
-      envMap: this.env, envMapIntensity: 0.45, emissive: 0x1a0626, emissiveIntensity: 0.8 });
+    const mat = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.95, metalness: 0.05,
+      envMap: this.env, envMapIntensity: 0.2, emissive: 0x1e0c2a, emissiveIntensity: 0.7 });
     const mesh = new THREE.Mesh(geo, mat);
-    mesh.receiveShadow = true;
     this.world.add(mesh);
 
-    // cristais venenosos brotando das paredes
-    const crystalCols = [0xff2d95, 0x9b30ff, 0xff1a3a, 0x1fffb0];
-    const geoC = new THREE.OctahedronGeometry(1, 0); geoC.scale(0.16, 0.75, 0.16); geoC.translate(0, 0.55, 0);
+    // poucos cristais lilases, discretos, brotando das paredes
+    const geoC = new THREE.OctahedronGeometry(1, 0); geoC.scale(0.14, 0.7, 0.14); geoC.translate(0, 0.5, 0);
     const o = new THREE.Object3D();
-    const spots = this.wallSpots.sort(() => Math.random() - 0.5).slice(0, 90);
-    crystalCols.forEach((cc, ci) => {
-      const count = ci === 3 ? 10 : 26;
-      const im = new THREE.InstancedMesh(geoC, new THREE.MeshStandardMaterial({
-        color: cc, emissive: cc, emissiveIntensity: ci === 3 ? 1.1 : 0.9, roughness: 0.15, metalness: 0.2, flatShading: true }), count * 3);
-      let n = 0;
-      for (let k = 0; k < count; k++) {
-        const p = spots[(ci * 26 + k) % spots.length];
-        if (!p) break;
-        const out = new THREE.Vector3(p.x, 0, p.z).normalize();
-        for (let m = 0; m < 3; m++) {
-          o.position.copy(p).addScaledVector(out, 0.1 + Math.random() * 0.2).add(new THREE.Vector3((Math.random() - 0.5) * 0.5, 0, (Math.random() - 0.5) * 0.5));
-          o.lookAt(o.position.clone().add(out).add(new THREE.Vector3(0, 1.4 + Math.random(), 0)));
-          o.rotateX(Math.PI / 2);
-          o.scale.setScalar(0.5 + Math.random() * 0.9);
-          o.updateMatrix();
-          im.setMatrixAt(n++, o.matrix);
-        }
+    const spots = this.wallSpots.sort(() => Math.random() - 0.5).slice(0, 30);
+    const im = new THREE.InstancedMesh(geoC, new THREE.MeshStandardMaterial({
+      color: 0xd8a0ff, emissive: 0xb070ff, emissiveIntensity: 0.55, roughness: 0.2, transparent: true, opacity: 0.85 }), spots.length * 3);
+    let n = 0;
+    for (const p of spots) {
+      const out = new THREE.Vector3(p.x, 0, p.z).normalize();
+      for (let m = 0; m < 3; m++) {
+        o.position.copy(p).addScaledVector(out, 0.1 + Math.random() * 0.2).add(new THREE.Vector3((Math.random() - 0.5) * 0.5, 0, (Math.random() - 0.5) * 0.5));
+        o.lookAt(o.position.clone().add(out).add(new THREE.Vector3(0, 1.4 + Math.random(), 0)));
+        o.rotateX(Math.PI / 2);
+        o.scale.setScalar(0.4 + Math.random() * 0.7);
+        o.updateMatrix();
+        im.setMatrixAt(n++, o.matrix);
       }
-      im.count = n;
-      this.world.add(im);
-    });
+    }
+    im.count = n;
+    this.world.add(im);
   }
 
   build(tiles) {
@@ -481,46 +467,40 @@ export class Board3D {
     const rail = this.path.map((p, i) => p.clone().addScaledVector(this.outward[i], 1.25).setY(p.y - 0.22));
     const curve = new THREE.CatmullRomCurve3(rail);
     this.world.add(new THREE.Mesh(new THREE.TubeGeometry(curve, N * 10, 0.035, 6, false),
-      new THREE.MeshBasicMaterial({ color: 0xff3d8a })));
-    const rail2 = this.path.map((p, i) => p.clone().addScaledVector(this.outward[i], -1.25).setY(p.y - 0.25));
-    this.world.add(new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(rail2), N * 10, 0.02, 6, false),
-      new THREE.MeshBasicMaterial({ color: 0x9b4dff, transparent: true, opacity: 0.7 })));
+      new THREE.MeshBasicMaterial({ color: 0xffa0d8, transparent: true, opacity: 0.35 })));
 
     // ---- degraus de vidro com núcleo de luz
     const geo = new RoundedBoxGeometry(1.86, 0.5, 1.86, 4, 0.16);
     const coreGeo = new RoundedBoxGeometry(1.36, 0.08, 1.36, 2, 0.04);
     const topGeo = new THREE.PlaneGeometry(1.86, 1.86).rotateX(-Math.PI / 2);
-    const glassCache = {}, coreCache = {};
+    this.tileMats = [];
     tiles.forEach((tile, i) => {
       const fase = FASES[tile.fase];
-      glassCache[fase.cor] ??= new THREE.MeshPhysicalMaterial({
-        color: shade(fase.cor, 0.55), transmission: 1, roughness: 0.3, thickness: 0.9, ior: 1.45,
-        attenuationColor: new THREE.Color(fase.cor), attenuationDistance: 0.8,
-        clearcoat: 1, clearcoatRoughness: 0.06, specularIntensity: 1, envMap: this.env, envMapIntensity: 1.1,
+      const glass = new THREE.MeshPhysicalMaterial({
+        color: shade(fase.cor, -0.35), roughness: 0.12, transparent: true, opacity: 0.5,
+        clearcoat: 1, clearcoatRoughness: 0.05, envMap: this.env, envMapIntensity: 0.9,
       });
-      glassCache[fase.cor].userData = { hi: shade(fase.cor, 0.55), lo: shade(fase.cor, -0.45) };
-      coreCache[fase.cor] ??= new THREE.MeshBasicMaterial({ color: shade(fase.cor, 0.1) });
+      const coreM = new THREE.MeshBasicMaterial({ color: new THREE.Color(fase.cor), transparent: true, opacity: 0.5 });
+      const topM = new THREE.MeshBasicMaterial({ map: this.#tileTexture(tile, i), transparent: true, depthWrite: false, opacity: 0.6 });
       const g = new THREE.Group();
       g.position.copy(this.path[i]);
       g.rotation.y = Math.atan2(this.dirs[i].x, this.dirs[i].z) + Math.PI;
-      const block = new THREE.Mesh(geo, glassCache[fase.cor]);
+      const block = new THREE.Mesh(geo, glass);
       block.position.y = -0.25;
-      block.receiveShadow = true;
-      const core = new THREE.Mesh(coreGeo, coreCache[fase.cor]);
+      const core = new THREE.Mesh(coreGeo, coreM);
       core.position.y = -0.3;
-      const top = new THREE.Mesh(topGeo, new THREE.MeshBasicMaterial({ map: this.#tileTexture(tile, i), transparent: true, depthWrite: false }));
+      const top = new THREE.Mesh(topGeo, topM);
       top.position.y = 0.006;
       g.add(block, core, top);
       if (tile.tipo === 'inicio' || tile.tipo === 'fim') g.scale.set(1.25, 1, 1.25);
       this.world.add(g);
-      // velas na beira do penhasco
-      if (i % 4 === 2) {
-        const c = this.#candles(2 + rnd(2), false);
+      this.tileMats.push({ glass, coreM, topM, lit: 0 });
+      if (i % 7 === 3) {
+        const c = this.#candles(2, false);
         c.position.copy(this.path[i]).addScaledVector(this.outward[i], 1.5).setY(this.path[i].y - 0.3);
         this.world.add(c);
       }
     });
-    this.glassMats = Object.values(glassCache);
 
     // ---- placas de cada fase
     FASES.forEach((fase, f) => {
@@ -535,7 +515,7 @@ export class Board3D {
       const post = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 1.6, 6),
         new THREE.MeshStandardMaterial({ color: 0xf2e6e0, metalness: 1, roughness: 0.2, envMap: this.env }));
       post.position.y = 0.8;
-      const cand = this.#candles(4, true);
+      const cand = this.#candles(3, false);
       cand.position.set(0.5, 0, 0.3);
       grp.add(post, sign, cand);
       this.world.add(grp);
@@ -548,12 +528,27 @@ export class Board3D {
     this.heartBig.position.set(0, sp.H + 4.6, 0);
     const hl = new THREE.PointLight(0xff1a3a, 40, 16, 1.4);
     this.heartBig.add(hl);
-    const halo = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTexture('#ff2a5a'), blending: THREE.AdditiveBlending, depthWrite: false, opacity: 0.7 }));
-    halo.scale.setScalar(9);
+    const halo = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTexture('#ff2a4a'), blending: THREE.AdditiveBlending, depthWrite: false, opacity: 0.85, fog: false }));
+    halo.scale.setScalar(12);
     this.heartBig.add(halo);
+    this.beaconHalo = halo;
     this.world.add(this.heartBig);
+    // feixe de luz subindo do pico, visível de longe através da névoa
+    const [bcv, bg] = canvas(8, 256);
+    const bgr = bg.createLinearGradient(0, 0, 0, 256);
+    bgr.addColorStop(0, 'rgba(255,40,80,0)'); bgr.addColorStop(0.75, 'rgba(255,40,80,.1)'); bgr.addColorStop(1, 'rgba(255,60,100,.3)');
+    bg.fillStyle = bgr; bg.fillRect(0, 0, 8, 256);
+    const beam = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.45, 40, 16, 1, true), new THREE.MeshBasicMaterial({
+      map: tex(bcv), transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide, fog: false }));
+    beam.position.set(0, sp.H + 22, 0);
+    this.world.add(beam);
+    const peak = new THREE.Mesh(new THREE.PlaneGeometry(2.4, 0.7), new THREE.MeshBasicMaterial({
+      map: this.#signTexture('Pico do Amor', '#ff2a4a'), transparent: true, side: THREE.DoubleSide, depthWrite: false }));
+    peak.position.set(0, sp.H + 2.6, 0);
+    this.world.add(peak);
+    this.animated.push({ o: peak, base: peak.position.y, sp: 0.8, amp: 0.08, sign: peak });
     // anel de luz em volta do cume
-    const ring = new THREE.Mesh(new THREE.TorusGeometry(3.2, 0.03, 8, 96), new THREE.MeshBasicMaterial({ color: 0xff5a9a }));
+    const ring = new THREE.Mesh(new THREE.TorusGeometry(3.2, 0.02, 8, 96), new THREE.MeshBasicMaterial({ color: 0xffa0d0, transparent: true, opacity: 0.5 }));
     ring.rotation.x = Math.PI / 2; ring.position.set(0, sp.H + 3, 0);
     this.world.add(ring);
     this.animated.push({ o: ring, base: ring.position.y, sp: 0.6, amp: 0.4, spin: 0.2 });
@@ -561,15 +556,15 @@ export class Board3D {
     // ---- lua de sangue ao longe
     const [mcv, mg] = canvas(256);
     const mgr = mg.createRadialGradient(100, 96, 10, 128, 128, 128);
-    mgr.addColorStop(0, '#ff9a8a'); mgr.addColorStop(0.5, '#c0203a'); mgr.addColorStop(1, '#40061a');
+    mgr.addColorStop(0, '#ffe0f0'); mgr.addColorStop(0.5, '#d08ac0'); mgr.addColorStop(1, '#5a3070');
     mg.fillStyle = mgr; mg.fillRect(0, 0, 256, 256);
     for (let k = 0; k < 30; k++) {
-      mg.fillStyle = `rgba(50,0,20,${0.08 + Math.random() * 0.12})`;
+      mg.fillStyle = `rgba(60,20,70,${0.05 + Math.random() * 0.08})`;
       mg.beginPath(); mg.arc(Math.random() * 256, Math.random() * 256, 4 + Math.random() * 22, 0, TAU); mg.fill();
     }
-    const moon = new THREE.Mesh(new THREE.SphereGeometry(14, 48, 32), new THREE.MeshBasicMaterial({ map: tex(mcv), fog: false }));
+    const moon = new THREE.Mesh(new THREE.SphereGeometry(10, 32, 24), new THREE.MeshBasicMaterial({ map: tex(mcv), fog: false, transparent: true, opacity: 0.75 }));
     moon.position.set(-70, sp.H + 30, -110);
-    const mhalo = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTexture('#ff2a4a'), blending: THREE.AdditiveBlending, depthWrite: false, fog: false, opacity: 0.7 }));
+    const mhalo = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTexture('#ffa0e0'), blending: THREE.AdditiveBlending, depthWrite: false, fog: false, opacity: 0.35 }));
     mhalo.scale.setScalar(80);
     moon.add(mhalo);
     this.world.add(moon);
@@ -597,13 +592,7 @@ export class Board3D {
     const hi = q !== 'leve';
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, hi ? 2 : 1.25));
     this.bloom.enabled = hi;
-    this.key.castShadow = hi;
-    for (const m of this.glassMats ?? []) {
-      m.transmission = hi ? 1 : 0;
-      m.transparent = !hi; m.opacity = hi ? 1 : 0.72;
-      if (m.userData.hi) m.color.copy(hi ? m.userData.hi : m.userData.lo);
-      m.needsUpdate = true;
-    }
+    document.body.classList.toggle('leve', !hi);
     this.resize();
   }
 
@@ -693,9 +682,9 @@ export class Board3D {
         const want = ahead.clone().sub(behind).setY(0);
         if (want.lengthSq() > 0.01) this.camDir.lerp(want.normalize(), 1 - Math.exp(-dt * 2)).normalize();
         const out = new THREE.Vector3(pos.x, 0, pos.z).normalize();
-        const back = this.portrait ? 5.6 : 6.2, up = this.portrait ? 5.4 : 4.4;
-        this.wantPos.copy(pos).addScaledVector(this.camDir, -back).addScaledVector(out, 3.0).setY(pos.y + up);
-        this.wantLook.copy(pos).addScaledVector(this.camDir, this.portrait ? 2.0 : 2.6).addScaledVector(out, -0.4);
+        const back = this.portrait ? 5.0 : 5.2, up = this.portrait ? 5.0 : 4.0;
+        this.wantPos.copy(pos).addScaledVector(this.camDir, -back).addScaledVector(out, 2.4).setY(pos.y + up);
+        this.wantLook.copy(pos).addScaledVector(this.camDir, this.portrait ? 0.9 : 1.1).addScaledVector(out, -0.3).setY(pos.y + 0.9);
       } else if (this.mode !== 'free') {
         // visão da montanha inteira (órbita lenta e hipnótica na tela inicial)
         const D = sp.R0 * (this.portrait ? 2.5 : 1.75);
@@ -703,6 +692,19 @@ export class Board3D {
         this.wantLook.copy(this.center);
         this.wantPos.set(Math.cos(ang) * D, sp.H + D * 0.62, Math.sin(ang) * D);
       }
+      // névoa: densa na trilha (mistério à frente), rala na visão geral
+      const fogWant = this.mode === 'follow' ? 0.08 : 0.014;
+      this.scene.fog.density += (fogWant - this.scene.fog.density) * (1 - Math.exp(-dt * 1.5));
+      // os degraus perto da peça da vez se acendem; o resto fica sugerido
+      this.tileMats.forEach((m, i) => {
+        const d = i - idx;
+        const want = this.mode !== 'follow' ? 0.5 : d >= 0 && d <= 6 ? 1 - d / 7.5 : d < 0 && d > -3 ? 0.35 : 0.08;
+        m.lit += (want - m.lit) * (1 - Math.exp(-dt * 3));
+        m.topM.opacity = 0.15 + m.lit * 0.85;
+        m.coreM.opacity = 0.15 + m.lit * 0.7;
+        m.glass.opacity = 0.35 + m.lit * 0.4;
+      });
+      this.beaconHalo.material.opacity = 0.6 + Math.sin(t * 2.2) * 0.25;
       const k = 1 - Math.exp(-dt * (this.mode === 'follow' ? 2.6 : 1.4));
       this.camPos.lerp(this.wantPos, k);
       this.camLook.lerp(this.wantLook, k);
