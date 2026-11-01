@@ -410,18 +410,28 @@ body.ready #stage { opacity: 1; }
   /* a carta continua sendo uma carta: centralizada, com respiro em volta */
   #card { place-items: center; padding: max(16px, env(safe-area-inset-top)) 16px max(16px, env(safe-area-inset-bottom)); }
 }
-/* login no celular: marca grande em cima, formulário ancorado embaixo (perto do polegar e do teclado) */
+/* login no celular: rola sempre que faltar altura (nada se sobrepõe); com o teclado aberto a marca encolhe */
 @media (max-width: 640px) {
-  #lock .panel { justify-content: space-between; gap: 14px; }
-  #lock .hero { flex: 1; justify-content: center; align-items: center; gap: 8px; min-height: 0; }
-  #lock .logo.small .l1 { font-size: 60px; } #lock .logo.small .l2 { font-size: 46px; }
-  #lock .form { gap: 12px; }
-  #lock .form h2 { margin-bottom: -2px; }
-  #lock .ou { margin: 2px 0; }
-  #lock .form h2 { text-align: left; font-size: 28px; }
+  #lock .panel { justify-content: flex-start; gap: 18px; min-height: 100%; }
+  #lock .hero { flex: 1 0 auto; justify-content: center; align-items: center; gap: 8px; padding: 8px 0 0; transition: padding .3s var(--ease); }
+  #lock .logo.small .l1 { font-size: 60px; transition: font-size .3s var(--ease); }
+  #lock .logo.small .l2 { font-size: 46px; transition: font-size .3s var(--ease); }
+  #lock .form { flex: none; gap: 12px; }
+  #lock .form h2 { text-align: left; font-size: 28px; margin-bottom: -2px; }
   #lock input { padding: 15px 16px; font-size: 17px; }
   #lock .cta { padding: 17px; }
+  #lock .ou { margin: 2px 0; }
+  html.teclado #lock .hero { flex: none; padding: 0; }
+  html.teclado #lock .hero .tag { display: none; }
+  html.teclado #lock .logo.small .l1 { font-size: 38px; }
+  html.teclado #lock .logo.small .l2 { font-size: 30px; }
 }
+/* campo de senha com o olho para mostrar */
+.campo-senha { position: relative; }
+.campo-senha input { padding-right: 52px !important; }
+.olho { position: absolute; right: 4px; top: 50%; transform: translateY(-50%); width: 44px; height: 44px; display: grid; place-items: center; border-radius: 50%; }
+.olho svg { width: 20px; height: 20px; fill: none; stroke: var(--ink-2); stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+.olho.on svg { stroke: #ff9ab4; }
 
 /* =====================================================================
    Noite do casal: o que vale hoje, nossas cartas, lembrança
@@ -512,3 +522,28 @@ button, .tile-btn, .limite, .wish { -webkit-user-select: none; user-select: none
 #instalar .cta { padding: 10px 16px; font-size: 14px; flex: none; }
 #instalar .fechar { position: absolute; top: -8px; right: -8px; width: 26px; height: 26px; border-radius: 50%; font-size: 16px; line-height: 1;
   background: rgba(30, 8, 26, .95); border: 1px solid rgba(255,255,255,.2); color: var(--ink-2); }
+
+/* celular: rodapé fixo em vidro escuro (o conteúdo que passa por baixo não embaralha o botão) */
+@media (max-width: 640px) {
+  .sheet-foot { background: rgba(20, 5, 18, .82); -webkit-backdrop-filter: var(--blur); backdrop-filter: var(--blur);
+    border-top: 1px solid rgba(255,255,255,.08); padding-top: 12px; }
+  .panel.sheet { padding-bottom: 0; }
+}
+/* celular com pouca altura (iPhone SE, Safari com barras): marca compacta para o essencial caber sem rolar */
+@media (max-width: 640px) and (max-height: 720px) {
+  #lock .logo.small .l1 { font-size: 46px; } #lock .logo.small .l2 { font-size: 36px; }
+  #lock .hero .tag { font-size: 13px; }
+  #lock .panel { gap: 12px; }
+  #lock input { padding: 13px 15px; }
+  #lock .cta { padding: 15px; }
+  #setup .logo .l1 { font-size: 50px; } #setup .logo .l2 { font-size: 38px; }
+  #setup .panel { gap: 12px; }
+  #setup .badges { display: none; }
+  .tag { font-size: 13px; }
+}
+/* celular: telas de conteúdo em fluxo normal. O painel tem no mínimo a altura da tela e cresce com o conteúdo,
+   então nunca transborda para cima (parte inalcançável) — rola normalmente. Carta e pausa seguem centralizada/folha. */
+@media (max-width: 640px) {
+  .screen:not(#card):not(#menu) { display: block; }
+  .screen:not(#card):not(#menu) > .panel:not(.sheet) { min-height: 100%; }
+}

@@ -604,6 +604,22 @@ $('#lk-esqueci').onclick = async () => {
   if (!email) return ($('#lk-msg').textContent = 'Digite seu e-mail acima.');
   $('#lk-msg').textContent = await auth.reset(email);
 };
+// login no celular: "Próximo" vai para a senha, olho mostra a senha, e o campo em foco fica visível acima do teclado
+$('#lk-user').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); $('#lk-pass').focus(); } });
+$('#lk-olho').onclick = () => {
+  const ver = $('#lk-pass').type === 'password';
+  for (const id of ['#lk-pass', '#lk-pass2']) $(id).type = ver ? 'text' : 'password';
+  $('#lk-olho').classList.toggle('on', ver);
+  $('#lk-olho').setAttribute('aria-label', ver ? 'Esconder senha' : 'Mostrar senha');
+};
+document.addEventListener('focusin', e => {
+  if (!e.target.matches('input, textarea')) return;
+  setTimeout(() => e.target.scrollIntoView({ block: 'center', behavior: 'smooth' }), 320);
+});
+if (window.visualViewport) {
+  const teclado = () => document.documentElement.classList.toggle('teclado', visualViewport.height < window.innerHeight * 0.78);
+  visualViewport.addEventListener('resize', teclado);
+}
 $('#lock form').onsubmit = async e => {
   e.preventDefault();
   const u = $('#lk-user').value.trim(), s1 = $('#lk-pass').value, s2 = $('#lk-pass2').value;

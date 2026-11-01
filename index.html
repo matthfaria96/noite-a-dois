@@ -2,7 +2,7 @@
 <html lang="pt-BR">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no, interactive-widget=resizes-content">
   <meta name="theme-color" content="#16040f">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="format-detection" content="telephone=no">
@@ -293,9 +293,12 @@
       <div class="form">
       <h2>Entrar</h2>
       <form autocomplete="on">
-        <input id="lk-user" autocomplete="username" placeholder="E-mail">
-        <input id="lk-pass" type="password" autocomplete="current-password" placeholder="Senha">
-        <input id="lk-pass2" type="password" autocomplete="new-password" placeholder="Confirmar senha" class="hidden">
+        <input id="lk-user" autocomplete="username" placeholder="E-mail" inputmode="email" autocapitalize="none" autocorrect="off" spellcheck="false" enterkeyhint="next">
+        <div class="campo-senha">
+          <input id="lk-pass" type="password" autocomplete="current-password" placeholder="Senha" enterkeyhint="go">
+          <button type="button" class="olho" id="lk-olho" aria-label="Mostrar senha"><svg viewBox="0 0 24 24"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></svg></button>
+        </div>
+        <input id="lk-pass2" type="password" autocomplete="new-password" placeholder="Confirmar senha" class="hidden" enterkeyhint="go">
         <label class="check"><input type="checkbox" id="lk-lembrar"> Manter conectado neste aparelho</label>
         <button class="cta" id="lk-ok">Entrar</button>
       </form>
