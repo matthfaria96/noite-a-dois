@@ -1,5 +1,9 @@
 # Noite a Dois — jogo de tabuleiro 3D para casais
 
+### ▶ Jogar agora: **https://matthfaria96.github.io/noite-a-dois/**
+
+> +18 · funciona no celular e no computador · dá para instalar na tela inicial (Compartilhar → Adicionar à Tela de Início)
+
 Web, responsivo (celular e computador), sem instalação. Junta **dado + tabuleiro + cartas**:
 um mapa 3D de blocos que serpenteia entre ilhas flutuantes e sobe até o **Clímax**, com a câmera atrás da peça da vez.
 
@@ -21,6 +25,19 @@ O visual segue a linguagem de vidro da Apple (macOS/iOS) com uma paleta noturna 
 > Desempenho: vidro com refração (transmission) e desfoque de fundo pesam mais na placa de vídeo.
 > Em celulares de 2020 para cá deve rodar bem. Se algum aparelho travar, o primeiro ajuste é trocar
 > `transmission` dos degraus por transparência simples em `js/scene.js`.
+
+## Instalar como app
+- **iPhone (Safari):** abra o link, toque em **Compartilhar → Adicionar à Tela de Início**.
+- **Android (Chrome):** abra o link, toque no menu **⋮ → Instalar app**.
+
+O jogo abre em tela cheia com ícone próprio e funciona **offline** depois da primeira visita (`sw.js`).
+Ao publicar mudanças, aumente `VERSAO` em `sw.js` para os aparelhos baixarem a versão nova.
+
+## Gráficos: Alta / Leve
+- **Alta:** degraus de vidro com refração, brilho (bloom) e sombras.
+- **Leve:** vidro translúcido simples, sem bloom e sem sombras, e resolução menor. É bem mais leve para a placa de vídeo.
+- O jogo mede o desempenho nos primeiros segundos da partida. Se o aparelho não aguentar o modo Alta, troca para o Leve sozinho e avisa.
+  Dá para trocar manualmente no menu ☰ → **Gráficos**.
 
 ## Como rodar
 Qualquer servidor estático serve. Localmente:

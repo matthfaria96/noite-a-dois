@@ -159,6 +159,23 @@ function showCard({ cat, text, secs = 0, who, fase, refusable = true }) {
 
 // ------------------------------------------------------------ fluxo
 const board = new Board3D($('#stage'));
+let quality = store.get('quality', 'auto'); // 'auto' | 'alta' | 'leve'
+const qualityLabel = () => { $('#btn-quality').textContent = 'Gráficos: ' + (board.quality === 'leve' ? 'Leve' : 'Alta'); };
+board.setQuality(quality === 'leve' ? 'leve' : 'alta');
+board.onLowFps = () => {
+  if (quality !== 'auto') return;
+  board.setQuality('leve'); qualityLabel();
+  toast('Gráficos ajustados para o modo leve');
+};
+$('#btn-quality').onclick = () => {
+  quality = board.quality === 'leve' ? 'alta' : 'leve';
+  store.set('quality', quality);
+  board.setQuality(quality); qualityLabel();
+};
+qualityLabel();
+if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
+  navigator.serviceWorker.register('sw.js').catch(() => {});
+}
 
 function startGame() {
   const nEle = $('#name-ele').value.trim() || 'Ele';

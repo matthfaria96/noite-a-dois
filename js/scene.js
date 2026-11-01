@@ -66,6 +66,7 @@ export class Board3D {
     this.camDir = new THREE.Vector3(0, 0, -1);
     this.wantPos = new THREE.Vector3();
     this.wantLook = new THREE.Vector3();
+    this.quality = 'alta';
     this.mode = 'orbit'; // 'orbit' (tela inicial) | 'follow' | 'overview' | 'free'
 
     // Iluminação de pouca luz: ambiente baixo + "luz de vela" seguindo a peça
@@ -393,6 +394,7 @@ export class Board3D {
         attenuationColor: new THREE.Color(fase.cor), attenuationDistance: 0.8,
         clearcoat: 1, clearcoatRoughness: 0.06, specularIntensity: 1, envMap: this.env, envMapIntensity: 1.1,
       });
+      glassCache[fase.cor].userData = { hi: shade(fase.cor, 0.55), lo: shade(fase.cor, -0.45) };
       coreCache[fase.cor] ??= new THREE.MeshBasicMaterial({ color: shade(fase.cor, 0.1) });
       const g = new THREE.Group();
       g.position.copy(this.path[i]);
@@ -414,6 +416,8 @@ export class Board3D {
         this.world.add(pil);
       }
     });
+
+    this.glassMats = Object.values(glassCache);
 
     // ---- utilidades de espaço livre
     const freeAt = (p, r) => this.path.every(q => Math.hypot(q.x - p.x, q.z - p.z) > r);
@@ -515,6 +519,24 @@ export class Board3D {
     this.camDir.set(0, 0, -1);
     this.camPos.copy(this.path[0]).add(new THREE.Vector3(0, 16, 14));
     this.camLook.copy(this.path[Math.min(N - 1, 6)]);
+    this.setQuality(this.quality);
+    this.fps = { t0: 0, frames: 0, done: false };
+  }
+
+  // 'alta' = vidro com refração, bloom e sombras; 'leve' = para celulares mais simples
+  setQuality(q) {
+    this.quality = q;
+    const hi = q !== 'leve';
+    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, hi ? 2 : 1.25));
+    this.bloom.enabled = hi;
+    this.key.castShadow = hi;
+    for (const m of this.glassMats ?? []) {
+      m.transmission = hi ? 1 : 0;
+      m.transparent = !hi; m.opacity = hi ? 1 : 0.72;
+      if (m.userData.hi) m.color.copy(hi ? m.userData.hi : m.userData.lo);
+      m.needsUpdate = true;
+    }
+    this.resize();
   }
 
   #spot(who, i) {
@@ -606,6 +628,16 @@ export class Board3D {
   #tick() {
     const dt = Math.min(0.1, this.clock.getDelta());
     const t = this.clock.elapsedTime;
+    // mede o FPS nos primeiros segundos da partida; se estiver baixo, avisa para trocar para o modo leve
+    if (this.fps && !this.fps.done && this.mode === 'follow' && this.quality !== 'leve') {
+      if (!this.fps.t0) this.fps.t0 = performance.now();
+      this.fps.frames++;
+      const el = performance.now() - this.fps.t0;
+      if (el > 4000) {
+        this.fps.done = true;
+        if (this.fps.frames / (el / 1000) < 28) this.onLowFps?.();
+      }
+    }
     if (this.path) {
       const p = this.pieces[this.active];
       const idx = p.userData.idx ?? 0;
