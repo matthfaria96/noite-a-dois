@@ -43,7 +43,7 @@ O casal sobe uma montanha envolta em névoa rosa-violeta até o **Pico do Amor**
 - **Android (Chrome):** abra o link, toque no menu **⋮ → Instalar app**.
 
 O jogo abre em tela cheia com ícone próprio e funciona **offline** depois da primeira visita (`sw.js`).
-Ao publicar mudanças, aumente `VERSAO` em `sw.js` para os aparelhos baixarem a versão nova.
+Ao publicar mudanças, aumente `VERSAO` em `sw.js`. O jogo confere a cada minuto (e quando o app volta para a frente): a versão nova baixa em segundo plano e aparece um aviso discreto **"Versão nova da noite pronta · Atualizar"**. Ele nunca aparece no meio de uma partida, só nas telas iniciais.
 
 ## Configurações (⚙️ na tela inicial ou ☰ → Configurações)
 - **Som:** volume da música e dos efeitos.

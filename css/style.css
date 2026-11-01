@@ -665,3 +665,14 @@ svg.gen { width: 1.15em; height: 1.15em; fill: none; stroke: currentColor; strok
   #dado-hud img { inset: -6px; width: 66px; height: 66px; }
   #dado-hud b { font-size: 18px; }
 }
+
+/* aviso de versão nova: pílula de vidro discreta embaixo, no estilo do resto */
+#atualizar { position: fixed; z-index: 31; left: 50%; bottom: calc(max(16px, env(safe-area-inset-bottom)) + 4px); transform: translateX(-50%);
+  width: max-content; max-width: calc(100% - 24px); display: flex; align-items: center; gap: 10px; padding: 7px 7px 7px 14px; border-radius: 999px;
+  background: linear-gradient(160deg, rgba(40, 8, 28, .92), rgba(12, 2, 10, .94)); border: 1px solid var(--hair);
+  -webkit-backdrop-filter: var(--blur); backdrop-filter: var(--blur); box-shadow: 0 14px 40px rgba(0, 0, 0, .55), 0 0 24px rgba(180, 20, 60, .2);
+  font-size: 14px; color: var(--ink); animation: sobeConvite .5s var(--ease) both; }
+#atualizar svg { width: 17px; height: 17px; flex: none; fill: #ff8aa8; filter: drop-shadow(0 0 6px rgba(255, 60, 110, .7)); }
+#atualizar .cta { padding: 8px 14px; font-size: 13px; }
+#atualizar .cta:disabled { opacity: .7; }
+@media (max-width: 640px) { #atualizar span { font-size: 13px; } }

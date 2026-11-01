@@ -1,6 +1,6 @@
 // Service worker: deixa o jogo abrir offline e instalável como app.
 // Ao mudar qualquer arquivo, aumente a VERSAO para os aparelhos baixarem a nova.
-const VERSAO = 'nad-v16';
+const VERSAO = 'nad-v17';
 const ARQUIVOS = [
   './',
   'index.html',
@@ -111,9 +111,16 @@ const ARQUIVOS = [
   'vendor/three/three.module.min.js',
 ];
 
+// a versão nova baixa tudo e fica esperando: o jogo mostra "Atualizar" e só troca quando a pessoa toca
+// (na primeira visita não há versão antiga, então ela já entra direto)
 self.addEventListener('install', e => {
-  e.waitUntil(caches.open(VERSAO).then(c => c.addAll(ARQUIVOS)).then(() => self.skipWaiting()));
+  e.waitUntil(caches.open(VERSAO).then(c => c.addAll(ARQUIVOS)).then(async () => {
+    // quem ainda está numa versão anterior ao aviso (até nad-v16) não tem o botão: essa troca entra sozinha
+    const antigas = (await caches.keys()).filter(k => /^nad-v(\d+)$/.test(k) && Number(k.slice(5)) < 17);
+    if (antigas.length) self.skipWaiting();
+  }));
 });
+self.addEventListener('message', e => { if (e.data === 'atualizar') self.skipWaiting(); });
 self.addEventListener('activate', e => {
   e.waitUntil(caches.keys().then(ks => Promise.all(ks.filter(k => k !== VERSAO).map(k => caches.delete(k))))
     .then(() => self.clients.claim()));

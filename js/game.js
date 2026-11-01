@@ -212,17 +212,32 @@ board.onLowFps = () => {
 // ------------------------------------------------------------ app instalado (PWA)
 const instalado = matchMedia('(display-mode: fullscreen), (display-mode: standalone)').matches || navigator.standalone === true;
 document.documentElement.classList.toggle('app', instalado);
-if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
-  // versão nova: recarrega sozinho, mas só nas telas iniciais (nunca no meio de uma partida)
-  const tinhaVersao = !!navigator.serviceWorker.controller;
-  let atualizar = false;
-  navigator.serviceWorker.addEventListener('controllerchange', () => {
-    if (!tinhaVersao) return;
-    if (visible('#hud')) atualizar = true; else location.reload();
-  });
-  window.addEventListener('nad:inicio', () => { if (atualizar) location.reload(); });
-  navigator.serviceWorker.register('sw.js').catch(() => {});
+// versão nova: baixa em segundo plano e fica pronta; um aviso discreto oferece "Atualizar".
+// Nunca no meio da partida: se chegar durante o jogo, o aviso espera a volta à tela inicial.
+let swNovo = null;
+function avisarAtualizacao() {
+  if (!swNovo || visible('#hud')) return;
+  hide('#instalar');
+  show('#atualizar');
 }
+if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
+  navigator.serviceWorker.register('sw.js').then(reg => {
+    const pronto = sw => { if (sw && navigator.serviceWorker.controller) { swNovo = sw; avisarAtualizacao(); } };
+    pronto(reg.waiting);
+    reg.addEventListener('updatefound', () => {
+      const sw = reg.installing;
+      sw?.addEventListener('statechange', () => { if (sw.state === 'installed') pronto(sw); });
+    });
+    // confere a cada minuto e sempre que o app volta para a frente (app instalado retomado no iPhone)
+    const conferir = () => reg.update().catch(() => {});
+    setInterval(conferir, 60_000);
+    document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') conferir(); });
+  }).catch(() => {});
+  let recarregando = false;
+  navigator.serviceWorker.addEventListener('controllerchange', () => { if (swNovo && !recarregando) { recarregando = true; location.reload(); } });
+  window.addEventListener('nad:inicio', avisarAtualizacao);
+}
+$('#btn-atualizar').onclick = () => { $('#btn-atualizar').disabled = true; $('#btn-atualizar').textContent = 'Atualizando…'; swNovo?.postMessage('atualizar'); };
 // tela acesa durante a partida
 let wake = null;
 async function manterTelaAcesa(on) {
@@ -239,6 +254,7 @@ function convidarInstalar() {
   if (instalado || store.get('instalar-dispensado', 0) > Date.now() || TESTE.on) return;
   if (!pedidoInstalar && !ios) return;
   if (!visible('#setup')) return setTimeout(convidarInstalar, 3000); // só na tela inicial, nunca por cima do login
+  if (visible('#atualizar')) return;
   $('#btn-instalar').classList.toggle('hidden', !pedidoInstalar);
   if (!pedidoInstalar) $('#instalar-dica').innerHTML = 'Toque em <b>Compartilhar</b> e depois em <b>Adicionar à Tela de Início</b>: abre em tela cheia, como um app.';
   show('#instalar');
@@ -666,7 +682,11 @@ async function afterLogin() {
 }
 
 // ------------------------------------------------------------ navegação
-const toSetup = () => { manterTelaAcesa(false); window.dispatchEvent(new Event('nad:inicio')); ['#menu', '#final', '#hud', '#settings'].forEach(hide); show('#setup'); board.setMode('orbit'); voice.stop(); TESTE.on = false; board.speed = dice.speed = 1; };
+const toSetup = () => {
+  manterTelaAcesa(false);
+  ['#menu', '#final', '#hud', '#settings'].forEach(hide); show('#setup'); board.setMode('orbit'); voice.stop(); TESTE.on = false; board.speed = dice.speed = 1;
+  window.dispatchEvent(new Event('nad:inicio')); // depois de sair do jogo: o aviso de versão nova pode aparecer
+};
 const [sn1, sn2] = store.get('names', ['', '']);
 $('#name-ele').value = sn1; $('#name-ela').value = sn2;
 $('#btn-start').onclick = () => startGame(false);
