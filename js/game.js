@@ -298,8 +298,7 @@ function startGame(teste = false) {
   $('#test-badge b').textContent = `Modo de teste · ${TESTE.vel}×`;
   updateHUD();
   toast(`${G.players[G.turn].name} começa a noite…`);
-  fala('inicio');
-  fala('comeca');
+  fala('inicio'); // uma fala só: quem começa já aparece na tela
   autoNext();
 }
 

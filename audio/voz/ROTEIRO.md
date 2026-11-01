@@ -15,8 +15,6 @@ Os textos ficam em `FALAS`, em `js/voice.js`. Para variar mais, basta gravar `<m
 | inicio-1 | Vamos começar… meus amores? |
 | inicio-2 | Prontos?… Então vem. |
 | inicio-3 | Hoje a noite é de vocês… |
-| comeca-1 | Você começa… |
-| comeca-2 | Primeiro… você. |
 | vez-1 | Sua vez… |
 | vez-2 | Agora é com você. |
 | vez-3 | Joga pra mim… |

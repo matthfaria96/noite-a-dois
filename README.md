@@ -88,13 +88,13 @@ js/dice.js        pedra filosofal (dado de rubi) e o palco da rolagem; foto para
 js/icons.js       ícones vetoriais das categorias (3D e interface)
 js/game.js        regras, turnos, cartas, configurações, login, modo de teste
 js/audio.js       trilha lounge gerada em tempo real (fixa) + efeitos sonoros
-js/voice.js       narradora: 66 falas gravadas, sorteadas sem repetir por momento do jogo
+js/voice.js       narradora: 64 falas gravadas, sorteadas sem repetir por momento do jogo
 js/cartas.js      baralho da noite: limites, catálogo (ligar/desligar), cartas do casal, ritmo
 js/lembranca.js   resumo da noite e imagem para guardar
 js/auth.js        login: Supabase (nuvem) ou conta local
 js/config.js      chaves públicas do Supabase (vazio = conta local)
 js/util.js        utilidades e armazenamento local
-audio/            lista.json e voz/ (66 falas em MP3 + ROTEIRO.md)
+audio/            lista.json e voz/ (64 falas em MP3 + ROTEIRO.md)
 supabase/         migração SQL do banco do jogo
 fonts/            Playfair Display, Great Vibes, Inter (locais)
 vendor/three/     Three.js r160 minificado, só os módulos usados
