@@ -21,6 +21,11 @@
   </script>
 </head>
 <body>
+  <!-- abertura: aparece na hora e se dissolve quando o tabuleiro estiver pronto -->
+  <div id="splash" aria-hidden="true">
+    <div class="splash-logo"><span class="l1">Noite</span><span class="l2">a Dois</span></div>
+    <div class="splash-bar"><i></i></div>
+  </div>
   <div id="stage"></div>
   <div class="dreamblur"></div>
   <div class="vignette"></div>
@@ -62,13 +67,16 @@
 
   <!-- TELA INICIAL -->
   <section id="setup" class="screen hidden">
-    <div class="panel">
+    <div class="panel duo">
       <button class="icon-btn gear" id="btn-settings" aria-label="Configurações">
         <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1Z"/></svg>
       </button>
-      <div class="badges"><span>2 jogadores</span><span>+18</span><span>30–70 min</span></div>
-      <h1 class="logo"><span class="l1">Noite</span><span class="l2">a Dois</span></h1>
-      <p class="tag">Uma subida a dois, entre névoa e desejo, até o Pico do Amor.</p>
+      <div class="hero">
+        <div class="badges"><span>2 jogadores</span><span>+18</span><span>30–70 min</span></div>
+        <h1 class="logo"><span class="l1">Noite</span><span class="l2">a Dois</span></h1>
+        <p class="tag">Uma subida a dois, entre névoa e desejo, até o Pico do Amor.</p>
+      </div>
+      <div class="form">
       <div class="names">
         <label class="ele"><span>♂ Ele</span><input id="name-ele" maxlength="14" placeholder="Nome dele"></label>
         <label class="ela"><span>♀ Ela</span><input id="name-ela" maxlength="14" placeholder="Nome dela"></label>
@@ -92,12 +100,13 @@
       <button class="cta" id="btn-start">Começar a noite</button>
       <div class="links"><button class="link" id="btn-rules">Como jogar</button><button class="link" id="btn-teste-setup">Modo de teste</button></div>
       <p class="fine">Só para maiores de 18. Joguem apenas se ambos quiserem — qualquer um pode recusar uma carta ou pausar a qualquer momento.</p>
+      </div>
     </div>
   </section>
 
   <!-- REGRAS -->
   <section id="rules" class="screen hidden">
-    <div class="panel scroll">
+    <div class="panel scroll sheet rules-panel">
       <h2>Como jogar</h2>
       <ol>
         <li>Cada um tem a sua peça: <b class="c-ele">♂ Ele</b> e <b class="c-ela">♀ Ela</b>.</li>
@@ -117,7 +126,7 @@
         <li>Recusar uma carta custa 2 casas para trás (ou use um passe livre).</li>
         <li>Quem chegar primeiro ao <b>Clímax</b> escolhe 1 de 3 desejos para o parceiro realizar.</li>
       </ol>
-      <button class="cta" data-close>Entendi</button>
+      <div class="sheet-foot"><button class="cta" data-close>Entendi</button></div>
     </div>
   </section>
 
@@ -162,8 +171,9 @@
 
   <!-- LOGIN -->
   <section id="lock" class="screen hidden">
-    <div class="panel">
-      <h1 class="logo small"><span class="l1">Noite</span><span class="l2">a Dois</span></h1>
+    <div class="panel duo">
+      <div class="hero"><h1 class="logo small"><span class="l1">Noite</span><span class="l2">a Dois</span></h1></div>
+      <div class="form">
       <h2>Entrar</h2>
       <form autocomplete="on">
         <input id="lk-user" autocomplete="username" placeholder="E-mail">
@@ -174,13 +184,19 @@
       </form>
       <p id="lk-msg" class="fine"></p>
       <div class="links"><button class="link" id="lk-troca">Criar uma conta</button><button class="link" id="lk-esqueci">Esqueci a senha</button></div>
+      </div>
     </div>
   </section>
 
   <!-- CONFIGURAÇÕES -->
   <section id="settings" class="screen hidden">
-    <div class="panel scroll">
-      <h2>Configurações</h2>
+    <div class="panel scroll sheet">
+      <header class="sheet-head">
+        <h2>Configurações</h2>
+        <button class="icon-btn close" data-close aria-label="Fechar"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+      </header>
+      <div class="groups">
+      <div class="col">
       <div class="group">
         <h3>Som</h3>
         <label class="row">Música<input type="range" id="cfg-musica" min="0" max="1" step="0.05"></label>
@@ -190,8 +206,6 @@
         <h3>Narração</h3>
         <label class="row">Voz da narradora<span class="switch"><input type="checkbox" id="cfg-narracao"><i></i></span></label>
         <label class="row">Volume da voz<input type="range" id="cfg-voz" min="0" max="1" step="0.05"></label>
-        <label class="row col">Voz<select id="cfg-voz-nome"></select></label>
-        <p class="fine" id="cfg-voz-info"></p>
         <button class="ghost" id="btn-voz-teste">Ouvir a narradora</button>
       </div>
       <div class="group">
@@ -202,6 +216,8 @@
           <button data-v="leve">Leve</button>
         </div>
       </div>
+      </div>
+      <div class="col">
       <div class="group" id="conta">
         <h3>Conta</h3>
         <p class="fine conta-user"></p>
@@ -225,7 +241,9 @@
         </div>
         <button class="ghost" id="btn-teste">Iniciar modo de teste</button>
       </div>
-      <button class="cta" data-close>Pronto</button>
+      </div>
+      </div>
+      <div class="sheet-foot"><button class="cta" data-close>Pronto</button></div>
     </div>
   </section>
 

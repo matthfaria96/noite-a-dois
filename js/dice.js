@@ -5,80 +5,94 @@ import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 
 const SERIF = '"Playfair Display", Georgia, serif';
 const ease4 = t => 1 - Math.pow(1 - t, 4);
+const easeInOut = t => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
 
-// Faces: +x:3  -x:4  +y:1  -y:6  +z:2  -z:5  (opostas somam 7)
-export const FACES = [
-  [3, [1, 0, 0], [0, Math.PI / 2, 0]], [4, [-1, 0, 0], [0, -Math.PI / 2, 0]],
-  [1, [0, 1, 0], [-Math.PI / 2, 0, 0]], [6, [0, -1, 0], [Math.PI / 2, 0, 0]],
-  [2, [0, 0, 1], [0, 0, 0]], [5, [0, 0, -1], [0, Math.PI, 0]],
-];
-// rotação (Euler YXZ) que deixa a face `n` virada para cima
-export const TOP = { 1: [0, 0], 6: [Math.PI, 0], 2: [-Math.PI / 2, 0], 5: [Math.PI / 2, 0], 3: [0, Math.PI / 2], 4: [0, -Math.PI / 2] };
+// Romboedro de cristal: um cubo esticado ao longo da diagonal, com duas pontas e 6 faces em losango.
+// Os cantos são levemente lapidados para cintilar. Faces opostas somam 7.
+const STRETCH = 1.65;   // quanto o cristal é esticado entre as pontas
+const INR = 0.45;       // distância do centro até cada face (o dado pousa a essa altura)
+const CHAMFER = 0.13;   // lapidação dos cantos
+const CROWN = 0.085;    // cada face sobe numa pirâmide baixinha: 4 facetas que cintilam
+const AXES = [[1, 0, 0, 1], [-1, 0, 0, 6], [0, 1, 0, 2], [0, -1, 0, 5], [0, 0, 1, 3], [0, 0, -1, 4]];
+
+const SHAPE = (() => {
+  const tilt = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(1, 1, 1).normalize(), new THREE.Vector3(0, 1, 0));
+  const A = new THREE.Matrix4().makeScale(1, STRETCH, 1).multiply(new THREE.Matrix4().makeRotationFromQuaternion(tilt));
+  const N = new THREE.Matrix3().getNormalMatrix(A);
+  const k = INR * new THREE.Vector3(1, 0, 0).applyMatrix3(N).length();
+  A.premultiply(new THREE.Matrix4().makeScale(k, k, k));
+  const tip = new THREE.Vector3(1, 1, 1).applyMatrix4(A);
+  const faces = AXES.map(([x, y, z, n]) => {
+    const normal = new THREE.Vector3(x, y, z).applyMatrix3(N).normalize();
+    const center = new THREE.Vector3(x, y, z).applyMatrix4(A);
+    // o número fica "em pé" apontando para a ponta mais próxima
+    const pole = tip.clone().multiplyScalar(Math.sign(normal.y));
+    const up = pole.sub(center).projectOnPlane(normal).normalize();
+    return { n, normal, center, up };
+  });
+  const pts = [];
+  for (const sx of [-1, 1]) for (const sy of [-1, 1]) for (const sz of [-1, 1]) {
+    const v = [sx, sy, sz];
+    for (let i = 0; i < 3; i++) { const c = v.slice(); c[i] *= 1 - 2 * CHAMFER; pts.push(new THREE.Vector3(...c).applyMatrix4(A)); }
+  }
+  for (const f of faces) pts.push(f.center.clone().addScaledVector(f.normal, CROWN));
+  return { faces, pts, tipY: tip.y };
+})();
+
+// quaternion que leva a face `n` para a direção `dir`, com o número em pé (`up` vira +y, ou -z se a face olhar para cima)
+function faceTo(n, toFront) {
+  const f = SHAPE.faces.find(x => x.n === n);
+  const right = new THREE.Vector3().crossVectors(f.up, f.normal);
+  const q = new THREE.Quaternion().setFromRotationMatrix(new THREE.Matrix4().makeBasis(right, f.up, f.normal).transpose());
+  return toFront ? q : new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), -Math.PI / 2).multiply(q);
+}
+const faceToCamera = n => faceTo(n, true);
+// orientação do dado pousado no tabuleiro com `n` para cima e girado `yaw` em torno do eixo vertical
+export const faceUp = (n, yaw = 0) => new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), yaw).multiply(faceTo(n, false));
 
 function numberTexture(n) {
   const cv = document.createElement('canvas'); cv.width = cv.height = 256;
   const g = cv.getContext('2d');
   g.textAlign = 'center'; g.textBaseline = 'middle';
-  g.font = `600 196px ${SERIF}`;
-  const gr = g.createLinearGradient(0, 40, 0, 230);
+  g.font = `600 176px ${SERIF}`;
+  const gr = g.createLinearGradient(0, 50, 0, 220);
   gr.addColorStop(0, '#fff4c4'); gr.addColorStop(0.4, '#e9bd55'); gr.addColorStop(1, '#9a6410');
   g.fillStyle = gr;
-  g.fillText(String(n), 128, 136);
-  if (n === 6) g.fillRect(92, 236, 72, 9);
+  g.fillText(String(n), 128, 140);
+  if (n === 6) g.fillRect(96, 228, 64, 8);
   const t = new THREE.CanvasTexture(cv);
   t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 4;
   return t;
 }
 
-// Lapidação de joia: cada face vira um octógono e as arestas e cantos ganham várias facetas
-// (todas as permutações de ±a, ±b, ±d). Fica bem cristalino e continua sendo um cubo de 6 faces.
-function gemGeometry(a = 0.5, b = 0.36, d = 0.17) {
-  const pts = [];
-  const perms = [[a, b, d], [a, d, b], [b, a, d], [d, a, b], [b, d, a], [d, b, a]];
-  for (const [x, y, z] of perms) for (const sx of [-1, 1]) for (const sy of [-1, 1]) for (const sz of [-1, 1])
-    pts.push(new THREE.Vector3(sx * x, sy * y, sz * z));
-  return new ConvexGeometry(pts);
-}
-
 export function makeDie(env) {
   const g = new THREE.Group();
   const crystal = new THREE.MeshPhysicalMaterial({
-    color: 0xff3a48, roughness: 0.03, metalness: 0, transmission: 1, thickness: 1.0, ior: 2.1,
-    attenuationColor: new THREE.Color(0xff0a24), attenuationDistance: 1.1,
+    color: 0xff4a58, roughness: 0.02, metalness: 0, transmission: 1, thickness: 1.4, ior: 2.1,
+    attenuationColor: new THREE.Color(0xff1a34), attenuationDistance: 2.4,
     clearcoat: 1, clearcoatRoughness: 0, specularIntensity: 1, specularColor: new THREE.Color(0xffffff),
-    envMap: env, envMapIntensity: 2.6, emissive: 0x3a0006, emissiveIntensity: 0.4, flatShading: true,
+    envMap: env, envMapIntensity: 3.2, emissive: 0x6a0012, emissiveIntensity: 0.55, flatShading: true,
   });
-  const body = new THREE.Mesh(gemGeometry(), crystal);
+  const body = new THREE.Mesh(new ConvexGeometry(SHAPE.pts), crystal);
   body.castShadow = true;
   g.add(body);
   // núcleo: dá profundidade ao vermelho quando visto através do cristal
-  const core = new THREE.Mesh(new THREE.OctahedronGeometry(0.24, 0), new THREE.MeshBasicMaterial({ color: 0xff2440 }));
+  const core = new THREE.Mesh(new THREE.OctahedronGeometry(0.22, 0), new THREE.MeshBasicMaterial({ color: 0xff2440 }));
+  core.scale.y = 1.7;
   g.add(core);
-  for (const [n, nrm, rot] of FACES) {
-    const map = numberTexture(n);
+  for (const f of SHAPE.faces) {
+    const map = numberTexture(f.n);
     // alphaTest + opaco: os números entram no "passe de refração" e aparecem por dentro do cristal
-    const m = new THREE.Mesh(new THREE.PlaneGeometry(0.46, 0.46), new THREE.MeshStandardMaterial({
+    const m = new THREE.Mesh(new THREE.PlaneGeometry(0.44, 0.44), new THREE.MeshStandardMaterial({
       map, alphaTest: 0.5, side: THREE.DoubleSide, metalness: 0.9, roughness: 0.32, envMap: env, envMapIntensity: 1.8,
       emissive: 0xffb437, emissiveMap: map, emissiveIntensity: 0.18,
     }));
-    m.position.set(nrm[0] * 0.503, nrm[1] * 0.503, nrm[2] * 0.503);
-    m.rotation.set(...rot);
-    m.userData = { n, nrm: new THREE.Vector3(...nrm) };
+    m.position.copy(f.center).addScaledVector(f.normal, CROWN + 0.006);
+    m.quaternion.copy(faceToCamera(f.n)).invert();
+    m.userData = { n: f.n };
     g.add(m);
   }
-  g.rotation.order = 'YXZ';
   return g;
-}
-
-// quaternion que vira a face `n` para a câmera (+z) com o número em pé
-function faceToCamera(n) {
-  const [, nrm, rot] = FACES.find(f => f[0] === n);
-  const e = new THREE.Euler(...rot);
-  const normal = new THREE.Vector3(...nrm);
-  const up = new THREE.Vector3(0, 1, 0).applyEuler(e);
-  const right = new THREE.Vector3().crossVectors(up, normal);
-  const m = new THREE.Matrix4().makeBasis(right, up, normal).transpose();
-  return new THREE.Quaternion().setFromRotationMatrix(m);
 }
 
 function starTexture() {
@@ -116,10 +130,12 @@ export class DiceStage {
     const red1 = new THREE.PointLight(0xff1030, 30, 10, 1.4); red1.position.set(-2.4, -0.4, -1.6);
     const red2 = new THREE.PointLight(0xff3a5a, 18, 10, 1.4); red2.position.set(2.2, 1.4, -2);
     const fill = new THREE.HemisphereLight(0x6a4080, 0x200008, 0.5);
-    this.scene.add(key, red1, red2, fill);
+    // luz de contorno por trás: acende as arestas e as pontas do cristal
+    const rim = new THREE.SpotLight(0xffd6e0, 60, 12, 0.6, 0.5, 1); rim.position.set(-1.2, 2.2, -3);
+    this.scene.add(key, red1, red2, fill, rim);
 
     this.die = makeDie(this.env);
-    this.die.scale.setScalar(1.15);
+    this.die.scale.setScalar(0.62);
     this.scene.add(this.die);
 
     // estúdio infinito: esfera escura com brilho carmim na altura do dado
@@ -158,6 +174,24 @@ export class DiceStage {
     this.halo = new THREE.Mesh(new THREE.RingGeometry(1.25, 1.28, 96), new THREE.MeshBasicMaterial({ color: 0xffc0b0, transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false }));
     this.halo.position.set(0, 0.05, -0.9);
     this.scene.add(this.halo);
+    // feixe de luz que desce do alto: dois planos cruzados com degradê (barato, sem pós-processamento)
+    const bmcv = document.createElement('canvas'); bmcv.width = 64; bmcv.height = 256;
+    const bmg = bmcv.getContext('2d');
+    const bx = bmg.createLinearGradient(0, 0, 64, 0);
+    bx.addColorStop(0, 'rgba(255,190,200,0)'); bx.addColorStop(0.5, 'rgba(255,225,215,1)'); bx.addColorStop(1, 'rgba(255,190,200,0)');
+    bmg.fillStyle = bx; bmg.fillRect(0, 0, 64, 256);
+    bmg.globalCompositeOperation = 'destination-in';
+    const by = bmg.createLinearGradient(0, 0, 0, 256);
+    by.addColorStop(0, 'rgba(0,0,0,0)'); by.addColorStop(0.35, 'rgba(0,0,0,.9)'); by.addColorStop(0.8, 'rgba(0,0,0,.5)'); by.addColorStop(1, 'rgba(0,0,0,0)');
+    bmg.fillStyle = by; bmg.fillRect(0, 0, 64, 256);
+    const beamMat = new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(bmcv), transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide });
+    this.beam = new THREE.Group();
+    for (const ry of [0, Math.PI / 2]) {
+      const pl = new THREE.Mesh(new THREE.PlaneGeometry(1.5, 6), beamMat); pl.rotation.y = ry; this.beam.add(pl);
+    }
+    this.beam.position.set(0, 2.2, -0.4);
+    this.beam.userData.mat = beamMat;
+    this.scene.add(this.beam);
     const warm = new THREE.PointLight(0xffb08a, 14, 8, 1.4); warm.position.set(0.8, 1.6, 2.2);
     this.scene.add(warm);
 
@@ -174,6 +208,10 @@ export class DiceStage {
 
     window.addEventListener('resize', () => this.resize());
     this.resize();
+    // pré-aquece os shaders e o passe de refração quando o navegador estiver ocioso,
+    // para a primeira rolagem não travar
+    const warmup = () => { this.renderer.compile(this.scene, this.camera); this.renderer.render(this.scene, this.camera); this.renderer.clear(); };
+    (window.requestIdleCallback ?? (f => setTimeout(f, 1500)))(warmup, { timeout: 4000 });
   }
 
   resize() {
@@ -199,40 +237,54 @@ export class DiceStage {
       const caption = L.querySelector('.dice-caption');
       caption.classList.remove('show');
 
-      const qT = new THREE.Quaternion().setFromEuler(new THREE.Euler(0.16, -0.22, 0, 'YXZ')).multiply(faceToCamera(value));
-      const axis = new THREE.Vector3(Math.random() - 0.5, Math.random() - 0.5, Math.random() - 0.5).normalize();
-      const axis2 = new THREE.Vector3(Math.random() - 0.5, 1, Math.random() - 0.5).normalize();
-      const spin = Math.PI * 2 * (5 + Math.random() * 2);
-      const T = 2600 / this.speed, HOLD = 1300 / this.speed, t0 = performance.now();
+      // pousa levemente inclinado, mostrando as facetas e a ponta de cima
+      const qT = new THREE.Quaternion().setFromEuler(new THREE.Euler(0.2, -0.36, 0.05, 'YXZ')).multiply(faceToCamera(value));
+      const axis = new THREE.Vector3(Math.random() - 0.5, 1.6, Math.random() - 0.5).normalize(); // gira mais em torno do próprio eixo, como um pião
+      const axis2 = new THREE.Vector3(1, Math.random() - 0.5, Math.random() - 0.5).normalize();
+      const spin = Math.PI * 2 * (2.5 + Math.random());
+      const T = 2900 / this.speed, HOLD = 1400 / this.speed, t0 = performance.now();
       let landed = false;
       const qa = new THREE.Quaternion(), qb = new THREE.Quaternion();
+      const cam = this.camera, beamMat = this.beam.userData.mat;
 
       const frame = () => {
         const now = performance.now();
         const t = Math.min(1, (now - t0) / T);
-        const e = ease4(t);
-        // gira forte no começo e desacelera até parar exatamente na face sorteada
+        const e = easeInOut(t);
+        const tl = landed ? (now - t0 - T) / 1000 : 0; // segundos desde o pouso
+        // desce flutuando dentro do feixe, girando devagar, e assenta exatamente na face sorteada
         qa.setFromAxisAngle(axis, spin * (1 - e));
-        qb.setFromAxisAngle(axis2, spin * 0.35 * (1 - e) * (1 - e));
+        qb.setFromAxisAngle(axis2, Math.sin(t * Math.PI) * 0.5 * (1 - e));
         this.die.quaternion.copy(qT).multiply(qa).multiply(qb);
-        // entra flutuando de cima e assenta
-        const fall = ease4(Math.min(1, t * 1.25));
-        this.die.position.set(0, 2.6 * (1 - fall) + Math.sin(now / 600) * 0.03 * fall, -1.5 * (1 - fall));
-        const sc = 0.55 + 0.6 * fall;
-        this.die.scale.setScalar(sc * (t >= 1 ? 1 + Math.max(0, 0.06 - (now - t0 - T) / 3000) : 1));
+        const fall = ease4(Math.min(1, t * 1.1));
+        const bob = Math.sin(now / 700) * 0.035 * fall;
+        this.die.position.set(0, 2.4 * (1 - fall) + bob + (landed ? Math.min(0.12, tl * 0.4) * Math.max(0, 1 - tl) : 0), -0.8 * (1 - fall));
+        // "respiro" ao pousar
+        const pulse = landed ? Math.exp(-tl * 4) * 0.08 : 0;
+        this.die.scale.setScalar((0.4 + 0.22 * fall) * (1 + pulse));
+        // a câmera se aproxima devagar
+        cam.position.z = 4.6 - 0.5 * easeInOut(Math.min(1, (now - t0) / (T + HOLD)));
+        // feixe: acende, e depois do pouso se recolhe
+        beamMat.opacity = Math.min(1, (now - t0) / 500) * (landed ? Math.max(0.15, 1 - tl * 1.4) : 1) * 0.55;
+        this.beam.rotation.y = now / 5000;
         this.pool.material.opacity = 0.7 * fall;
-        this.aura.material.opacity = (0.75 + Math.sin(now / 700) * 0.12) * fall;
+        this.pool.scale.setScalar(0.6 + fall * 0.5 + pulse * 3);
+        this.aura.material.opacity = (0.7 + Math.sin(now / 700) * 0.12 + pulse * 3) * fall;
         this.aura.scale.setScalar(4 + Math.sin(now / 900) * 0.2);
-        this.halo.material.opacity = 0.16 * fall;
+        // anel de luz: aro discreto que vira uma onda ao pousar
+        const wave = landed ? Math.min(1, tl / 0.9) : 0;
+        this.halo.material.opacity = landed ? 0.16 + 0.7 * (1 - wave) * (1 - wave) : 0.16 * fall;
+        this.halo.scale.setScalar(landed ? 1 + ease4(wave) * 1.6 : 1 + Math.sin(now / 800) * 0.03);
         this.halo.rotation.z = now / 4000;
-        this.halo.scale.setScalar(1 + Math.sin(now / 800) * 0.03);
-        this.pool.scale.setScalar(0.6 + fall * 0.5);
+        // brilhos sobem em espiral em volta do cristal
         this.sparks.forEach(s => {
           const d = s.userData;
-          d.a += 0.004 * d.sp * (1 + (1 - e) * 4);
-          s.position.set(Math.cos(d.a) * d.r, d.y + Math.sin(now / 900 + d.ph) * 0.1, Math.sin(d.a) * d.r * 0.6);
-          s.material.opacity = Math.max(0, Math.sin(now / 260 + d.ph)) * 0.8 * fall;
-          s.scale.setScalar(0.06 + Math.max(0, Math.sin(now / 260 + d.ph)) * 0.08);
+          d.a += 0.006 * d.sp * (1 + (1 - e) * 3);
+          d.y += 0.004 * d.sp; if (d.y > 1.2) d.y = -1.1;
+          s.position.set(Math.cos(d.a) * d.r, d.y, Math.sin(d.a) * d.r * 0.6);
+          const tw = Math.max(0, Math.sin(now / 260 + d.ph));
+          s.material.opacity = tw * 0.8 * fall * Math.min(1, (1.2 - d.y) * 2);
+          s.scale.setScalar(0.05 + tw * 0.08 + pulse);
         });
         if (t >= 1 && !landed) {
           landed = true;
@@ -241,10 +293,10 @@ export class DiceStage {
           onLand?.();
         }
         if (landed) { // brilho que atravessa o cristal ao pousar
-          const g = Math.min(1, (now - t0 - T) / 700);
-          this.glint.position.set(-0.6 + g * 1.2, 0.55 - g * 0.5, 0.75);
-          this.glint.material.opacity = Math.sin(g * Math.PI) * 0.7;
-          this.glint.scale.setScalar(0.15 + Math.sin(g * Math.PI) * 0.18);
+          const g = Math.min(1, tl / 0.7);
+          this.glint.position.set(-0.5 + g, 0.75 - g * 0.6, 0.75);
+          this.glint.material.opacity = Math.sin(g * Math.PI) * 0.8;
+          this.glint.scale.setScalar(0.15 + Math.sin(g * Math.PI) * 0.22);
         }
         this.renderer.render(this.scene, this.camera);
         if (now - t0 < T + HOLD) requestAnimationFrame(frame);

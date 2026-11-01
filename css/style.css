@@ -286,3 +286,142 @@ select option { color: #000; }
 .side small { display: block; font-size: 10px; font-weight: 600; letter-spacing: .14em; text-transform: uppercase; color: var(--ink-2); }
 .side b { display: block; font: italic 600 19px/1.15 var(--serif); color: #fff; text-shadow: 0 0 14px var(--c); }
 @media (max-width: 640px) { .side { top: 40%; padding: 8px 12px; } .side b { font-size: 16px; } .side-ico { width: 32px; height: 32px; } }
+
+/* =====================================================================
+   Layout responsivo das telas
+   celular: folhas de tela cheia, com o botão principal preso embaixo
+   desktop: painéis largos em colunas, sem espaço desperdiçado
+   ===================================================================== */
+.hero, .form { display: flex; flex-direction: column; gap: 16px; }
+.sheet-head { display: flex; align-items: center; justify-content: center; position: relative; }
+.sheet-head .close { position: absolute; right: 0; width: 38px; height: 38px; }
+.groups, .groups > .col { display: flex; flex-direction: column; gap: 14px; }
+.sheet-foot { display: flex; flex-direction: column; }
+#menu .panel { gap: 12px; }
+
+/* tablet e telas médias: um pouco mais de largura e grupos em duas colunas */
+@media (min-width: 641px) {
+  .screen { padding: 28px; }
+  .sheet { width: min(760px, 100%); }
+  .groups { display: grid; grid-template-columns: repeat(auto-fit, minmax(290px, 1fr)); align-items: start; gap: 16px; }
+  /* cabeçalho e rodapé ficam visíveis enquanto o conteúdo rola */
+  .panel.sheet { padding-top: 0; padding-bottom: 0; }
+  .sheet-head, .sheet-foot, .rules-panel > h2 { position: sticky; z-index: 3; margin: 0 -28px; padding: 22px 28px 12px;
+    background: linear-gradient(rgba(26, 6, 24, .72), rgba(26, 6, 24, .5)); -webkit-backdrop-filter: var(--blur); backdrop-filter: var(--blur); }
+  .sheet-head, .rules-panel > h2 { top: 0; }
+  .sheet-foot { bottom: 0; padding: 14px 28px 22px; flex-direction: row; justify-content: flex-end; }
+  .sheet-foot .cta { min-width: 220px; }
+  .panel.sheet { padding-left: 28px; padding-right: 28px; }
+}
+
+/* desktop */
+@media (min-width: 900px) {
+  .screen { padding: 40px; }
+  .panel.duo { width: min(1080px, 100%); display: grid; grid-template-columns: 1.1fr 1fr; align-items: center; gap: 0; padding: 0; }
+  .panel.duo .hero { padding: 56px 48px; gap: 22px; border-right: 1px solid rgba(255,255,255,.12); height: 100%; justify-content: center; }
+  .panel.duo .form { padding: 52px 52px 44px; gap: 20px; }
+  .panel.duo .logo .l1 { font-size: 112px; } .panel.duo .logo .l2 { font-size: 82px; margin-top: -10px; }
+  .panel.duo .logo.small .l1 { font-size: 88px; } .panel.duo .logo.small .l2 { font-size: 64px; }
+  .panel.duo .tag { font-size: 19px; max-width: 30ch; margin: 0 auto; }
+  .panel.duo .form h2 { text-align: left; }
+  .panel.duo .gear { top: 20px; right: 20px; }
+  .names input { padding: 14px 16px; font-size: 17px; }
+  .seg button { padding: 11px 6px; font-size: 15px; }
+  .cta { padding: 18px; font-size: 18px; }
+
+  .sheet { width: min(1100px, 100%); max-height: min(88vh, 880px); }
+  .groups { gap: 18px; padding: 6px 0 4px; }
+  .groups > .col { gap: 18px; }
+  .group { padding: 20px; gap: 14px; }
+  .group h3 { font-size: 22px; }
+  .row { font-size: 15px; }
+  #settings h2, .rules-panel > h2 { font-size: 38px; }
+
+  .rules-panel { width: min(1000px, 100%); }
+  .rules-panel ol { columns: 2; column-gap: 48px; font-size: 16px; padding: 8px 0 8px 22px; }
+  .rules-panel ol > li { break-inside: avoid; margin-bottom: 12px; }
+
+  #menu .panel { width: min(460px, 100%); padding: 34px 30px; }
+  .card { width: min(520px, 100%); }
+  .card-head .ico { width: 88px; height: 88px; }
+  .card-head .cat { font-size: 36px; }
+  .card-text { font-size: 30px; min-height: 160px; padding: 14px 40px; }
+  .card-actions { padding: 16px 28px 28px; }
+  .panel.wide { width: min(1000px, 100%); padding: 40px 44px; }
+  .wish { padding: 28px 22px; font-size: 19px; }
+}
+
+/* celular: cada tela ocupa o aparelho inteiro, como uma folha do iOS */
+@media (max-width: 640px) {
+  .screen { padding: 0; place-items: stretch; }
+  .screen > .panel { width: 100%; min-height: 100%; max-height: none; border-radius: 0; border: 0; justify-content: center;
+    padding: max(22px, calc(env(safe-area-inset-top) + 14px)) 20px max(22px, calc(env(safe-area-inset-bottom) + 14px));
+    background-color: rgba(14, 3, 14, .35); animation: fade .4s ease; }
+  .screen > .panel::after { display: none; }
+  .panel .gear { top: max(14px, calc(env(safe-area-inset-top) + 6px)); }
+  /* telas com rolagem: o conteúdo rola e o botão principal fica preso embaixo */
+  .screen > .panel.sheet { height: 100%; justify-content: flex-start; padding-top: 0; padding-bottom: 0; }
+  .sheet-head, .rules-panel > h2 { position: sticky; top: 0; z-index: 3; margin: 0 -20px; padding: max(16px, calc(env(safe-area-inset-top) + 8px)) 20px 12px;
+    background: rgba(22, 5, 20, .6); -webkit-backdrop-filter: var(--blur); backdrop-filter: var(--blur); }
+  .sheet-head .close { right: 0; }
+  .sheet-foot { position: sticky; bottom: 0; z-index: 3; margin: auto -20px 0; padding: 14px 20px max(16px, calc(env(safe-area-inset-bottom) + 8px));
+    background: linear-gradient(rgba(22, 5, 20, 0), rgba(22, 5, 20, .75) 35%); }
+  /* pausa: folha que sobe de baixo, no estilo iOS */
+  #menu { place-items: end stretch; }
+  #menu .panel { min-height: 0; border-radius: var(--r-lg) var(--r-lg) 0 0; animation: rise .5s var(--ease); }
+  .card { width: 100%; }
+  .card-actions .cta, .card-actions .ghost { padding: 16px; }
+}
+
+/* =====================================================================
+   Abertura e transições
+   ===================================================================== */
+#splash { position: fixed; inset: 0; z-index: 50; display: grid; place-content: center; justify-items: center; gap: 34px;
+  background: radial-gradient(ellipse 70% 60% at 50% 45%, #3a0c26 0%, #16040f 55%, #08020a 100%);
+  transition: opacity 1s ease, filter 1s ease, transform 1.2s var(--ease); }
+body.ready #splash { opacity: 0; filter: blur(14px); transform: scale(1.06); pointer-events: none; }
+.splash-logo { display: flex; flex-direction: column; align-items: center; line-height: .9; animation: splashIn 1.4s var(--ease) both; }
+.splash-logo .l1 { font: italic 800 78px var(--serif); letter-spacing: -.02em;
+  background: linear-gradient(180deg, #fff, #ffe3ea 45%, #ff9ab0); -webkit-background-clip: text; background-clip: text; color: transparent;
+  filter: drop-shadow(0 2px 22px rgba(255, 80, 120, .5)); }
+.splash-logo .l2 { font: 400 58px var(--script); margin-top: -6px; color: #fff;
+  text-shadow: 0 0 14px rgba(255, 40, 90, 1), 0 0 34px rgba(255, 20, 70, .8); animation: glow 2.4s ease-in-out infinite; }
+.splash-bar { width: 140px; height: 2px; border-radius: 2px; overflow: hidden; background: rgba(255,255,255,.1); animation: fade 1s .5s both; }
+.splash-bar i { display: block; width: 40%; height: 100%; border-radius: 2px;
+  background: linear-gradient(90deg, transparent, #ff6a8a, #ffd0dc, #ff6a8a, transparent); animation: shimmer 1.4s ease-in-out infinite; }
+@keyframes splashIn { from { opacity: 0; transform: translateY(14px) scale(.96); filter: blur(10px) } }
+@keyframes glow { 50% { text-shadow: 0 0 20px rgba(255, 40, 90, 1), 0 0 54px rgba(255, 20, 70, .9) } }
+@keyframes shimmer { from { transform: translateX(-110%) } to { transform: translateX(260%) } }
+/* a cena surge da escuridão quando está pronta */
+#stage { opacity: 0; transition: opacity 1.6s ease .2s; }
+body.ready #stage { opacity: 1; }
+
+/* saída das telas (a entrada já usa fade + rise) */
+.screen.leaving { animation: fadeOut .28s ease forwards; pointer-events: none; }
+.screen.leaving > .panel, .screen.leaving > .card { animation: sink .28s ease forwards; }
+@keyframes fadeOut { to { opacity: 0 } }
+@keyframes sink { to { transform: translateY(14px) scale(.98); opacity: 0; filter: blur(4px) } }
+
+/* número do dado: surge de dentro da luz */
+.dice-caption { filter: blur(10px); letter-spacing: .2em; transition: opacity .6s ease, transform .8s var(--ease), filter .7s ease, letter-spacing .9s var(--ease); }
+.dice-caption.show { filter: none; letter-spacing: 0; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .2s !important; }
+}
+
+/* painéis grandes: um pouco mais de tinta para o texto não brigar com o tabuleiro */
+@media (min-width: 641px) {
+  .panel.duo, .panel.sheet, .panel.wide { background-color: rgba(18, 4, 16, .5); }
+  .groups { grid-template-columns: 1fr 1fr; }
+}
+@media (min-width: 900px) {
+  .sheet:not(.rules-panel) { width: min(980px, 100%); }
+}
+/* categorias em "Como jogar": ícone à esquerda e o texto corre livre */
+.cats li { display: block; position: relative; padding-left: 38px; min-height: 28px; line-height: 1.5; }
+.cats .ci { position: absolute; left: 0; top: 0; }
+@media (max-width: 640px) {
+  /* a carta continua sendo uma carta: centralizada, com respiro em volta */
+  #card { place-items: center; padding: max(16px, env(safe-area-inset-top)) 16px max(16px, env(safe-area-inset-bottom)); }
+}

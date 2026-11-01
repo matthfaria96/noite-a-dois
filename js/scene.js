@@ -9,7 +9,7 @@ import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js'
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 import { CATEGORIAS, FASES } from './data.js';
 import { drawIcon } from './icons.js';
-import { makeDie, TOP } from './dice.js';
+import { makeDie, faceUp } from './dice.js';
 
 const PIECE_COLORS = { ele: 0x8a9cff, ela: 0xff7ab0 };
 const FOG = 0x2a1238;   // névoa rosa-violeta
@@ -653,10 +653,9 @@ export class Board3D {
     const idx = this.pieces[who]?.userData.idx ?? 0;
     const d = this.dirs[idx], o = this.outward[idx];
     const p = this.path[idx].clone().addScaledVector(d, 1.3).addScaledVector(o, 0.75);
-    p.y += 0.36;
+    p.y += 0.4; // o dado se apoia na ponta da lapidação da face de baixo
     this.die.position.copy(p);
-    const [rx, rz] = TOP[value];
-    this.die.rotation.set(rx, Math.random() * TAU, rz);
+    this.die.quaternion.copy(faceUp(value, Math.random() * TAU));
     this.die.visible = true;
   }
 

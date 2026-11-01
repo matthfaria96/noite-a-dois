@@ -5,11 +5,11 @@ import { FASES, CATEGORIAS, VERDADE, DESAFIO, PENA, ARMADILHA, SORTE, DESEJOS } 
 import { iconURL } from './icons.js';
 import { $, wait, rnd, pick, shuffle, store } from './util.js';
 import { GameAudio } from './audio.js';
-import { Narrator, FALAS } from './voice.js';
+import { Narrator } from './voice.js';
 import { auth } from './auth.js';
 
 // ------------------------------------------------------------ configurações (salvas no aparelho e na nuvem)
-const CFG_DEFAULT = { musica: 0.6, efeitos: 0.7, voz: 1, narracao: true, vozNome: '', graficos: 'auto', dur: 40, start: 'ela', testeVel: 2 };
+const CFG_DEFAULT = { musica: 0.6, efeitos: 0.7, voz: 1, narracao: true, graficos: 'auto', dur: 40, start: 'ela', testeVel: 2 };
 const cfg = { ...CFG_DEFAULT, ...store.get('cfg', {}) };
 let saveT;
 function saveCfg() {
@@ -25,7 +25,6 @@ function applyCfg() {
   audio.setVolume('efeitos', cfg.efeitos);
   voice.enabled = cfg.narracao;
   voice.volume = cfg.voz;
-  voice.voiceName = cfg.vozNome;
 }
 applyCfg();
 
@@ -64,7 +63,16 @@ const G = { N: cfg.dur, starter: cfg.start, players: {}, turn: 'ela', busy: fals
 const TESTE = { on: false, vel: 1 };
 const other = g => (g === 'ele' ? 'ela' : 'ele');
 const pause = ms => wait(ms / (TESTE.on ? TESTE.vel : 1));
-const say = (text, key) => (TESTE.on && TESTE.vel > 1 ? Promise.resolve() : voice.say(text, key));
+const say = key => (TESTE.on && TESTE.vel > 1 ? Promise.resolve() : voice.say(key));
+// reações espontâneas da narradora: só às vezes, e nunca a mesma duas vezes seguidas
+const REACOES = ['uau', 'gostosinho', 'delicia', 'eu-amo', 'olha-so', 'assim-gosto', 'continua'];
+let ultimaReacao;
+function reage(chance = 0.4, opcoes = REACOES) {
+  if (Math.random() > chance) return;
+  const k = pick(opcoes.filter(o => o !== ultimaReacao));
+  ultimaReacao = k;
+  say(`reacao-${k}`);
+}
 
 function fill(text, who) {
   const me = G.players[who], par = G.players[other(who)];
@@ -76,9 +84,17 @@ function fill(text, who) {
 }
 
 // ------------------------------------------------------------ UI helpers
-const show = id => $(id).classList.remove('hidden');
-const hide = id => $(id).classList.add('hidden');
-const visible = id => !$(id).classList.contains('hidden');
+// telas entram e saem com transição: `leaving` toca a saída e só depois esconde
+const showEl = el => { el.classList.remove('leaving', 'hidden'); };
+const hideEl = el => {
+  if (el.classList.contains('hidden') || el.classList.contains('leaving')) return;
+  if (!el.classList.contains('screen') || matchMedia('(prefers-reduced-motion: reduce)').matches) return el.classList.add('hidden');
+  el.classList.add('leaving');
+  setTimeout(() => { if (el.classList.contains('leaving')) el.classList.replace('leaving', 'hidden'); }, 280);
+};
+const show = id => showEl($(id));
+const hide = id => hideEl($(id));
+const visible = id => { const c = $(id).classList; return !c.contains('hidden') && !c.contains('leaving'); };
 let toastT;
 function toast(msg, ms = 2200) {
   const t = $('#toast'); t.textContent = msg; show('#toast');
@@ -156,13 +172,13 @@ function showCard({ cat, text, secs = 0, who, fase, refusable = true, falar = tr
       };
     }
     let autoT;
-    const done = r => { clearInterval(iv); clearTimeout(autoT); hide('#card'); voice.stop(); resolve(r); };
+    const done = r => { clearInterval(iv); clearTimeout(autoT); hide('#card'); voice.stop(); if (r === 'feito' && falar) reage(); resolve(r); };
     $('#btn-done').onclick = () => done('feito');
     refuse.onclick = () => done('recusou');
     card.style.animation = 'none'; void card.offsetWidth; card.style.animation = '';
     show('#card');
     audio.card();
-    if (falar) say(`${cat.nome}. ${text}`);
+    if (falar) say(cat.nome.toLowerCase());
     if (TESTE.on) autoT = setTimeout(() => done(refusable && Math.random() < 0.12 ? 'recusou' : 'feito'), 1800 / TESTE.vel);
   });
 }
@@ -210,8 +226,9 @@ function startGame(teste = false) {
   $('#test-badge b').textContent = `Modo de teste · ${TESTE.vel}×`;
   updateHUD();
   toast(`${G.players[G.turn].name} começa a noite…`);
-  say(FALAS['boas-vindas'], 'boas-vindas');
-  say(`${G.players[G.turn].name}, você começa.`);
+  say('inicio');
+  say('boas-vindas');
+  say('comeca');
   autoNext();
 }
 
@@ -226,7 +243,7 @@ async function move(who, to) {
   updateHUD();
   // entrou numa fase nova: a narradora anuncia e a música esquenta
   const f = G.tiles[p.pos].fase;
-  if (f > G.fase) { G.fase = f; audio.setPhase(f); say(FALAS[`fase-${f + 1}`], `fase-${f + 1}`); }
+  if (f > G.fase) { G.fase = f; audio.setPhase(f); say(`fase-${f + 1}`); }
 }
 
 async function roll() {
@@ -241,6 +258,7 @@ async function roll() {
   await dice.roll(v, () => audio.land());
   board.paused = false;
   board.placeDie(v, who);
+  if (v >= 5) reage(0.6, ['uau', 'olha-so']);
   await pause(250);
   await move(who, p.pos + v);
   if (p.pos >= G.N - 1) return finish(who);
@@ -255,7 +273,7 @@ async function refusePenalty(who) {
   const tipo = G.tiles[p.pos].tipo in CATEGORIAS ? G.tiles[p.pos].tipo : 'armadilha';
   if (p.passe) { p.passe--; sides(tipo, 'Usou o passe livre', { titulo: 'Recusou', sub: p.name, subR: 'Sem penalidade' }); updateHUD(); return; }
   sides(tipo, 'Volta 2 casas', { titulo: 'Recusou', sub: p.name, subR: 'Penalidade' });
-  say(FALAS.recusou, 'recusou');
+  say('recusou');
   audio.trap();
   await move(who, p.pos - 2);
 }
@@ -281,7 +299,7 @@ async function resolveTile(who) {
   if (tile.tipo === 'armadilha') {
     audio.trap();
     const card = draw('armadilha', ARMADILHA, who);
-    say(FALAS.armadilha, 'armadilha');
+    say('armadilha');
     const text = fill(card.t, who);
     const r = await showCard({ cat, text, who, fase: f, falar: false });
     if (r === 'recusou') { await refusePenalty(who); return false; }
@@ -301,7 +319,7 @@ async function resolveTile(who) {
 
   if (tile.tipo === 'sorte') {
     const card = draw('sorte', SORTE, who);
-    say(FALAS.sorte, 'sorte');
+    say('sorte');
     await showCard({ cat, text: fill(card.t, who), who, fase: f, refusable: false, falar: false });
     if (card.e === 'avancar') { sides('sorte', `Avança ${card.n} casa${card.n > 1 ? 's' : ''}`, { sub: 'Efeito', subR: p.name }); await move(who, p.pos + card.n); }
     if (card.e === 'passe') { p.passe++; updateHUD(); sides('sorte', 'Ganhou um passe livre', { sub: 'Efeito', subR: p.name }); }
@@ -322,8 +340,7 @@ function endTurn(again) {
   board.focus(next);
   G.busy = false;
   updateHUD();
-  const n = G.players[next].name;
-  say(pick([`Sua vez, ${n}.`, `${n}… é com você.`, `Role o dado, ${n}.`, `Agora é você, ${n}.`]));
+  say(pick(['vez-1', 'vez-2', 'vez-3', 'vez-4']));
   autoNext();
 }
 
@@ -331,8 +348,9 @@ function finish(winner) {
   audio.win();
   const w = G.players[winner], l = G.players[other(winner)];
   updateHUD();
-  say(FALAS.pico, 'pico');
-  say(`${w.name}… ${FALAS.desejo}`);
+  say(winner === 'ele' ? 'vencedor' : 'vencedora');
+  say('pico');
+  say('desejo');
   if (!TESTE.on) {
     const st = store.get('stats', { partidas: 0, ele: 0, ela: 0 });
     st.partidas++; st[winner]++;
@@ -352,7 +370,6 @@ function finish(winner) {
       : `“${t}”`;
     show('#wish-chosen');
     audio.card();
-    if (!TESTE.on) say(t);
   };
   opts.forEach((t, i) => {
     const b = document.createElement('button');
@@ -390,15 +407,7 @@ bindRange('#cfg-efeitos', 'efeitos', () => audio.hop());
 bindRange('#cfg-voz', 'voz');
 $('#cfg-narracao').checked = cfg.narracao;
 $('#cfg-narracao').onchange = e => { cfg.narracao = e.target.checked; applyCfg(); saveCfg(); };
-function fillVoices() {
-  const sel = $('#cfg-voz-nome'), vs = voice.voices();
-  sel.innerHTML = '<option value="">Automática (a mais suave)</option>' + vs.map(v => `<option>${v.name}</option>`).join('');
-  sel.value = cfg.vozNome;
-  $('#cfg-voz-info').textContent = vs.length ? '' : 'Este navegador não oferece vozes em português.';
-}
-$('#cfg-voz-nome').onchange = e => { cfg.vozNome = e.target.value; applyCfg(); saveCfg(); };
-window.speechSynthesis?.addEventListener?.('voiceschanged', fillVoices);
-$('#btn-voz-teste').onclick = () => { voice.stop(); voice.unlock(); const was = voice.enabled; voice.enabled = true; voice.say(FALAS['boas-vindas'], 'boas-vindas').then(() => { voice.enabled = was; }); };
+$('#btn-voz-teste').onclick = () => { voice.stop(); const was = voice.enabled; voice.enabled = true; voice.say('boas-vindas').then(() => { voice.enabled = was; }); };
 
 function renderConta() {
   const box = $('#conta');
@@ -411,7 +420,7 @@ function renderConta() {
   box.querySelector('#btn-sair').classList.toggle('hidden', !logged);
   box.querySelector('#btn-apagar').classList.toggle('hidden', auth.cloud || !auth.hasAccount());
 }
-function openSettings() { fillVoices(); renderConta(); hide('#menu'); show('#settings'); }
+function openSettings() { renderConta(); hide('#menu'); show('#settings'); }
 $('#btn-settings').onclick = openSettings;
 $('#btn-settings-menu').onclick = openSettings;
 $('#btn-proteger').onclick = () => { hide('#settings'); openLock('criar'); };
@@ -507,7 +516,7 @@ $('#btn-map').onclick = () => {
   board.setMode(on ? 'overview' : 'follow');
   $('#btn-map').classList.toggle('on', on);
 };
-document.querySelectorAll('[data-close]').forEach(b => b.onclick = () => b.closest('.screen').classList.add('hidden'));
+document.querySelectorAll('[data-close]').forEach(b => b.onclick = () => hideEl(b.closest('.screen')));
 window.addEventListener('keydown', e => { if (e.code === 'Space' && visible('#hud') && !visible('#card') && !TESTE.on) roll(); });
 // o áudio só pode começar depois de um toque
 window.addEventListener('pointerdown', () => { audio.start().then(applyCfg); voice.unlock(); }, { once: true });
@@ -518,7 +527,16 @@ Promise.all(['italic 700 40px "Playfair Display"', '700 40px "Playfair Display"'
   G.tiles = generateBoard(G.N);
   board.build(G.tiles);
   board.setMode('orbit');
+  // espera o tabuleiro desenhar os primeiros quadros e dissolve a abertura
+  requestAnimationFrame(() => requestAnimationFrame(ready));
 });
+// a abertura sai de qualquer jeito, mesmo se o 3D demorar ou falhar
+function ready() {
+  if (document.body.classList.contains('ready')) return;
+  document.body.classList.add('ready');
+  setTimeout(() => $('#splash')?.remove(), 1200);
+}
+setTimeout(ready, 8000);
 auth.init().then(() => {
   if (auth.isLogged()) { if (auth.cloud) afterLogin(); else show('#setup'); }
   else openLock(auth.cloud && !auth.session ? 'entrar' : 'entrar');
