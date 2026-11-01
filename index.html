@@ -130,7 +130,7 @@
   <!-- HUD -->
   <div id="hud" class="hidden">
     <div class="topbar">
-      <div class="chip ele" id="chip-ele"><span class="sym">♂</span><span class="nm"></span><span class="pos"></span></div>
+      <div class="chip ele" id="chip-ele"><span class="sym" aria-label="Ele"><svg class="gen" viewBox="0 0 24 24" aria-hidden="true"><circle cx="10" cy="14" r="5.5"/><path d="M14 10 19.5 4.5M14.5 4.5h5v5"/></svg></span><span class="nm"></span><span class="pos"></span></div>
       <div class="mid-btns">
         <button class="icon-btn" id="btn-menu" aria-label="Menu">
           <svg viewBox="0 0 24 24"><path d="M5 8h14M5 12h14M5 16h14"/></svg>
@@ -139,7 +139,7 @@
           <svg viewBox="0 0 24 24"><path d="M9 4 3 6.5v13L9 17l6 2.5 6-2.5V4l-6 2.5L9 4Zm0 0v13m6-10.5v13"/></svg>
         </button>
       </div>
-      <div class="chip ela" id="chip-ela"><span class="sym">♀</span><span class="nm"></span><span class="pos"></span></div>
+      <div class="chip ela" id="chip-ela"><span class="sym" aria-label="Ela"><svg class="gen" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="9" r="5.5"/><path d="M12 14.5V21M9 18h6"/></svg></span><span class="nm"></span><span class="pos"></span></div>
     </div>
     <div class="track">
       <div class="track-bar"><i class="dot ele" id="dot-ele"></i><i class="dot ela" id="dot-ela"></i></div>
@@ -175,8 +175,8 @@
       </div>
       <div class="form">
       <div class="names">
-        <label class="ele"><span>♂ Ele</span><input id="name-ele" maxlength="14" placeholder="Nome dele"></label>
-        <label class="ela"><span>♀ Ela</span><input id="name-ela" maxlength="14" placeholder="Nome dela"></label>
+        <label class="ele"><span><svg class="gen" viewBox="0 0 24 24" aria-hidden="true"><circle cx="10" cy="14" r="5.5"/><path d="M14 10 19.5 4.5M14.5 4.5h5v5"/></svg>Ele</span><input id="name-ele" maxlength="14" placeholder="Nome dele"></label>
+        <label class="ela"><span><svg class="gen" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="9" r="5.5"/><path d="M12 14.5V21M9 18h6"/></svg>Ela</span><input id="name-ela" maxlength="14" placeholder="Nome dela"></label>
       </div>
       <div class="opt">
         <span>Duração</span>
@@ -218,7 +218,7 @@
     <div class="panel scroll sheet rules-panel">
       <h2>Como jogar</h2>
       <ol>
-        <li>Cada um tem a sua peça: <b class="c-ele">♂ Ele</b> e <b class="c-ela">♀ Ela</b>.</li>
+        <li>Cada um tem a sua peça: <b class="c-ele"><svg class="gen" viewBox="0 0 24 24" aria-hidden="true"><circle cx="10" cy="14" r="5.5"/><path d="M14 10 19.5 4.5M14.5 4.5h5v5"/></svg>Ele</b> e <b class="c-ela"><svg class="gen" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="9" r="5.5"/><path d="M12 14.5V21M9 18h6"/></svg>Ela</b>.</li>
         <li>Na sua vez, role o <b class="c-red">dado de cristal</b> e suba os degraus.</li>
         <li>Todo degrau tem uma categoria. Caiu, cumpre:
           <ul class="cats">

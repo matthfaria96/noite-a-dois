@@ -94,6 +94,22 @@ void main() {
   gl_FragColor = vec4(col, 1.0);
 }`;
 
+// símbolo de ele (♂) ou ela (♀) desenhado em traço, centrado em (cx, cy) num quadrado de lado `size`
+// (os caracteres Unicode mudam de fonte e de linha de base no iPhone e ficam fora do centro)
+function simboloGenero(g, quem, cx, cy, size) {
+  const k = size / 24, x = v => cx + (v - 12) * k, y = v => cy + (v - 12) * k;
+  g.lineWidth = 2 * k; g.lineCap = 'round'; g.lineJoin = 'round';
+  g.beginPath();
+  if (quem === 'ele') {
+    g.arc(x(10), y(14), 5.5 * k, 0, TAU);
+    g.moveTo(x(14), y(10)); g.lineTo(x(19.5), y(4.5)); g.moveTo(x(14.5), y(4.5)); g.lineTo(x(19.5), y(4.5)); g.lineTo(x(19.5), y(9.5));
+  } else {
+    g.arc(x(12), y(9), 5.5 * k, 0, TAU);
+    g.moveTo(x(12), y(14.5)); g.lineTo(x(12), y(21)); g.moveTo(x(9), y(18)); g.lineTo(x(15), y(18));
+  }
+  g.stroke();
+}
+
 export class Board3D {
   constructor(container) {
     this.container = container;
@@ -276,12 +292,11 @@ export class Board3D {
     band.rotation.x = Math.PI / 2; band.position.y = 0.04;
     g.add(coreB, coreH, body, head, band);
     const [cv, c2] = canvas(128);
-    c2.beginPath(); c2.arc(64, 64, 56, 0, TAU); c2.fillStyle = 'rgba(255,255,255,.16)'; c2.fill();
-    c2.lineWidth = 3; c2.strokeStyle = 'rgba(255,255,255,.75)'; c2.stroke();
+    c2.beginPath(); c2.arc(64, 64, 56, 0, TAU); c2.fillStyle = 'rgba(30,4,20,.55)'; c2.fill();
+    c2.lineWidth = 3; c2.strokeStyle = 'rgba(255,120,160,.55)'; c2.stroke();
     const hex = '#' + new THREE.Color(color).getHexString();
-    c2.fillStyle = '#fff'; c2.shadowColor = hex; c2.shadowBlur = 18;
-    c2.font = '600 62px system-ui, sans-serif';
-    c2.textAlign = 'center'; c2.textBaseline = 'middle'; c2.fillText(symbol, 64, 68);
+    c2.strokeStyle = '#f6e3ea'; c2.shadowColor = hex; c2.shadowBlur = 16;
+    simboloGenero(c2, symbol, 64, 64, 84);
     const spr = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex(cv), depthWrite: false, fog: false }));
     spr.scale.setScalar(0.55); spr.position.y = 1.75; g.add(spr);
     const ring = new THREE.Mesh(new THREE.RingGeometry(0.52, 0.64, 48),
@@ -584,7 +599,7 @@ export class Board3D {
 
     // ---- peças
     for (const who of ['ele', 'ela']) {
-      const p = this.#pawn(PIECE_COLORS[who], who === 'ele' ? '♂' : '♀');
+      const p = this.#pawn(PIECE_COLORS[who], who);
       this.pieces[who] = p;
       this.world.add(p);
       this.place(who, 0);
@@ -653,7 +668,7 @@ export class Board3D {
     const idx = this.pieces[who]?.userData.idx ?? 0;
     const d = this.dirs[idx], o = this.outward[idx];
     const p = this.path[idx].clone().addScaledVector(d, 1.3).addScaledVector(o, 0.75);
-    p.y += 0.4; // o dado se apoia na ponta da lapidação da face de baixo
+    p.y += 0.47; // o dado se apoia na ponta da lapidação da face de baixo
     this.die.position.copy(p);
     this.die.quaternion.copy(faceUp(value, Math.random() * TAU));
     this.die.visible = true;

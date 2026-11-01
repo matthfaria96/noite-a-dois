@@ -616,3 +616,10 @@ h2 { color: #f8e1e9; text-shadow: 0 0 24px rgba(200, 20, 60, .35); }
    cortava essas pontas. A folga lateral deixa as letras inteiras, e a margem negativa mantém o logo no lugar. */
 .logo .l1 { padding: 0 .16em .06em; margin-inline: -.16em; margin-bottom: -.06em; }
 .logo .l2 { padding-inline: .2em; margin-inline: -.2em; }
+/* símbolos de ele e ela desenhados (SVG): centrados de verdade em qualquer aparelho */
+svg.gen { width: 1.15em; height: 1.15em; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round;
+  vertical-align: -.2em; margin-right: .3em; flex: none; }
+.chip .sym svg.gen { width: 19px; height: 19px; margin: 0; vertical-align: 0; display: block; }
+.names label span { display: inline-flex; align-items: center; }
+/* rolagem: fundo bem escuro e sensual, sem halo claro */
+.dice-dim { background: radial-gradient(ellipse 55% 50% at 50% 50%, rgba(36, 0, 12, .7) 0%, rgba(4, 0, 3, .95) 62%, #000 100%); }
