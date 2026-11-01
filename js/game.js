@@ -4,6 +4,8 @@ import { DiceStage } from './dice.js';
 import { FASES, CATEGORIAS } from './data.js';
 import { LIMITES, limitesAtivos, baralho, armadilhas, sortes, desejos, faseDaCasa, pesoNoRitmo } from './cartas.js';
 import * as lembranca from './lembranca.js';
+
+window.progresso?.(0.74, 'Preparando o tabuleiro…');
 import { iconURL } from './icons.js';
 import { $, wait, rnd, shuffle, store } from './util.js';
 import { GameAudio } from './audio.js';
@@ -207,7 +209,45 @@ board.onLowFps = () => {
   board.setQuality('leve'); dice.setQuality('leve');
   toast('Gráficos ajustados para o modo leve');
 };
-if ('serviceWorker' in navigator && location.protocol.startsWith('http')) navigator.serviceWorker.register('sw.js').catch(() => {});
+// ------------------------------------------------------------ app instalado (PWA)
+const instalado = matchMedia('(display-mode: fullscreen), (display-mode: standalone)').matches || navigator.standalone === true;
+document.documentElement.classList.toggle('app', instalado);
+if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
+  // versão nova: recarrega sozinho, mas só nas telas iniciais (nunca no meio de uma partida)
+  const tinhaVersao = !!navigator.serviceWorker.controller;
+  let atualizar = false;
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (!tinhaVersao) return;
+    if (visible('#hud')) atualizar = true; else location.reload();
+  });
+  window.addEventListener('nad:inicio', () => { if (atualizar) location.reload(); });
+  navigator.serviceWorker.register('sw.js').catch(() => {});
+}
+// tela acesa durante a partida
+let wake = null;
+async function manterTelaAcesa(on) {
+  try {
+    if (on && !wake && document.visibilityState === 'visible') { wake = await navigator.wakeLock?.request('screen'); wake?.addEventListener('release', () => { wake = null; }); }
+    if (!on && wake) { await wake.release(); wake = null; }
+  } catch { wake = null; }
+}
+document.addEventListener('visibilitychange', () => { if (visible('#hud')) manterTelaAcesa(document.visibilityState === 'visible'); });
+// convite para instalar: botão nativo no Android/desktop, instrução no iPhone; nunca dentro do app instalado
+let pedidoInstalar = null;
+const ios = /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+function convidarInstalar() {
+  if (instalado || store.get('instalar-dispensado', 0) > Date.now() || TESTE.on) return;
+  if (!pedidoInstalar && !ios) return;
+  if (!visible('#setup')) return setTimeout(convidarInstalar, 3000); // só na tela inicial, nunca por cima do login
+  $('#btn-instalar').classList.toggle('hidden', !pedidoInstalar);
+  if (!pedidoInstalar) $('#instalar-dica').innerHTML = 'Toque em <b>Compartilhar</b> e depois em <b>Adicionar à Tela de Início</b>: abre em tela cheia, como um app.';
+  show('#instalar');
+}
+window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); pedidoInstalar = e; setTimeout(convidarInstalar, 2500); });
+$('#btn-instalar').onclick = async () => { hide('#instalar'); await pedidoInstalar?.prompt(); pedidoInstalar = null; };
+$('#instalar-fechar').onclick = () => { hide('#instalar'); store.set('instalar-dispensado', Date.now() + 7 * 864e5); };
+window.addEventListener('appinstalled', () => hide('#instalar'));
+if (ios) setTimeout(convidarInstalar, 4000);
 
 // ------------------------------------------------------------ fluxo da partida
 function startGame(teste = false) {
@@ -233,6 +273,8 @@ function startGame(teste = false) {
   $('#btn-map').classList.remove('on');
   ['#setup', '#final', '#menu', '#settings'].forEach(hide);
   show('#hud');
+  hide('#instalar');
+  manterTelaAcesa(true);
   $('#test-badge').classList.toggle('hidden', !TESTE.on);
   $('#test-badge b').textContent = `Modo de teste · ${TESTE.vel}×`;
   updateHUD();
@@ -435,11 +477,23 @@ $('#cfg-narracao').checked = cfg.narracao;
 $('#cfg-narracao').onchange = e => { cfg.narracao = e.target.checked; applyCfg(); saveCfg(); };
 $('#btn-voz-teste').onclick = () => { voice.stop(); const was = voice.enabled; voice.enabled = true; voice.fala('inicio').then(() => { voice.enabled = was; }); };
 
+// visitante: joga sem conta (com a nuvem ligada, nada é salvo nela até entrar)
+let visitante = false;
+function entrarComoVisitante(demo) {
+  visitante = true;
+  hide('#lock');
+  $('#btn-entrar-setup').classList.toggle('hidden', !auth.cloud);
+  if (demo) return startGame(true);
+  show('#setup');
+  board.setMode('orbit');
+  toast('Modo visitante: joguem à vontade');
+}
 function renderConta() {
   const box = $('#conta');
+  box.querySelector('#btn-entrar').classList.toggle('hidden', !(auth.cloud && !auth.session));
   const logged = auth.hasAccount() && auth.isLogged();
   box.querySelector('.conta-user').textContent = auth.cloud
-    ? (auth.session ? `Conectado como ${auth.user()} (salvo na nuvem)` : 'Sem login')
+    ? (auth.session ? `Conectado como ${auth.user()} (salvo na nuvem)` : 'Visitante: entre para salvar nomes, limites e cartas na nuvem.')
     : auth.hasAccount() ? `Conta local: ${auth.user()} (só neste aparelho)` : 'Sem senha: qualquer pessoa com este aparelho abre o jogo.';
   box.querySelector('#btn-proteger').classList.toggle('hidden', auth.cloud || auth.hasAccount());
   box.querySelector('#btn-senha').classList.toggle('hidden', !logged);
@@ -530,12 +584,17 @@ function openLock(mode) {
   $('#lk-troca').textContent = criar ? 'Já tenho conta' : 'Criar uma conta';
   $('#lk-troca').classList.toggle('hidden', !auth.cloud && auth.hasAccount() && !criar);
   $('#lk-esqueci').classList.toggle('hidden', criar);
+  ['#lk-convidado', '#lk-demo', '#lock .ou'].forEach(q => $(q).classList.toggle('hidden', criar));
   $('#lk-msg').textContent = auth.cloud ? '' : 'Conta local: fica salva só neste aparelho.';
   $('#lk-user').value = criar ? '' : auth.user();
   ['#setup', '#hud'].forEach(hide);
   show('#lock');
 }
 $('#lk-troca').onclick = () => openLock(lockMode === 'criar' ? 'entrar' : 'criar');
+$('#lk-convidado').onclick = () => entrarComoVisitante(false);
+$('#lk-demo').onclick = () => entrarComoVisitante(true);
+$('#btn-entrar').onclick = () => { hide('#settings'); openLock('entrar'); };
+$('#btn-entrar-setup').onclick = () => openLock('entrar');
 $('#lk-esqueci').onclick = async () => {
   if (!auth.cloud) {
     if (confirm('Na conta local não existe recuperação. Apagar a conta e os dados deste aparelho para começar de novo?')) { auth.removeLocal(); store.clearAll(); location.reload(); }
@@ -563,6 +622,8 @@ $('#lock form').onsubmit = async e => {
 };
 
 async function afterLogin() {
+  visitante = false;
+  $('#btn-entrar-setup').classList.add('hidden');
   hide('#lock');
   const prof = await auth.loadProfile().catch(() => null);
   if (prof) {
@@ -579,7 +640,7 @@ async function afterLogin() {
 }
 
 // ------------------------------------------------------------ navegação
-const toSetup = () => { ['#menu', '#final', '#hud', '#settings'].forEach(hide); show('#setup'); board.setMode('orbit'); voice.stop(); TESTE.on = false; board.speed = dice.speed = 1; };
+const toSetup = () => { manterTelaAcesa(false); window.dispatchEvent(new Event('nad:inicio')); ['#menu', '#final', '#hud', '#settings'].forEach(hide); show('#setup'); board.setMode('orbit'); voice.stop(); TESTE.on = false; board.speed = dice.speed = 1; };
 const [sn1, sn2] = store.get('names', ['', '']);
 $('#name-ele').value = sn1; $('#name-ela').value = sn2;
 $('#btn-start').onclick = () => startGame(false);
@@ -605,18 +666,25 @@ Promise.all(['italic 700 40px "Playfair Display"', '700 40px "Playfair Display"'
   G.tiles = generateBoard(G.N);
   board.build(G.tiles);
   board.setMode('orbit');
-  // espera o tabuleiro desenhar os primeiros quadros e dissolve a abertura
-  requestAnimationFrame(() => requestAnimationFrame(ready));
+  window.progresso?.(0.9, 'Lapidando o dado…');
+  // espera o tabuleiro desenhar os primeiros quadros
+  requestAnimationFrame(() => requestAnimationFrame(etapaPronta));
 });
-// a abertura sai de qualquer jeito, mesmo se o 3D demorar ou falhar
+// a abertura só sai quando o tabuleiro desenhou E a tela (login ou início) já está montada;
+// e sai de qualquer jeito se o 3D demorar ou falhar
+let etapas = 2;
+function etapaPronta() { if (--etapas <= 0) ready(); }
 function ready() {
   if (document.body.classList.contains('ready')) return;
-  document.body.classList.add('ready');
-  setTimeout(() => $('#splash')?.remove(), 1200);
+  window.progresso?.(1, 'Pronto');
+  setTimeout(() => {
+    document.body.classList.add('ready');
+    setTimeout(() => $('#splash')?.remove(), 1100);
+  }, 250);
 }
 setTimeout(ready, 8000);
-auth.init().then(() => {
-  if (auth.isLogged()) { if (auth.cloud) afterLogin(); else show('#setup'); }
-  else openLock(auth.cloud && !auth.session ? 'entrar' : 'entrar');
-});
+auth.init().then(async () => {
+  if (auth.isLogged()) { if (auth.cloud) await afterLogin(); else show('#setup'); }
+  else openLock('entrar');
+}).finally(etapaPronta);
 window.__G = G; window.__B = board; window.__D = dice; // depuração
