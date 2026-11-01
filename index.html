@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+  <meta name="theme-color" content="#0a0206">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>Noite a Dois</title>
+  <link rel="preload" href="fonts/playfair-display-italic.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="fonts/great-vibes-normal.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="fonts/inter.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="css/style.css">
+  <script type="importmap">
+    { "imports": { "three": "./vendor/three/three.module.js", "three/addons/": "./vendor/three/addons/" } }
+  </script>
+</head>
+<body>
+  <div id="stage"></div>
+  <div class="vignette"></div>
+
+  <!-- HUD -->
+  <div id="hud" class="hidden">
+    <div class="topbar">
+      <div class="chip ele" id="chip-ele"><span class="sym">♂</span><span class="nm"></span><span class="pos"></span></div>
+      <div class="mid-btns">
+        <button class="icon-btn" id="btn-menu" aria-label="Menu">
+          <svg viewBox="0 0 24 24"><path d="M5 8h14M5 12h14M5 16h14"/></svg>
+        </button>
+        <button class="icon-btn" id="btn-map" aria-label="Ver o mapa">
+          <svg viewBox="0 0 24 24"><path d="M9 4 3 6.5v13L9 17l6 2.5 6-2.5V4l-6 2.5L9 4Zm0 0v13m6-10.5v13"/></svg>
+        </button>
+      </div>
+      <div class="chip ela" id="chip-ela"><span class="sym">♀</span><span class="nm"></span><span class="pos"></span></div>
+    </div>
+    <div class="track">
+      <div class="track-bar"><i class="dot ele" id="dot-ele"></i><i class="dot ela" id="dot-ela"></i></div>
+      <div class="fase" id="fase-label"></div>
+    </div>
+    <div class="bottom">
+      <div class="turn" id="turn-label"></div>
+      <button class="roll" id="btn-roll"><span class="die-ico">6</span><span>Rolar o dado</span></button>
+    </div>
+  </div>
+
+  <div id="big-number" class="hidden"></div>
+  <div id="toast" class="hidden"></div>
+
+  <!-- TELA INICIAL -->
+  <section id="setup" class="screen">
+    <div class="panel">
+      <div class="badges"><span>2 jogadores</span><span>+18</span><span>30–70 min</span></div>
+      <h1 class="logo"><span class="l1">Noite</span><span class="l2">a Dois</span></h1>
+      <p class="tag">Um jogo de sedução, provocação e prazer — degrau por degrau, até o clímax.</p>
+      <div class="names">
+        <label class="ele"><span>♂ Ele</span><input id="name-ele" maxlength="14" placeholder="Nome dele"></label>
+        <label class="ela"><span>♀ Ela</span><input id="name-ela" maxlength="14" placeholder="Nome dela"></label>
+      </div>
+      <div class="opt">
+        <span>Duração</span>
+        <div class="seg" id="seg-dur">
+          <button data-v="28">Rápida<small>~30 min</small></button>
+          <button data-v="40" class="on">Normal<small>~50 min</small></button>
+          <button data-v="52">Longa<small>~70 min</small></button>
+        </div>
+      </div>
+      <div class="opt">
+        <span>Quem começa</span>
+        <div class="seg" id="seg-start">
+          <button data-v="ela" class="on">Ela</button>
+          <button data-v="ele">Ele</button>
+          <button data-v="sorte">Sorteio</button>
+        </div>
+      </div>
+      <button class="cta" id="btn-start">Começar a noite</button>
+      <button class="link" id="btn-rules">Como jogar</button>
+      <p class="fine">Só para maiores de 18. Joguem apenas se ambos quiserem — qualquer um pode recusar uma carta ou pausar a qualquer momento.</p>
+    </div>
+  </section>
+
+  <!-- REGRAS -->
+  <section id="rules" class="screen hidden">
+    <div class="panel scroll">
+      <h2>Como jogar</h2>
+      <ol>
+        <li>Cada um tem a sua peça: <b class="c-ele">♂ Ele</b> e <b class="c-ela">♀ Ela</b>.</li>
+        <li>Na sua vez, role o <b class="c-red">dado de cristal</b> e suba os degraus.</li>
+        <li>Todo degrau tem uma categoria. Caiu, cumpre:
+          <ul class="cats">
+            <li><i class="ci" data-t="verdade"></i><b>Verdade</b> – responda com sinceridade.</li>
+            <li><i class="ci" data-t="desafio"></i><b>Desafio</b> – faça o que a carta mandar.</li>
+            <li><i class="ci" data-t="pena"></i><b>Pena</b> – carícia livre, use a criatividade.</li>
+            <li><i class="ci" data-t="armadilha"></i><b>Armadilha</b> – volte casas, perca a vez, troque de lugar…</li>
+            <li><i class="ci" data-t="sorte"></i><b>Sorte</b> – avance, jogue de novo ou ganhe um passe livre.</li>
+          </ul>
+        </li>
+        <li>O tabuleiro tem 4 fases e esquenta a cada uma:
+          <b style="color:#d86ad8">Aquecimento</b> → <b style="color:#ff4f96">Provocação</b> →
+          <b style="color:#ff4a4a">Fogo</b> → <b style="color:#ff8a3a">Clímax</b>.</li>
+        <li>Recusar uma carta custa 2 casas para trás (ou use um passe livre).</li>
+        <li>Quem chegar primeiro ao <b>Clímax</b> escolhe 1 de 3 desejos para o parceiro realizar.</li>
+      </ol>
+      <button class="cta" data-close>Entendi</button>
+    </div>
+  </section>
+
+  <!-- CARTA -->
+  <section id="card" class="screen hidden">
+    <div class="card">
+      <div class="card-head"><span class="ico"></span><span class="cat"></span><span class="fase-tag"></span></div>
+      <div class="card-who"></div>
+      <p class="card-text"></p>
+      <div class="timer hidden"><svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="44" class="bg"/><circle cx="50" cy="50" r="44" class="fg"/></svg><b></b></div>
+      <div class="card-actions">
+        <button class="ghost" id="btn-refuse">Recusar</button>
+        <button class="cta" id="btn-done">Feito</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- FINAL -->
+  <section id="final" class="screen hidden">
+    <div class="panel wide">
+      <div class="crown"><svg viewBox="0 0 24 24"><path d="M12 21s-7.5-4.6-9.6-9.3C.9 8.3 3 4.5 6.6 4.5c2.1 0 3.6 1.2 5.4 3.2 1.8-2 3.3-3.2 5.4-3.2 3.6 0 5.7 3.8 4.2 7.2C19.5 16.4 12 21 12 21Z"/></svg></div>
+      <h2 id="final-title"></h2>
+      <p id="final-sub"></p>
+      <div class="wishes" id="wishes"></div>
+      <div id="wish-chosen" class="hidden">
+        <p class="chosen-text"></p>
+        <button class="cta" id="btn-again">Jogar de novo</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- MENU -->
+  <section id="menu" class="screen hidden">
+    <div class="panel">
+      <h2>Pausa</h2>
+      <button class="cta" data-close>Continuar</button>
+      <button class="ghost" id="btn-show-rules">Como jogar</button>
+      <button class="ghost" id="btn-restart">Recomeçar</button>
+    </div>
+  </section>
+
+  <script type="module" src="js/game.js"></script>
+</body>
+</html>
