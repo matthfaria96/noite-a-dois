@@ -18,6 +18,7 @@ const SPACING = 2.15;  // distância entre casas ao longo da trilha
 const LEDGE = 1.95;     // meia-largura do terraço da trilha
 const SERIF = '"Playfair Display", Georgia, serif';
 const SANS = '-apple-system, BlinkMacSystemFont, "SF Pro Display", Inter, system-ui, sans-serif';
+const V_KEY = new THREE.Vector3(2.5, 11, 4), V_UP3 = new THREE.Vector3(0, 3, 0);
 const TAU = Math.PI * 2;
 
 const ease = t => 1 - Math.pow(1 - t, 3);
@@ -120,6 +121,11 @@ export class Board3D {
     this.wantPos = new THREE.Vector3();
     this.wantLook = new THREE.Vector3();
     this.quality = 'alta';
+    this.speed = 1;        // modo de teste acelera as animações
+    this.paused = false;   // pausa o 3D enquanto o palco do dado cobre a tela
+    this.throttle = false; // 30 fps quando uma tela cobre o tabuleiro
+    this.frame = 0;
+    this.tmpOut = new THREE.Vector3(); this.tmpV = new THREE.Vector3();
     this.mode = 'orbit'; // 'orbit' (tela inicial) | 'follow' | 'overview' | 'free'
 
     this.scene.add(new THREE.HemisphereLight(0x9a7ad0, 0x2a1030, 0.75));
@@ -590,7 +596,7 @@ export class Board3D {
   setQuality(q) {
     this.quality = q;
     const hi = q !== 'leve';
-    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, hi ? 2 : 1.25));
+    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, hi ? 1.75 : 1.1));
     this.bloom.enabled = hi;
     document.body.classList.toggle('leve', !hi);
     this.resize();
@@ -612,13 +618,14 @@ export class Board3D {
   }
 
   setMode(m) { this.mode = m; }
+  setThrottle(on) { this.throttle = on; }
 
   async movePiece(who, from, to, onStep) {
     const dir = to > from ? 1 : -1;
     const piece = this.pieces[who];
     for (let i = from; i !== to; i += dir) {
       const a = this.#spot(who, i), b = this.#spot(who, i + dir);
-      const T = 340, t0 = performance.now();
+      const T = 340 / this.speed, t0 = performance.now();
       await new Promise(res => {
         const step = () => {
           const t = Math.min(1, (performance.now() - t0) / T);
@@ -658,6 +665,8 @@ export class Board3D {
   }
 
   #tick() {
+    if (this.paused) { this.clock.getDelta(); return; }
+    if (this.throttle && (this.frame++ & 1)) return;
     const dt = Math.min(0.1, this.clock.getDelta());
     const t = this.clock.elapsedTime;
     this.sky.material.uniforms.uTime.value = t;
@@ -679,9 +688,9 @@ export class Board3D {
 
       if (this.mode === 'follow') {
         const ahead = this.path[Math.min(N - 1, idx + 2)], behind = this.path[Math.max(0, idx - 1)];
-        const want = ahead.clone().sub(behind).setY(0);
+        const want = this.tmpV.copy(ahead).sub(behind).setY(0);
         if (want.lengthSq() > 0.01) this.camDir.lerp(want.normalize(), 1 - Math.exp(-dt * 2)).normalize();
-        const out = new THREE.Vector3(pos.x, 0, pos.z).normalize();
+        const out = this.tmpOut.set(pos.x, 0, pos.z).normalize();
         const back = this.portrait ? 5.0 : 5.2, up = this.portrait ? 5.0 : 4.0;
         this.wantPos.copy(pos).addScaledVector(this.camDir, -back).addScaledVector(out, 2.4).setY(pos.y + up);
         this.wantLook.copy(pos).addScaledVector(this.camDir, this.portrait ? 0.9 : 1.1).addScaledVector(out, -0.3).setY(pos.y + 0.9);
@@ -713,13 +722,13 @@ export class Board3D {
       this.sky.position.copy(this.camera.position);
 
       const focus = this.mode === 'follow' ? pos : this.center;
-      this.key.position.copy(focus).add(new THREE.Vector3(2.5, 11, 4));
+      this.key.position.copy(focus).add(V_KEY);
       this.key.target.position.copy(focus);
       this.key.angle = this.mode === 'follow' ? 0.62 : 1.05;
       this.key.intensity = (this.mode === 'follow' ? 55 : 110) * (0.96 + Math.sin(t * 7) * 0.02 + Math.sin(t * 13) * 0.02);
       this.key.distance = this.mode === 'follow' ? 40 : 120;
       this.rim.position.copy(pos).addScaledVector(this.camDir, 6).setY(pos.y + 2.5);
-      this.blue.position.copy(pos).addScaledVector(this.camDir, -3).add(new THREE.Vector3(0, 3, 0));
+      this.blue.position.copy(pos).addScaledVector(this.camDir, -3).add(V_UP3);
 
       for (const k2 in this.pieces) {
         const pc = this.pieces[k2];
@@ -727,7 +736,7 @@ export class Board3D {
         pc.userData.ring.material.opacity = 0.6 + Math.sin(t * 3) * 0.3;
         pc.userData.sprite.position.y = 1.75 + Math.sin(t * 2 + (k2 === 'ele' ? 0 : 1.5)) * 0.08;
       }
-      const tmp = new THREE.Vector3();
+      const tmp = this.tmpV;
       for (const a of this.animated) {
         a.o.position.y = a.base + Math.sin(t * a.sp) * a.amp;
         if (a.spin) a.o.rotation.z = t * a.spin;

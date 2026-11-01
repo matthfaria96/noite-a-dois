@@ -17,7 +17,7 @@
   <meta name="description" content="Noite a Dois — jogo de tabuleiro 3D para casais (+18).">
   <link rel="stylesheet" href="css/style.css">
   <script type="importmap">
-    { "imports": { "three": "./vendor/three/three.module.js", "three/addons/": "./vendor/three/addons/" } }
+    { "imports": { "three": "./vendor/three/three.module.min.js", "three/addons/": "./vendor/three/addons/" } }
   </script>
 </head>
 <body>
@@ -47,6 +47,7 @@
       <div class="turn" id="turn-label"></div>
       <button class="roll" id="btn-roll"><span class="die-ico">6</span><span>Rolar o dado</span></button>
     </div>
+    <div id="test-badge" class="hidden"><b>Modo de teste</b><button>Parar</button></div>
   </div>
 
   <div id="dice-layer" class="hidden">
@@ -54,12 +55,14 @@
     <div id="dice-stage"></div>
     <div class="dice-caption"></div>
   </div>
-  <div id="big-number" class="hidden"></div>
   <div id="toast" class="hidden"></div>
 
   <!-- TELA INICIAL -->
-  <section id="setup" class="screen">
+  <section id="setup" class="screen hidden">
     <div class="panel">
+      <button class="icon-btn gear" id="btn-settings" aria-label="Configurações">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1Z"/></svg>
+      </button>
       <div class="badges"><span>2 jogadores</span><span>+18</span><span>30–70 min</span></div>
       <h1 class="logo"><span class="l1">Noite</span><span class="l2">a Dois</span></h1>
       <p class="tag">Uma subida a dois, entre névoa e desejo, até o Pico do Amor.</p>
@@ -84,7 +87,7 @@
         </div>
       </div>
       <button class="cta" id="btn-start">Começar a noite</button>
-      <button class="link" id="btn-rules">Como jogar</button>
+      <div class="links"><button class="link" id="btn-rules">Como jogar</button><button class="link" id="btn-teste-setup">Modo de teste</button></div>
       <p class="fine">Só para maiores de 18. Joguem apenas se ambos quiserem — qualquer um pode recusar uma carta ou pausar a qualquer momento.</p>
     </div>
   </section>
@@ -148,9 +151,78 @@
     <div class="panel">
       <h2>Pausa</h2>
       <button class="cta" data-close>Continuar</button>
-      <button class="ghost" id="btn-quality">Gráficos: Alta</button>
+      <button class="ghost" id="btn-settings-menu">Configurações</button>
       <button class="ghost" id="btn-show-rules">Como jogar</button>
       <button class="ghost" id="btn-restart">Recomeçar</button>
+    </div>
+  </section>
+
+  <!-- LOGIN -->
+  <section id="lock" class="screen hidden">
+    <div class="panel">
+      <h1 class="logo small"><span class="l1">Noite</span><span class="l2">a Dois</span></h1>
+      <h2>Entrar</h2>
+      <form autocomplete="on">
+        <input id="lk-user" autocomplete="username" placeholder="E-mail">
+        <input id="lk-pass" type="password" autocomplete="current-password" placeholder="Senha">
+        <input id="lk-pass2" type="password" autocomplete="new-password" placeholder="Confirmar senha" class="hidden">
+        <label class="check"><input type="checkbox" id="lk-lembrar"> Manter conectado neste aparelho</label>
+        <button class="cta" id="lk-ok">Entrar</button>
+      </form>
+      <p id="lk-msg" class="fine"></p>
+      <div class="links"><button class="link" id="lk-troca">Criar uma conta</button><button class="link" id="lk-esqueci">Esqueci a senha</button></div>
+    </div>
+  </section>
+
+  <!-- CONFIGURAÇÕES -->
+  <section id="settings" class="screen hidden">
+    <div class="panel scroll">
+      <h2>Configurações</h2>
+      <div class="group">
+        <h3>Som</h3>
+        <label class="row">Música<input type="range" id="cfg-musica" min="0" max="1" step="0.05"></label>
+        <label class="row">Efeitos<input type="range" id="cfg-efeitos" min="0" max="1" step="0.05"></label>
+      </div>
+      <div class="group">
+        <h3>Narração</h3>
+        <label class="row">Voz da narradora<span class="switch"><input type="checkbox" id="cfg-narracao"><i></i></span></label>
+        <label class="row">Volume da voz<input type="range" id="cfg-voz" min="0" max="1" step="0.05"></label>
+        <label class="row col">Voz<select id="cfg-voz-nome"></select></label>
+        <p class="fine" id="cfg-voz-info"></p>
+        <button class="ghost" id="btn-voz-teste">Ouvir a narradora</button>
+      </div>
+      <div class="group">
+        <h3>Gráficos</h3>
+        <div class="seg" id="seg-graf">
+          <button data-v="auto">Automático</button>
+          <button data-v="alta">Alta</button>
+          <button data-v="leve">Leve</button>
+        </div>
+      </div>
+      <div class="group" id="conta">
+        <h3>Conta</h3>
+        <p class="fine conta-user"></p>
+        <button class="ghost" id="btn-proteger">Proteger o jogo com senha</button>
+        <button class="ghost" id="btn-senha">Alterar senha</button>
+        <form id="troca-senha" class="hidden">
+          <input type="password" id="ts-atual" placeholder="Senha atual" autocomplete="current-password">
+          <input type="password" id="ts-nova" placeholder="Nova senha" autocomplete="new-password">
+          <button class="cta">Salvar nova senha</button>
+        </form>
+        <button class="ghost" id="btn-sair">Sair</button>
+        <button class="ghost danger" id="btn-apagar">Apagar conta deste aparelho</button>
+      </div>
+      <div class="group">
+        <h3>Modo de teste</h3>
+        <p class="fine">O jogo se joga sozinho, com os dois jogadores automáticos — bom para conferir o tabuleiro, as cartas e o ritmo.</p>
+        <div class="seg" id="seg-vel">
+          <button data-v="1">1×</button>
+          <button data-v="2">2×</button>
+          <button data-v="4">4×</button>
+        </div>
+        <button class="ghost" id="btn-teste">Iniciar modo de teste</button>
+      </div>
+      <button class="cta" data-close>Pronto</button>
     </div>
   </section>
 

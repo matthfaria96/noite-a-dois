@@ -45,11 +45,45 @@ O casal sobe uma montanha envolta em névoa rosa-violeta até o **Pico do Amor**
 O jogo abre em tela cheia com ícone próprio e funciona **offline** depois da primeira visita (`sw.js`).
 Ao publicar mudanças, aumente `VERSAO` em `sw.js` para os aparelhos baixarem a versão nova.
 
-## Gráficos: Alta / Leve
-- **Alta:** degraus de vidro com refração, brilho (bloom) e sombras.
-- **Leve:** vidro translúcido simples, sem bloom e sem sombras, e resolução menor. É bem mais leve para a placa de vídeo.
-- O jogo mede o desempenho nos primeiros segundos da partida. Se o aparelho não aguentar o modo Alta, troca para o Leve sozinho e avisa.
-  Dá para trocar manualmente no menu ☰ → **Gráficos**.
+## Configurações (⚙️ na tela inicial ou ☰ → Configurações)
+- **Som:** volume da música e dos efeitos.
+- **Narração:** liga/desliga a narradora, escolhe o volume, a voz do aparelho e tem um botão para ouvir.
+- **Gráficos:** Automático, Alta ou Leve.
+  - **Alta:** brilho (bloom) e foco suave nas bordas.
+  - **Leve:** sem bloom e com resolução menor.
+  - **Automático:** começa em Alta e troca para Leve sozinho se o aparelho não aguentar.
+- **Conta:** criar conta e senha, alterar senha, sair.
+- **Modo de teste:** o jogo se joga sozinho com os dois jogadores automáticos, em 1×, 2× ou 4×. Também tem um atalho na tela inicial.
+  Rola o dado, cumpre as cartas (às vezes recusa, para testar a penalidade), escolhe o desejo e mostra no fim quantas rodadas e quanto tempo levou.
+- As configurações ficam salvas no aparelho e, com login na nuvem, no perfil da conta.
+
+## Conta e login (Supabase, banco próprio do jogo)
+Segue o mesmo padrão do app de finanças: e-mail e senha no Supabase Auth, chaves públicas e segurança por RLS.
+O jogo usa um **projeto Supabase separado**, com um banco só dele.
+
+1. Crie um projeto novo em supabase.com (ex.: `noite-a-dois`).
+2. No **SQL Editor**, rode `supabase/migrations/20261101120000_inicial.sql`. Ele cria a tabela `perfis` com RLS: cada um só lê e altera o próprio perfil.
+3. Em **Authentication → URL Configuration**, coloque `https://matthfaria96.github.io/noite-a-dois/` como Site URL e Redirect URL.
+4. Em **Project Settings → API**, copie a *Project URL* e a *anon public key* para `js/config.js`.
+
+Com isso, o jogo exige login (com "esqueci a senha" por e-mail), e os nomes, as configurações e as estatísticas ficam salvos na nuvem.
+**Sem configurar**, o jogo usa uma conta local opcional (usuário e senha só neste aparelho, com hash PBKDF2), criada em Configurações → "Proteger o jogo com senha".
+
+## Narração e música
+- **Narradora:** anuncia o início, a vez de cada um, as fases, armadilhas e sorte, lê as cartas e o desejo escolhido. A música abaixa enquanto ela fala.
+  Por padrão usa a voz feminina em português mais natural do aparelho. No iPhone e no Mac, a melhor costuma ser a *Luciana* (dá para baixar a versão "Aprimorada" em Ajustes → Acessibilidade → Conteúdo Falado → Vozes).
+- **Voz gravada (VoiceStudio):** as falas fixas estão em `audio/voz/ROTEIRO.md`. Exporte cada uma como MP3 com o nome indicado, coloque em `audio/voz/` e liste em `audio/lista.json`.
+  As falas com nomes e o texto das cartas continuam com a voz do aparelho.
+- **Música:** trilha ambiente hipnótica **gerada em tempo real**, sem arquivo: acordes suspensos que "respiram", um grave profundo, batidas de coração bem baixinhas e notas cristalinas com eco.
+  Ela esquenta a cada fase: o filtro abre, o coração acelera e aparecem mais notas. Para usar uma faixa própria, coloque `audio/musica.mp3` e marque `"musica": true` em `audio/lista.json`.
+
+## Desempenho
+- O 3D do tabuleiro **pausa** enquanto o dado gira em destaque e cai para **30 fps** quando uma tela (carta, menu, configurações) cobre o tabuleiro.
+- No modo Alta, a resolução vai até 1,75× (antes era 2×), e o bloom é calculado em meia resolução.
+- Não há refração no tabuleiro (só no dado), nem sombras, e a montanha tem uma malha reduzida.
+- O laço de animação não cria objetos novos a cada quadro.
+- Three.js minificado e só com os módulos usados: de 1,9 MB para 780 KB.
+- O app fica salvo no aparelho e abre offline. Login e banco nunca passam pelo cache.
 
 ## Como rodar
 Qualquer servidor estático serve. Localmente:
@@ -64,15 +98,23 @@ Não precisa de build e o Three.js já vem junto em `vendor/`, então funciona s
 
 ## Estrutura
 ```
-index.html        telas (início, regras, HUD, carta, final, pausa)
+index.html        telas (login, início, configurações, regras, HUD, carta, final, pausa)
 css/style.css     visual Liquid Glass: vidro fosco, borda especular, componentes iOS
 js/data.js        TODO o conteúdo: fases, categorias, perguntas, desafios, desejos
 js/scene.js       3D: montanha em espiral, nebulosa, cristais, degraus e peças de vidro, câmera
 js/dice.js        dado de cristal lapidado e o palco do dado (giro em destaque)
 js/icons.js       ícones vetoriais das categorias (3D e interface)
-js/game.js        regras, turnos, baralhos, efeitos, tela final, sons
+js/game.js        regras, turnos, cartas, configurações, login, modo de teste
+js/audio.js       música ambiente gerada em tempo real + efeitos sonoros
+js/voice.js       narradora (voz do aparelho ou falas gravadas)
+js/auth.js        login: Supabase (nuvem) ou conta local
+js/config.js      chaves públicas do Supabase (vazio = conta local)
+js/util.js        utilidades e armazenamento local
+audio/            lista.json, voz/ROTEIRO.md (falas para gravar)
+supabase/         migração SQL do banco do jogo
 fonts/            Playfair Display, Great Vibes, Inter (locais)
-vendor/three/     Three.js r160 (local)
+vendor/three/     Three.js r160 minificado, só os módulos usados
+vendor/supabase/  cliente Supabase (carregado só se configurado)
 ```
 
 ## Regras

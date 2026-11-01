@@ -25,11 +25,11 @@ export const FASES = [
 // Categorias de casa ("degraus") do tabuleiro.
 // peso[f] = chance relativa da categoria aparecer na fase f.
 export const CATEGORIAS = {
-  verdade:   { nome: 'Verdade',   icone: '💋', cor: '#ff8ab8', peso: [3.2, 2.2, 1.6, 1.2] },
-  desafio:   { nome: 'Desafio',   icone: '🔥', cor: '#ff6a7a', peso: [2.0, 3.0, 3.6, 4.2] },
-  pena:      { nome: 'Pena',      icone: '🪶', cor: '#c89aff', peso: [1.0, 1.2, 1.2, 1.0] },
-  armadilha: { nome: 'Armadilha', icone: '⛓️', cor: '#e8c8a0', peso: [1.0, 1.3, 1.5, 1.5] },
-  sorte:     { nome: 'Sorte',     icone: '✨', cor: '#ffb8a0', peso: [1.0, 0.9, 0.7, 0.5] },
+  verdade:   { nome: 'Verdade',   cor: '#ff8ab8', peso: [3.2, 2.2, 1.6, 1.2] },
+  desafio:   { nome: 'Desafio',   cor: '#ff6a7a', peso: [2.0, 3.0, 3.6, 4.2] },
+  pena:      { nome: 'Pena',      cor: '#c89aff', peso: [1.0, 1.2, 1.2, 1.0] },
+  armadilha: { nome: 'Armadilha', cor: '#e8c8a0', peso: [1.0, 1.3, 1.5, 1.5] },
+  sorte:     { nome: 'Sorte',     cor: '#ffb8a0', peso: [1.0, 0.9, 0.7, 0.5] },
 };
 
 // ---------------------------------------------------------------- VERDADE

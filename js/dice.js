@@ -98,6 +98,7 @@ function starTexture() {
 export class DiceStage {
   constructor(layer) {
     this.layer = layer;
+    this.speed = 1;
     this.host = layer.querySelector('#dice-stage');
     const r = this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
     r.setPixelRatio(Math.min(window.devicePixelRatio, 2));
@@ -169,7 +170,7 @@ export class DiceStage {
   }
 
   setQuality(q) {
-    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, q === 'leve' ? 1.25 : 2));
+    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, q === 'leve' ? 1.25 : 1.75));
     this.resize();
   }
 
@@ -187,7 +188,7 @@ export class DiceStage {
       const axis = new THREE.Vector3(Math.random() - 0.5, Math.random() - 0.5, Math.random() - 0.5).normalize();
       const axis2 = new THREE.Vector3(Math.random() - 0.5, 1, Math.random() - 0.5).normalize();
       const spin = Math.PI * 2 * (5 + Math.random() * 2);
-      const T = 2600, HOLD = 1300, t0 = performance.now();
+      const T = 2600 / this.speed, HOLD = 1300 / this.speed, t0 = performance.now();
       let landed = false;
       const qa = new THREE.Quaternion(), qb = new THREE.Quaternion();
 
