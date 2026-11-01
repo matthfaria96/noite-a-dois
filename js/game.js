@@ -180,14 +180,16 @@ function showCard({ cat, text, secs = 0, who, fase, refusable = true, falar = tr
     }
     let autoT;
     const done = r => {
-      clearInterval(iv); clearTimeout(autoT); hide('#card'); voice.stop();
+      clearInterval(iv); clearTimeout(autoT); hide('#card'); voice.stop(); document.body.classList.remove('carta-aberta');
       if (r === 'feito') { G.diario.feitas++; if (falar) talvez(fase < 2 ? 'suave' : 'quente', 0.5); }
       else G.diario.recusadas++;
       resolve(r);
     };
     $('#btn-done').onclick = () => done('feito');
     refuse.onclick = () => done('recusou');
-    card.style.animation = 'none'; void card.offsetWidth; card.style.animation = '';
+    card.style.animation = 'none'; card.querySelector('.verso').style.animation = 'none'; void card.offsetWidth;
+    card.style.animation = ''; card.querySelector('.verso').style.animation = '';
+    document.body.classList.add('carta-aberta');
     show('#card');
     audio.card();
     if (falar) fala(tipo);
@@ -503,6 +505,30 @@ $('#cfg-narracao').checked = cfg.narracao;
 $('#cfg-narracao').onchange = e => { cfg.narracao = e.target.checked; applyCfg(); saveCfg(); };
 $('#btn-voz-teste').onclick = () => { voice.stop(); const was = voice.enabled; voice.enabled = true; voice.fala('inicio').then(() => { voice.enabled = was; }); };
 
+// primeira vez: três passos rápidos (deslizar ou "Próximo"); não volta a aparecer
+let apPasso = 0;
+function apresentar() {
+  if (store.get('apresentado', false)) return;
+  apIr(0); show('#apresentacao');
+}
+function apIr(n) {
+  apPasso = Math.max(0, Math.min(2, n));
+  $('#ap-passos').style.transform = `translateX(${-apPasso * 100}%)`;
+  document.querySelectorAll('#ap-pontos i').forEach((d, i) => d.classList.toggle('on', i === apPasso));
+  $('#ap-proximo').classList.toggle('invisivel', apPasso === 2);
+}
+function apFechar() { store.set('apresentado', true); hide('#apresentacao'); }
+$('#ap-proximo').onclick = () => apIr(apPasso + 1);
+$('#ap-pular').onclick = apFechar;
+$('#ap-fim').onclick = apFechar;
+$('#ap-limites').onclick = () => { apFechar(); abrirLimites(); };
+document.querySelectorAll('#ap-pontos i').forEach((d, i) => d.onclick = () => apIr(i));
+{ // deslizar entre os passos no celular
+  let x0 = null;
+  $('#ap-passos').addEventListener('touchstart', e => { x0 = e.touches[0].clientX; }, { passive: true });
+  $('#ap-passos').addEventListener('touchend', e => { if (x0 === null) return; const dx = e.changedTouches[0].clientX - x0; if (Math.abs(dx) > 40) apIr(apPasso + (dx < 0 ? 1 : -1)); x0 = null; });
+}
+
 // visitante: joga sem conta (com a nuvem ligada, nada é salvo nela até entrar)
 let visitante = false;
 function entrarComoVisitante(demo) {
@@ -513,6 +539,7 @@ function entrarComoVisitante(demo) {
   show('#setup');
   board.setMode('orbit');
   toast('Modo visitante: joguem à vontade');
+  apresentar();
 }
 function renderConta() {
   const box = $('#conta');
@@ -679,6 +706,7 @@ async function afterLogin() {
   }
   show('#setup');
   board.setMode('orbit');
+  apresentar();
 }
 
 // ------------------------------------------------------------ navegação

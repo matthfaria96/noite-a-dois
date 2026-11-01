@@ -16,10 +16,10 @@ const c = (t, p = 'ambos', s = 0) => ({ t, p, s });
 
 // As 4 fases do tabuleiro: a intensidade sobe conforme vocês avançam.
 export const FASES = [
-  { nome: 'Aquecimento', cor: '#7a5cff', desc: 'olhares, confissões e toques leves' },
-  { nome: 'Provocação',  cor: '#b45cff', desc: 'beijos, arrepios e as primeiras peças' },
-  { nome: 'Fogo',        cor: '#e05cd0', desc: 'pele com pele, sem pressa' },
-  { nome: 'Clímax',      cor: '#ff6aa8', desc: 'sem freios — até o final' },
+  { nome: 'Aquecimento', cor: '#a63a6c', desc: 'olhares, confissões e toques leves' },
+  { nome: 'Provocação',  cor: '#c22858', desc: 'beijos, arrepios e as primeiras peças' },
+  { nome: 'Fogo',        cor: '#da1c40', desc: 'pele com pele, sem pressa' },
+  { nome: 'Clímax',      cor: '#ff2a50', desc: 'sem freios — até o final' },
 ];
 
 // Categorias de casa ("degraus") do tabuleiro.

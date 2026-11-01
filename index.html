@@ -237,8 +237,8 @@
           </ul>
         </li>
         <li>O tabuleiro tem 4 fases e esquenta a cada uma:
-          <b style="color:#a894ff">Aquecimento</b> → <b style="color:#cc94ff">Provocação</b> →
-          <b style="color:#f094e4">Fogo</b> → <b style="color:#ff9ac4">Clímax</b>, lá no Pico do Amor.</li>
+          <b style="color:#e07aa0">Aquecimento</b> → <b style="color:#f0587e">Provocação</b> →
+          <b style="color:#ff4a62">Fogo</b> → <b style="color:#ff6a82">Clímax</b>, lá no Pico do Amor.</li>
         <li>Recusar uma carta custa 2 casas para trás (ou use um passe livre).</li>
         <li>Quem chegar primeiro ao <b>Clímax</b> escolhe 1 de 3 desejos para o parceiro realizar.</li>
       </ol>
@@ -249,6 +249,7 @@
   <!-- CARTA -->
   <section id="card" class="screen hidden">
     <div class="card">
+      <div class="verso" aria-hidden="true"><i></i><span>N</span></div>
       <div class="card-head"><span class="ico"></span><span class="cat"></span><span class="fase-tag"></span></div>
       <div class="card-who"></div>
       <p class="card-text"></p>
@@ -314,6 +315,35 @@
       <div class="ou"><span>ou</span></div>
       <button class="ghost visitante" id="lk-convidado"><b>Experimentar sem conta</b><small>Jogar agora; nada fica salvo na nuvem</small></button>
       <button class="link" id="lk-demo">Ver uma partida automática</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- PRIMEIRA VEZ: três passos rápidos -->
+  <section id="apresentacao" class="screen hidden">
+    <div class="panel apresentacao">
+      <button class="link pular" id="ap-pular">Pular</button>
+      <div class="passos" id="ap-passos">
+        <div class="passo">
+          <div class="ap-icone"><svg viewBox="0 0 24 24"><path d="M12 2 20 12 12 22 4 12Z"/><path d="M4 12h16M12 2v20" opacity=".45"/></svg></div>
+          <h2>Uma subida a dois</h2>
+          <p>Na sua vez, role a <b>pedra</b> e suba os degraus. Cada degrau traz uma carta: <b>verdade</b>, <b>desafio</b>, <b>pena</b>, armadilha ou sorte. Quem chegar primeiro ao <b>Pico do Amor</b> escolhe um desejo.</p>
+        </div>
+        <div class="passo">
+          <div class="ap-icone"><svg viewBox="0 0 24 24"><path d="M12 21s-7.5-4.6-9.6-9.3C.9 8.3 3 4.5 6.6 4.5c2.1 0 3.6 1.2 5.4 3.2 1.8-2 3.3-3.2 5.4-3.2 3.6 0 5.7 3.8 4.2 7.2C19.5 16.4 12 21 12 21Z"/></svg></div>
+          <h2>Vocês decidem</h2>
+          <p>Em <b>O que vale hoje</b>, desliguem o que não querem: as cartas com aquilo saem do baralho. Qualquer um pode <b>recusar</b> uma carta a qualquer momento (custa duas casas).</p>
+        </div>
+        <div class="passo">
+          <div class="ap-icone"><svg viewBox="0 0 24 24"><path d="M12 3l1.6 4.9L18.5 9.5l-4.9 1.6L12 16l-1.6-4.9L5.5 9.5l4.9-1.6Z"/></svg></div>
+          <h2>A noite é de vocês</h2>
+          <p>Escolham a <b>duração</b> e o <b>ritmo</b>, criem as <b>suas cartas</b> se quiserem, e deixem a narradora conduzir. A música abaixa quando ela fala.</p>
+          <div class="ap-acoes"><button class="ghost" id="ap-limites">O que vale hoje</button><button class="cta" id="ap-fim">Começar</button></div>
+        </div>
+      </div>
+      <div class="ap-rodape">
+        <div class="pontos" id="ap-pontos"><i class="on"></i><i></i><i></i></div>
+        <button class="cta" id="ap-proximo">Próximo</button>
       </div>
     </div>
   </section>

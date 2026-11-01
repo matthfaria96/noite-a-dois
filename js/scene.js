@@ -11,7 +11,7 @@ import { CATEGORIAS, FASES } from './data.js';
 import { drawIcon } from './icons.js';
 
 const PIECE_COLORS = { ele: 0x8a9cff, ela: 0xff7ab0 };
-const FOG = 0x2a1238;   // névoa rosa-violeta
+const FOG = 0x1a0610;   // névoa vinho, quase preta
 const FOCUS = 0xff2a4a; // vermelho dos pontos de foco (dado, peça da vez, pico)
 const SPACING = 2.15;  // distância entre casas ao longo da trilha
 const LEDGE = 1.95;     // meia-largura do terraço da trilha
@@ -82,13 +82,13 @@ void main() {
   vec3 q = vec3(cos(sw), el * 1.3, sin(sw)) * 1.8;
   float n1 = fbm(q + vec3(0.0, uTime * 0.008, 0.0));
   float n2 = fbm(q * 1.6 + vec3(4.0, 0.0, 1.3) + n1);
-  vec3 top = vec3(0.035, 0.015, 0.07);
+  vec3 top = vec3(0.016, 0.004, 0.012);
   vec3 col = mix(uFog, top, smoothstep(0.0, 0.75, el));
-  col += vec3(0.55, 0.28, 0.85) * smoothstep(0.45, 0.85, n1) * 0.22;   // véu lilás
-  col += vec3(0.95, 0.38, 0.68) * smoothstep(0.55, 0.9, n2) * 0.16;    // véu rosa
+  col += vec3(0.42, 0.04, 0.16) * smoothstep(0.45, 0.85, n1) * 0.24;   // véu carmim
+  col += vec3(0.6, 0.08, 0.22) * smoothstep(0.55, 0.9, n2) * 0.14;     // véu vinho
   vec3 sp = floor(d * 260.0);
   float st = h3(sp);
-  col += vec3(1.0, 0.92, 0.98) * step(0.998, st) * (0.5 + 0.5 * sin(uTime * 1.5 + st * 60.0)) * smoothstep(0.1, 0.5, el) * 0.8;
+  col += vec3(1.0, 0.62, 0.72) * step(0.998, st) * (0.5 + 0.5 * sin(uTime * 1.5 + st * 60.0)) * smoothstep(0.1, 0.5, el) * 0.8;
   col = mix(col, uFog, pow(1.0 - clamp(el + 0.15, 0.0, 1.0), 4.0)); // horizonte some na névoa
   gl_FragColor = vec4(col, 1.0);
 }`;
@@ -143,19 +143,19 @@ export class Board3D {
     this.tmpOut = new THREE.Vector3(); this.tmpV = new THREE.Vector3();
     this.mode = 'orbit'; // 'orbit' (tela inicial) | 'follow' | 'overview' | 'free'
 
-    this.scene.add(new THREE.HemisphereLight(0x9a7ad0, 0x2a1030, 0.75));
-    this.key = new THREE.SpotLight(0xffd0e0, 40, 40, 0.7, 0.9, 1.2);
+    this.scene.add(new THREE.HemisphereLight(0x8a3a5e, 0x1a0610, 0.7));
+    this.key = new THREE.SpotLight(0xff9ab0, 36, 40, 0.7, 0.9, 1.2);
     this.scene.add(this.key, this.key.target);
-    const moonLight = new THREE.DirectionalLight(0xb08aff, 0.8); moonLight.position.set(-30, 40, -20);
-    const venom = new THREE.DirectionalLight(0xff8ac0, 0.45); venom.position.set(30, 18, 25);
+    const moonLight = new THREE.DirectionalLight(0xa0304a, 0.7); moonLight.position.set(-30, 40, -20);
+    const venom = new THREE.DirectionalLight(0xd02050, 0.5); venom.position.set(30, 18, 25);
     this.scene.add(moonLight, venom);
-    this.rim = new THREE.PointLight(0xff5aa0, 16, 18, 1.5);
-    this.blue = new THREE.PointLight(0x7a5cff, 12, 16, 1.6);
+    this.rim = new THREE.PointLight(0xe0204e, 16, 18, 1.5);
+    this.blue = new THREE.PointLight(0x7a1450, 12, 16, 1.6);
     this.scene.add(this.rim, this.blue);
 
     this.composer = new EffectComposer(r);
     this.composer.addPass(new RenderPass(this.scene, this.camera));
-    this.bloom = new UnrealBloomPass(new THREE.Vector2(256, 256), 0.7, 0.8, 0.7);
+    this.bloom = new UnrealBloomPass(new THREE.Vector2(256, 256), 0.5, 0.6, 0.8);
     this.composer.addPass(this.bloom);
     this.composer.addPass(new OutputPass());
 
@@ -226,7 +226,7 @@ export class Board3D {
   // ================================================================ atmosfera
   #makeEmbers() {
     const N = 320, pos = new Float32Array(N * 3), col = new Float32Array(N * 3);
-    const palette = [0xffa0d0, 0xc08aff, 0xffd0e8, 0xff7ab0, 0xffffff].map(c => new THREE.Color(c));
+    const palette = [0xff4a6e, 0xb01a48, 0xff8aa0, 0xd02050, 0xffb0c0].map(c => new THREE.Color(c));
     for (let i = 0; i < N; i++) {
       const a = Math.random() * TAU, rr = 4 + Math.random() * 40;
       pos.set([Math.cos(a) * rr, Math.random() * 40 - 14, Math.sin(a) * rr], i * 3);
@@ -237,7 +237,7 @@ export class Board3D {
     geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
     geo.setAttribute('color', new THREE.BufferAttribute(col, 3));
     this.embers = new THREE.Points(geo, new THREE.PointsMaterial({
-      size: 0.16, map: glowTexture('#ffffff'), vertexColors: true, transparent: true, opacity: 0.7,
+      size: 0.16, map: glowTexture('#ffd0d8'), vertexColors: true, transparent: true, opacity: 0.7,
       depthWrite: false, blending: THREE.AdditiveBlending, fog: false,
     }));
     this.scene.add(this.embers);
@@ -407,7 +407,7 @@ export class Board3D {
   #buildMountain(sp) {
     const NR = 90, NA = 180, RMAX = sp.R0 + 14;
     const pos = [], col = [], idx = [];
-    const cLedge = new THREE.Color(0x3a2050), cLow = new THREE.Color(0x24123e), cHigh = new THREE.Color(0x9a5a9a), cVein = new THREE.Color(0xd08ad0);
+    const cLedge = new THREE.Color(0x2e0c1e), cLow = new THREE.Color(0x160510), cHigh = new THREE.Color(0x6e1e3e), cVein = new THREE.Color(0xc0304e);
     const tmp = new THREE.Color();
     this.wallSpots = [];
     for (let i = 0; i <= NR; i++) {
@@ -441,16 +441,16 @@ export class Board3D {
     geo.setIndex(idx);
     geo.computeVertexNormals();
     const mat = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.95, metalness: 0.05,
-      envMap: this.env, envMapIntensity: 0.2, emissive: 0x1e0c2a, emissiveIntensity: 0.7 });
+      envMap: this.env, envMapIntensity: 0.2, emissive: 0x1a0610, emissiveIntensity: 0.7 });
     const mesh = new THREE.Mesh(geo, mat);
     this.world.add(mesh);
 
-    // poucos cristais lilases, discretos, brotando das paredes
+    // poucos cristais rubi, discretos, brotando das paredes
     const geoC = new THREE.OctahedronGeometry(1, 0); geoC.scale(0.14, 0.7, 0.14); geoC.translate(0, 0.5, 0);
     const o = new THREE.Object3D();
     const spots = this.wallSpots.sort(() => Math.random() - 0.5).slice(0, 30);
     const im = new THREE.InstancedMesh(geoC, new THREE.MeshStandardMaterial({
-      color: 0xd8a0ff, emissive: 0xb070ff, emissiveIntensity: 0.55, roughness: 0.2, transparent: true, opacity: 0.85 }), spots.length * 3);
+      color: 0xff5a7a, emissive: 0xa0103a, emissiveIntensity: 0.6, roughness: 0.2, transparent: true, opacity: 0.85 }), spots.length * 3);
     let n = 0;
     for (const p of spots) {
       const out = new THREE.Vector3(p.x, 0, p.z).normalize();
@@ -487,7 +487,7 @@ export class Board3D {
     const rail = this.path.map((p, i) => p.clone().addScaledVector(this.outward[i], 1.25).setY(p.y - 0.22));
     const curve = new THREE.CatmullRomCurve3(rail);
     this.world.add(new THREE.Mesh(new THREE.TubeGeometry(curve, N * 10, 0.035, 6, false),
-      new THREE.MeshBasicMaterial({ color: 0xffa0d8, transparent: true, opacity: 0.35 })));
+      new THREE.MeshBasicMaterial({ color: 0xff5a7a, transparent: true, opacity: 0.3 })));
 
     // ---- degraus de vidro com núcleo de luz
     const geo = new RoundedBoxGeometry(1.86, 0.5, 1.86, 4, 0.16);
@@ -568,7 +568,7 @@ export class Board3D {
     this.world.add(peak);
     this.animated.push({ o: peak, base: peak.position.y, sp: 0.8, amp: 0.08, sign: peak });
     // anel de luz em volta do cume
-    const ring = new THREE.Mesh(new THREE.TorusGeometry(3.2, 0.02, 8, 96), new THREE.MeshBasicMaterial({ color: 0xffa0d0, transparent: true, opacity: 0.5 }));
+    const ring = new THREE.Mesh(new THREE.TorusGeometry(3.2, 0.02, 8, 96), new THREE.MeshBasicMaterial({ color: 0xd03050, transparent: true, opacity: 0.5 }));
     ring.rotation.x = Math.PI / 2; ring.position.set(0, sp.H + 3, 0);
     this.world.add(ring);
     this.animated.push({ o: ring, base: ring.position.y, sp: 0.6, amp: 0.4, spin: 0.2 });
@@ -576,7 +576,7 @@ export class Board3D {
     // ---- lua de sangue ao longe
     const [mcv, mg] = canvas(256);
     const mgr = mg.createRadialGradient(100, 96, 10, 128, 128, 128);
-    mgr.addColorStop(0, '#ffe0f0'); mgr.addColorStop(0.5, '#d08ac0'); mgr.addColorStop(1, '#5a3070');
+    mgr.addColorStop(0, '#ffb4a8'); mgr.addColorStop(0.5, '#c0304a'); mgr.addColorStop(1, '#4a0a1c');
     mg.fillStyle = mgr; mg.fillRect(0, 0, 256, 256);
     for (let k = 0; k < 30; k++) {
       mg.fillStyle = `rgba(60,20,70,${0.05 + Math.random() * 0.08})`;
@@ -584,7 +584,7 @@ export class Board3D {
     }
     const moon = new THREE.Mesh(new THREE.SphereGeometry(10, 32, 24), new THREE.MeshBasicMaterial({ map: tex(mcv), fog: false, transparent: true, opacity: 0.75 }));
     moon.position.set(-70, sp.H + 30, -110);
-    const mhalo = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTexture('#ffa0e0'), blending: THREE.AdditiveBlending, depthWrite: false, fog: false, opacity: 0.35 }));
+    const mhalo = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTexture('#ff4a5a'), blending: THREE.AdditiveBlending, depthWrite: false, fog: false, opacity: 0.35 }));
     mhalo.scale.setScalar(80);
     moon.add(mhalo);
     this.world.add(moon);

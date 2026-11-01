@@ -73,10 +73,7 @@ Com isso, o jogo exige login (com "esqueci a senha" por e-mail), e os nomes, as 
 - **Narradora:** voz feminina sussurrada e sedutora, gravada no VoiceStudio (OmniVoice, clonada de um trecho de ASMR).
   Ela dá as boas-vindas, avisa de quem é a vez, anuncia as fases, o tipo de carta, armadilhas, sorte, o Pico do Amor e o desejo. A música abaixa enquanto ela fala.
   **Só toca falas gravadas** (`audio/voz/ROTEIRO.md`, listadas em `audio/lista.json`): o jogo não usa a voz do aparelho. Nomes, texto das cartas e desejos aparecem só na tela.
-- **Música:** trilha ambiente hipnótica **gerada em tempo real**, sem arquivo: acordes suspensos que "respiram", um grave profundo, batidas de coração bem baixinhas e notas cristalinas com eco.
-  Ela esquenta a cada fase: o filtro abre, o coração acelera e aparecem mais notas. Para usar uma faixa própria, coloque `audio/musica.mp3` e marque `"musica": true` em `audio/lista.json`.
-
-## Desempenho
+- **Música:** trilha lounge sensual **gerada em tempo real**, sem arquivo e fixa (não muda com as fases): piano elétrico, baixo quente, batida trip-hop baixinha, colchão e chiado de vinil, a 70 BPM. Partes cheia e vazia se alternam a cada 16 compassos e as frases de melodia variam, para não enjoar. Para usar uma faixa própria, coloque `audio/musica.mp3` e marque `"musica": true` em `audio/lista.json`.
 - O 3D do tabuleiro **pausa** enquanto o dado gira em destaque e cai para **30 fps** quando uma tela (carta, menu, configurações) cobre o tabuleiro.
 - No modo Alta, a resolução vai até 1,75× (antes era 2×), e o bloom é calculado em meia resolução.
 - Não há refração no tabuleiro (só no dado), nem sombras, e a montanha tem uma malha reduzida.

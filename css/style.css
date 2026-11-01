@@ -91,7 +91,7 @@ body.leve .dreamblur { display: none; }
 .track { margin-top: 12px; padding: 0 4px; }
 .track-bar { height: 10px; border-radius: 999px; padding: 2px; }
 .track-bar::before { content: ''; position: absolute; inset: 2px; border-radius: 999px; opacity: .85;
-  background: linear-gradient(90deg, #7a5cff, #b45cff, #e05cd0, #ff6aa8); box-shadow: 0 0 14px rgba(200, 100, 255, .45); }
+  background: linear-gradient(90deg, #a63a6c, #c22858, #da1c40, #ff2a50); box-shadow: 0 0 14px rgba(220, 30, 70, .45); }
 .dot { position: absolute; top: 50%; width: 20px; height: 20px; margin: -10px 0 0 -10px; border-radius: 50%; transition: left .6s var(--ease);
   border: 2px solid #fff; box-shadow: 0 2px 10px rgba(0,0,0,.4), inset 0 1px 0 rgba(255,255,255,.6); }
 .dot.ele { background: linear-gradient(160deg, #b8c0ff, #6a6ae0); } .dot.ela { background: linear-gradient(160deg, #ffb0d0, #e04a9a); }
@@ -676,3 +676,60 @@ svg.gen { width: 1.15em; height: 1.15em; fill: none; stroke: currentColor; strok
 #atualizar .cta { padding: 8px 14px; font-size: 13px; }
 #atualizar .cta:disabled { opacity: .7; }
 @media (max-width: 640px) { #atualizar span { font-size: 13px; } }
+
+/* =====================================================================
+   Carta que vira: chega de costas (verso ornamentado) e gira para revelar
+   ===================================================================== */
+#card { perspective: 1400px; }
+.card { animation: virar .95s cubic-bezier(.3, .9, .3, 1) both; transform-style: preserve-3d; }
+@keyframes virar {
+  0% { transform: translateY(46px) rotateY(180deg) scale(.86); opacity: 0; }
+  15% { opacity: 1; }
+  100% { transform: none; opacity: 1; }
+}
+.verso { position: absolute; inset: 0; z-index: 5; border-radius: inherit; display: grid; place-items: center; pointer-events: none;
+  background: radial-gradient(ellipse at 50% 45%, #5a0c26 0%, #2a0414 55%, #12020a 100%);
+  box-shadow: inset 0 0 0 1px rgba(232, 168, 150, .55), inset 0 0 0 7px #16030c, inset 0 0 0 8px rgba(232, 120, 150, .35);
+  animation: versoSome .95s linear both; }
+.verso::before { content: ''; position: absolute; inset: 18px; border-radius: 22px; border: 1px solid rgba(232, 168, 150, .3);
+  background: repeating-linear-gradient(45deg, rgba(255, 100, 140, .05) 0 2px, transparent 2px 14px), repeating-linear-gradient(-45deg, rgba(255, 100, 140, .05) 0 2px, transparent 2px 14px); }
+.verso i { position: absolute; width: 120px; height: 120px; transform: rotate(45deg); border: 1px solid rgba(232, 168, 150, .5);
+  box-shadow: 0 0 30px rgba(200, 20, 60, .45), inset 0 0 24px rgba(200, 20, 60, .35); }
+.verso span { position: relative; font: italic 800 64px var(--serif); color: #f3c3cf; text-shadow: 0 0 18px rgba(220, 20, 70, .9); }
+/* o verso aparece enquanto a carta está de costas e some quando ela passa da metade do giro */
+@keyframes versoSome { 0%, 46% { opacity: 1 } 54%, 100% { opacity: 0 } }
+@media (prefers-reduced-motion: reduce) { .card { animation: fade .3s ease both; } .verso { display: none; } }
+
+/* tela limpa com a carta aberta: avisos laterais e painel do dado saem de cena */
+.side, #dado-hud { transition: opacity .35s ease, transform .35s ease; }
+body.carta-aberta .side, body.carta-aberta #dado-hud { opacity: 0 !important; }
+
+/* contraste no escuro: textos pequenos legíveis no celular à noite */
+:root { --ink-2: rgba(248, 228, 236, .76); --ink-3: rgba(246, 214, 228, .56); }
+.fine { font-size: 12px; }
+.seg button small { opacity: .85; }
+
+/* primeira vez: três passos */
+.apresentacao { position: relative; overflow: hidden; gap: 0; padding: 26px 0 22px; width: min(460px, 100%); }
+.apresentacao .pular { position: absolute; top: 18px; right: 20px; z-index: 2; font-size: 13px; }
+.passos { display: flex; transition: transform .55s var(--ease); }
+.passo { flex: 0 0 100%; display: flex; flex-direction: column; align-items: center; gap: 14px; padding: 24px 28px 8px; text-align: center; }
+.passo p { margin: 0; color: var(--ink-2); font-size: 15px; line-height: 1.6; }
+.passo p b { color: #ffd6e0; font-weight: 600; }
+.ap-icone { width: 84px; height: 84px; display: grid; place-items: center; border-radius: 50%;
+  background: radial-gradient(circle at 50% 40%, rgba(200, 20, 60, .45), rgba(40, 4, 20, .6)); border: 1px solid var(--hair);
+  box-shadow: 0 0 34px rgba(200, 20, 60, .35); }
+.ap-icone svg { width: 38px; height: 38px; fill: none; stroke: #ffc2d0; stroke-width: 1.5; stroke-linejoin: round; filter: drop-shadow(0 0 6px rgba(255, 60, 110, .8)); }
+.ap-acoes { display: flex; gap: 10px; width: 100%; margin-top: 6px; }
+.ap-acoes > * { flex: 1; }
+.ap-rodape { display: flex; align-items: center; justify-content: space-between; padding: 14px 28px 0; }
+.pontos { display: flex; gap: 8px; }
+.pontos i { width: 8px; height: 8px; border-radius: 50%; background: rgba(255, 140, 170, .25); cursor: pointer; transition: all .3s var(--ease); }
+.pontos i.on { width: 22px; border-radius: 4px; background: #e8547a; box-shadow: 0 0 10px rgba(232, 84, 122, .7); }
+#ap-proximo { padding: 11px 22px; font-size: 15px; transition: opacity .3s; }
+#ap-proximo.invisivel { opacity: 0; pointer-events: none; }
+@media (max-width: 640px) {
+  #apresentacao .panel { justify-content: center; padding-left: 0; padding-right: 0; }
+  .passo { padding: 24px 22px 8px; }
+  .ap-rodape { padding: 18px 22px 0; }
+}
