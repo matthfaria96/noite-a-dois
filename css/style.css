@@ -540,8 +540,8 @@ button, .tile-btn, .limite, .wish { -webkit-user-select: none; user-select: none
 /* celular: telas de conteúdo em fluxo normal. O painel tem no mínimo a altura da tela e cresce com o conteúdo,
    então nunca transborda para cima (parte inalcançável) — rola normalmente. Carta e pausa seguem centralizada/folha. */
 @media (max-width: 640px) {
-  .screen:not(#card):not(#menu):not(#limites):not(#info) { display: block; }
-  .screen:not(#card):not(#menu):not(#limites):not(#info) > .panel:not(.sheet) { min-height: 100%; }
+  .screen:not(#card):not(#menu):not(#limites):not(#info):not(#cartas) { display: block; }
+  .screen:not(#card):not(#menu):not(#limites):not(#info):not(#cartas) > .panel:not(.sheet) { min-height: 100%; }
 }
 
 /* =====================================================================
@@ -997,40 +997,47 @@ html, body, .screen, .panel, .sheet-body { overflow-x: hidden; }
 body.modal-aberto #setup > .panel, body.modal-aberto #hud, body.modal-aberto .side { opacity: 0; pointer-events: none; }
 @media (prefers-reduced-transparency: reduce) { .screen.foco { -webkit-backdrop-filter: none; backdrop-filter: none; background: rgba(8, 0, 6, .9); } }
 
-/* ---------- Nossas cartas no gratuito: amostra do Premium ---------- */
-#cartas.so-premium .cartas-grid { display: none; }
-@media (min-width: 641px) { #cartas.so-premium > .panel { width: min(560px, 100%); } }
-.premium-aviso { gap: 10px; padding: 22px 20px 20px; overflow: hidden; }
-.premium-aviso .pa-titulo { font: italic 600 24px var(--serif); color: #fbe3ea; }
-.amostras { position: relative; height: 210px; width: 100%; margin: 4px 0 6px; }
-.mini-carta { position: absolute; left: 50%; top: 8px; width: 150px; height: 196px; margin-left: -75px; padding: 26px 12px 12px;
-  display: flex; flex-direction: column; align-items: center; gap: 4px; text-align: center; border-radius: 18px;
-  background: linear-gradient(165deg, rgba(60, 12, 36, .96), rgba(18, 3, 12, .98));
-  box-shadow: inset 0 0 0 1px rgba(255, 214, 180, .5), 0 0 30px color-mix(in srgb, #ffb88a 22%, transparent), 0 18px 40px rgba(0, 0, 0, .6);
+/* ---------- Nossas cartas no gratuito: amostra curta do Premium ----------
+   computador: leque de cartas à esquerda, texto à direita; celular: cabe numa tela, sem rolar */
+#cartas.so-premium .cartas-grid, #cartas.so-premium .sheet-foot { display: none; }
+#cartas.so-premium .sheet-body { padding-bottom: 22px; }
+@media (min-width: 641px) { #cartas.so-premium > .panel { width: min(640px, 100%); } }
+.premium-aviso { display: grid; grid-template-columns: 250px 1fr; align-items: center; gap: 8px 18px; padding: 18px 22px 18px 10px; text-align: left; overflow: hidden; }
+.pa-texto { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; }
+.pa-texto .selo { margin: 0; }
+.premium-aviso .pa-titulo { font: italic 600 23px/1.15 var(--serif); color: #fbe3ea; }
+.vantagens { list-style: none; margin: 0 0 4px; padding: 0; display: flex; flex-direction: column; gap: 5px; font-size: 13.5px; color: var(--ink-2); }
+.vantagens li { position: relative; padding-left: 16px; }
+.vantagens li::before { content: '✦'; position: absolute; left: 0; color: #ffc8a8; text-shadow: 0 0 8px rgba(255, 170, 140, .7); font-size: 11px; top: 1px; }
+#btn-quero-premium { width: 100%; padding: 13px; font-size: 16px; }
+.amostras { position: relative; height: 196px; }
+.mini-carta { position: absolute; left: 50%; top: 10px; width: 118px; height: 160px; margin-left: -59px; padding: 22px 9px 9px;
+  display: flex; flex-direction: column; align-items: center; gap: 3px; text-align: center; border-radius: 15px;
+  background: linear-gradient(165deg, rgba(60, 12, 36, .97), rgba(18, 3, 12, .98));
+  box-shadow: inset 0 0 0 1px rgba(255, 214, 180, .5), 0 0 24px color-mix(in srgb, #ffb88a 20%, transparent), 0 14px 30px rgba(0, 0, 0, .6);
   transition: transform .5s var(--ease); }
-.mini-carta.m1 { transform: translateX(-92px) rotate(-11deg) translateY(14px) scale(.9); }
-.mini-carta.m3 { transform: translateX(92px) rotate(11deg) translateY(14px) scale(.9); }
+.mini-carta.m1 { transform: translateX(-66px) rotate(-12deg) translateY(12px) scale(.88); }
+.mini-carta.m3 { transform: translateX(66px) rotate(12deg) translateY(12px) scale(.88); }
 .mini-carta.m2 { z-index: 2; }
-.premium-aviso:hover .mini-carta.m1 { transform: translateX(-104px) rotate(-14deg) translateY(10px) scale(.9); }
-.premium-aviso:hover .mini-carta.m3 { transform: translateX(104px) rotate(14deg) translateY(10px) scale(.9); }
+.premium-aviso:hover .mini-carta.m1 { transform: translateX(-76px) rotate(-15deg) translateY(10px) scale(.88); }
+.premium-aviso:hover .mini-carta.m3 { transform: translateX(76px) rotate(15deg) translateY(10px) scale(.88); }
 .premium-aviso:hover .mini-carta.m2 { transform: translateY(-4px); }
-.mc-selo { position: absolute; top: 8px; left: 50%; transform: translateX(-50%); white-space: nowrap; padding: 2px 8px; border-radius: 999px;
-  font: 700 7.5px/1.3 var(--sf); letter-spacing: .12em; text-transform: uppercase; color: #2a0810; background: linear-gradient(135deg, #ffe0b8, #f0a0b4); }
-.mc-ico { width: 46px; height: 46px; flex: none; border-radius: 50%; overflow: hidden; background: center / 60% no-repeat, rgba(0, 0, 0, .3);
-  border: 1px solid rgba(255, 255, 255, .25); }
-.mc-ico.foto { border: 2px solid rgba(255, 214, 180, .85); box-shadow: 0 0 14px rgba(255, 170, 140, .45); }
+.mc-selo { position: absolute; top: 7px; left: 50%; transform: translateX(-50%); white-space: nowrap; padding: 2px 7px; border-radius: 999px;
+  font: 700 6.5px/1.3 var(--sf); letter-spacing: .12em; text-transform: uppercase; color: #2a0810; background: linear-gradient(135deg, #ffe0b8, #f0a0b4); }
+.mc-ico { width: 38px; height: 38px; flex: none; border-radius: 50%; overflow: hidden; background: center / 60% no-repeat, rgba(0, 0, 0, .3); border: 1px solid rgba(255, 255, 255, .25); }
+.mc-ico.foto { border: 2px solid rgba(255, 214, 180, .85); box-shadow: 0 0 12px rgba(255, 170, 140, .45); }
 .mc-ico svg { display: block; width: 100%; height: 100%; }
-.mini-carta b { font: italic 700 17px var(--serif); color: #fff; }
-.mini-carta small { font-size: 9.5px; color: var(--ink-2); }
+.mini-carta b { font: italic 700 14px var(--serif); color: #fff; }
+.mini-carta small { font-size: 8px; color: var(--ink-2); }
 .mini-carta small i { font-style: normal; font-weight: 700; } .mini-carta i.ele { color: var(--ele); } .mini-carta i.ela { color: var(--ela); }
-.mini-carta p { margin: 2px 0 0; font: italic 500 12.5px/1.3 var(--serif); color: #fff; }
-.vantagens { list-style: none; margin: 4px 0 6px; padding: 0; display: flex; flex-direction: column; gap: 7px; text-align: left; font-size: 14px; color: var(--ink); }
-.vantagens li { display: flex; align-items: baseline; gap: 9px; }
-.vantagens i { font-style: normal; color: #ffc8a8; text-shadow: 0 0 8px rgba(255, 170, 140, .7); }
-#btn-quero-premium { width: 100%; max-width: 320px; margin-top: 4px; }
-@media (max-width: 380px) { .mini-carta.m1 { transform: translateX(-74px) rotate(-11deg) translateY(14px) scale(.82); } .mini-carta.m3 { transform: translateX(74px) rotate(11deg) translateY(14px) scale(.82); } }
+.mini-carta p { margin: 1px 0 0; font: italic 500 10.5px/1.28 var(--serif); color: #fff; }
+@media (max-width: 640px) {
+  .premium-aviso { grid-template-columns: 1fr; padding: 6px 18px 18px; text-align: center; }
+  .amostras { height: 178px; }
+  .pa-texto { align-items: center; }
+  .vantagens { align-items: center; }
+}
 @media (prefers-reduced-motion: reduce) { .mini-carta { transition: none; } }
-#cartas.so-premium .sheet-foot .cta { background: transparent; border: 1px solid var(--hair); box-shadow: none; text-shadow: none; font-size: 16px; padding: 14px; }
 
 /* (i) dos ajustes: só o ícone, sem cara de botão */
 .info { width: 24px; height: 24px; padding: 0; border: 0; background: none; box-shadow: none; color: var(--ink-3); display: inline-grid; place-items: center; }
@@ -1050,3 +1057,9 @@ body.modal-aberto #setup > .panel, body.modal-aberto #hud, body.modal-aberto .si
 .info-lista span { display: block; margin-top: 2px; font-size: 14px; line-height: 1.5; color: var(--ink-2); }
 #info .lead b { color: #ffd6e0; font-weight: 600; }
 @media (max-width: 640px) { #info h2 { font-size: 26px; } }
+@media (max-width: 640px) {
+  #cartas.so-premium { place-items: end stretch; }
+  #cartas.so-premium > .panel { min-height: 0; height: auto; border-radius: var(--r-lg) var(--r-lg) 0 0; animation: rise .5s var(--ease); }
+  #cartas.so-premium .sheet-head { padding-top: 20px; }
+  #cartas.so-premium .sheet-body { padding-bottom: max(18px, env(safe-area-inset-bottom)); }
+}
