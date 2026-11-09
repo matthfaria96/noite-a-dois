@@ -178,21 +178,21 @@
         <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1Z"/></svg>
       </button>
       <div class="hero">
-        <div class="badges"><span>2 jogadores</span><span>+18</span><span>30–70 min</span></div>
+        <div class="badges"><span>2 jogadores</span><span>+18</span><span>25–85 min</span></div>
         <h1 class="logo"><span class="l1">Noite</span><span class="l2">a Dois</span></h1>
         <p class="tag">Uma subida a dois, entre névoa e desejo, até o Pico do Amor.</p>
       </div>
       <div class="form">
       <div class="names">
-        <label class="ele"><span><svg class="gen" viewBox="0 0 24 24" aria-hidden="true"><circle cx="10" cy="14" r="5.5"/><path d="M14 10 19.5 4.5M14.5 4.5h5v5"/></svg>Ele</span><input id="name-ele" maxlength="14" placeholder="Nome dele"></label>
-        <label class="ela"><span><svg class="gen" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="9" r="5.5"/><path d="M12 14.5V21M9 18h6"/></svg>Ela</span><input id="name-ela" maxlength="14" placeholder="Nome dela"></label>
+        <label class="ele"><span><svg class="gen" viewBox="0 0 24 24" aria-hidden="true"><circle cx="10" cy="14" r="5.5"/><path d="M14 10 19.5 4.5M14.5 4.5h5v5"/></svg>Ele</span><input id="name-ele" maxlength="14" placeholder="Nome dele" required aria-required="true" autocomplete="off"></label>
+        <label class="ela"><span><svg class="gen" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="9" r="5.5"/><path d="M12 14.5V21M9 18h6"/></svg>Ela</span><input id="name-ela" maxlength="14" placeholder="Nome dela" required aria-required="true" autocomplete="off"></label>
       </div>
-      <div class="opt">
-        <span>Duração</span>
-        <div class="seg" id="seg-dur">
-          <button data-v="28">Rápida<small>~30 min</small></button>
-          <button data-v="40" class="on">Normal<small>~50 min</small></button>
-          <button data-v="52">Longa<small>~70 min</small></button>
+      <div class="opt casas">
+        <span class="rotulo">Casas no tabuleiro <b id="casas-val">40 casas</b><small id="casas-tempo">~50 min</small></span>
+        <div class="casas-ctrl">
+          <button type="button" class="passo-btn" id="casas-menos" aria-label="Menos casas">−</button>
+          <input type="range" id="casas" min="20" max="64" step="4" value="40" aria-label="Casas no tabuleiro">
+          <button type="button" class="passo-btn" id="casas-mais" aria-label="Mais casas">+</button>
         </div>
       </div>
       <div class="opt">
@@ -204,11 +204,19 @@
         </div>
       </div>
       <div class="opt">
-        <span>Ritmo</span>
+        <span class="rotulo">Ritmo <button type="button" class="info" id="btn-ritmo-info" aria-label="Como o ritmo funciona" aria-expanded="false" aria-controls="ritmo-info"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5v.01"/></svg></button></span>
         <div class="seg" id="seg-ritmo">
           <button data-v="romantico">Romântico<small>mais verdades</small></button>
           <button data-v="provocante" class="on">Provocante<small>equilibrado</small></button>
           <button data-v="intenso">Intenso<small>esquenta rápido</small></button>
+        </div>
+        <div class="dica hidden" id="ritmo-info" role="note">
+          <p>O ritmo decide <b>o que aparece</b> nas casas e <b>quando o clima esquenta</b>. Ele não muda o tamanho da partida.</p>
+          <ul>
+            <li><b>Romântico:</b> mais verdades e carícias; as fases quentes chegam mais tarde.</li>
+            <li><b>Provocante:</b> o equilíbrio entre conversa e ação.</li>
+            <li><b>Intenso:</b> mais desafios e o Fogo e o Clímax chegam mais cedo.</li>
+          </ul>
         </div>
       </div>
       <div class="pair">
@@ -216,7 +224,7 @@
         <button class="tile-btn" id="btn-cartas"><b>Nossas cartas</b><small id="cartas-resumo">Criem as suas</small></button>
       </div>
       <button class="cta" id="btn-start">Começar a noite</button>
-      <div class="links"><button class="link" id="btn-rules">Como jogar</button><button class="link" id="btn-teste-setup">Modo de teste</button><button class="link destaque hidden" id="btn-entrar-setup">Entrar para salvar</button></div>
+      <div class="links"><button class="link" id="btn-rules">Como jogar</button><button class="link destaque hidden" id="btn-entrar-setup">Entrar para salvar</button></div>
       <p class="fine">Só para maiores de 18. Joguem apenas se ambos quiserem — qualquer um pode recusar uma carta ou pausar a qualquer momento.</p>
       </div>
     </div>
@@ -226,6 +234,16 @@
   <section id="rules" class="screen hidden">
     <div class="panel scroll sheet rules-panel">
       <h2>Como jogar</h2>
+      <div class="clima">
+        <h3>Antes de começar, preparem o clima</h3>
+        <p>Para a noite ficar mais intensa, deixem por perto:</p>
+        <ul>
+          <li><b>Vela aromática</b> – luz baixa e um cheiro gostoso no ar.</li>
+          <li><b>Óleo corporal</b> – para as massagens e carícias.</li>
+          <li><b>Venda para os olhos</b> – tirar a visão aguça todo o resto.</li>
+        </ul>
+        <p class="sem">Não tem algum deles? Tudo bem, nenhum é obrigatório: quando uma carta pedir um acessório, ela mostra uma alternativa.</p>
+      </div>
       <ol>
         <li>Cada um tem a sua peça: <b class="c-ele"><svg class="gen" viewBox="0 0 24 24" aria-hidden="true"><circle cx="10" cy="14" r="5.5"/><path d="M14 10 19.5 4.5M14.5 4.5h5v5"/></svg>Ele</b> e <b class="c-ela"><svg class="gen" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="9" r="5.5"/><path d="M12 14.5V21M9 18h6"/></svg>Ela</b>.</li>
         <li>Na sua vez, role o <b class="c-red">dado de cristal</b> e suba os degraus.</li>
@@ -233,7 +251,7 @@
           <ul class="cats">
             <li><i class="ci" data-t="verdade"></i><b>Verdade</b> – responda com sinceridade.</li>
             <li><i class="ci" data-t="desafio"></i><b>Desafio</b> – faça o que a carta mandar.</li>
-            <li><i class="ci" data-t="pena"></i><b>Pena</b> – carícia livre, use a criatividade.</li>
+            <li><i class="ci" data-t="pena"></i><b>Pena</b> – carícia livre, use a criatividade. Sem pena? Use suavemente as pontas dos dedos.</li>
             <li><i class="ci" data-t="armadilha"></i><b>Armadilha</b> – volte casas, perca a vez, troque de lugar…</li>
             <li><i class="ci" data-t="sorte"></i><b>Sorte</b> – avance, jogue de novo ou ganhe um passe livre.</li>
           </ul>
@@ -241,6 +259,7 @@
         <li>O tabuleiro tem 4 fases e esquenta a cada uma:
           <b style="color:#e07aa0">Aquecimento</b> → <b style="color:#f0587e">Provocação</b> →
           <b style="color:#ff4a62">Fogo</b> → <b style="color:#ff6a82">Clímax</b>, lá no Pico do Amor.</li>
+        <li>Sem acessório, a brincadeira continua: <b>pena</b> vira as pontas dos dedos, bem de leve, e <b>venda</b> vira pedir para a pessoa fechar os olhos.</li>
         <li>Recusar uma carta custa 2 casas para trás (ou use um passe livre).</li>
         <li>Quem chegar primeiro ao <b>Clímax</b> escolhe 1 de 3 desejos para o parceiro realizar.</li>
       </ol>
@@ -252,9 +271,11 @@
   <section id="card" class="screen hidden">
     <div class="card">
       <div class="verso" aria-hidden="true"><i></i><span>N</span></div>
+      <span class="nossa-selo hidden">Carta de vocês</span>
       <div class="card-head"><span class="ico"></span><span class="cat"></span><span class="fase-tag"></span></div>
       <div class="card-who"></div>
       <p class="card-text"></p>
+      <p class="card-dica hidden"></p>
       <div class="timer hidden"><svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="44" class="bg"/><circle cx="50" cy="50" r="44" class="fg"/></svg><b></b></div>
       <div class="card-actions">
         <button class="ghost" id="btn-refuse">Recusar</button>
@@ -316,7 +337,6 @@
       <div class="links"><button class="link" id="lk-troca">Criar uma conta</button><button class="link" id="lk-esqueci">Esqueci a senha</button></div>
       <div class="ou"><span>ou</span></div>
       <button class="ghost visitante" id="lk-convidado"><b>Experimentar sem conta</b><small>Jogar agora; nada fica salvo na nuvem</small></button>
-      <button class="link" id="lk-demo">Ver uma partida automática</button>
       </div>
     </div>
   </section>
@@ -339,7 +359,7 @@
         <div class="passo">
           <div class="ap-icone"><svg viewBox="0 0 24 24"><path d="M12 3l1.6 4.9L18.5 9.5l-4.9 1.6L12 16l-1.6-4.9L5.5 9.5l4.9-1.6Z"/></svg></div>
           <h2>A noite é de vocês</h2>
-          <p>Escolham a <b>duração</b> e o <b>ritmo</b>, criem as <b>suas cartas</b> se quiserem, e deixem a narradora conduzir. A música abaixa quando ela fala.</p>
+          <p>Escolham quantas <b>casas</b> o tabuleiro tem e o <b>ritmo</b>, criem as <b>suas cartas</b> se quiserem, e deixem a narradora conduzir. A música abaixa quando ela fala.</p>
           <div class="ap-acoes"><button class="ghost" id="ap-limites">O que vale hoje</button><button class="cta" id="ap-fim">Começar</button></div>
         </div>
       </div>
@@ -352,14 +372,15 @@
 
   <!-- O QUE VALE HOJE -->
   <section id="limites" class="screen hidden">
-    <div class="panel scroll sheet">
+    <div class="panel sheet fixa">
       <header class="sheet-head">
-        <h2>O que vale hoje</h2>
+        <h2>O que vale hoje?</h2>
         <button class="icon-btn close" data-close aria-label="Fechar"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
       </header>
-      <p class="lead">Desliguem o que não vale hoje: as cartas com isso saem do baralho. Dá para mudar a qualquer momento, até no meio do jogo.</p>
-      <div class="limites" id="limites-lista"></div>
-      <button class="link destaque" id="btn-catalogo-limites">Ver e desligar carta por carta</button>
+      <div class="sheet-body">
+        <p class="lead">Desliguem o que não vale hoje: as cartas com isso saem do baralho, sem revelar quais são. Dá para mudar a qualquer momento, até no meio do jogo.</p>
+        <div class="limites" id="limites-lista"></div>
+      </div>
       <div class="sheet-foot"><button class="cta" data-close>Combinado</button></div>
     </div>
   </section>
@@ -368,7 +389,7 @@
   <section id="catalogo" class="screen hidden">
     <div class="panel scroll sheet">
       <header class="sheet-head">
-        <h2>Todas as cartas</h2>
+        <h2>Todas as cartas <span class="selo dev">Dev</span></h2>
         <button class="icon-btn close" data-close aria-label="Fechar"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
       </header>
       <div class="cat-topo">
@@ -383,26 +404,47 @@
     </div>
   </section>
 
-  <!-- NOSSAS CARTAS -->
+  <!-- NOSSAS CARTAS (criar e editar é Premium) -->
   <section id="cartas" class="screen hidden">
-    <div class="panel scroll sheet">
+    <div class="panel sheet fixa">
       <header class="sheet-head">
         <h2>Nossas cartas</h2>
         <button class="icon-btn close" data-close aria-label="Fechar"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
       </header>
-      <div class="cartas-grid">
-        <form class="group" id="nova-carta">
-          <h3>Nova carta</h3>
-          <textarea id="nc-texto" maxlength="180" rows="3" placeholder="Ex.: Conte para {par} o que você pensou quando acordou hoje."></textarea>
-          <p class="fine">Use <b>{par}</b> para o nome do par. Ela entra no baralho junto com as outras.</p>
-          <div class="seg" id="seg-nc-tipo"><button type="button" data-v="verdade" class="on">Verdade</button><button type="button" data-v="desafio">Desafio</button></div>
-          <div class="seg" id="seg-nc-fase"><button type="button" data-v="0" class="on">Aquecimento</button><button type="button" data-v="1">Provocação</button><button type="button" data-v="2">Fogo</button><button type="button" data-v="3">Clímax</button></div>
-          <div class="seg" id="seg-nc-tempo"><button type="button" data-v="0" class="on">Livre</button><button type="button" data-v="30">30s</button><button type="button" data-v="60">1 min</button><button type="button" data-v="120">2 min</button></div>
-          <button class="cta">Adicionar carta</button>
-        </form>
-        <div class="group">
-          <h3>Do casal <small id="cartas-total"></small></h3>
-          <ul class="lista-cartas" id="lista-cartas"></ul>
+      <div class="sheet-body">
+        <div class="premium-aviso hidden" id="cartas-premium">
+          <span class="selo">Premium</span>
+          <b>Criem as cartas de vocês</b>
+          <p>Com o Premium vocês escrevem as próprias cartas, escolhem quem faz e quem recebe e podem colocar uma foto de vocês no lugar do ícone. Elas entram no baralho com destaque.</p>
+        </div>
+        <div class="cartas-grid">
+          <form class="group" id="nova-carta" autocomplete="off">
+            <h3 id="nc-titulo">Nova carta</h3>
+            <textarea id="nc-texto" maxlength="180" rows="3" placeholder="Ex.: Toque levemente no bumbum de {par}."></textarea>
+            <p class="fine esq">Use <b>{par}</b> para o nome de quem recebe.</p>
+            <div class="campo"><span>Tipo</span>
+              <div class="seg" id="seg-nc-tipo"><button type="button" data-v="verdade" class="on">Verdade</button><button type="button" data-v="desafio">Desafio</button></div></div>
+            <div class="quem-grid">
+              <div class="campo"><span>Quem faz</span>
+                <div class="seg quem" id="seg-nc-faz"><button type="button" data-v="ele" class="c-ele"><svg class="gen" viewBox="0 0 24 24" aria-hidden="true"><circle cx="10" cy="14" r="5.5"/><path d="M14 10 19.5 4.5M14.5 4.5h5v5"/></svg>Ele</button><button type="button" data-v="ela" class="c-ela"><svg class="gen" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="9" r="5.5"/><path d="M12 14.5V21M9 18h6"/></svg>Ela</button><button type="button" data-v="ambos" class="on">Ambos</button></div></div>
+              <div class="campo"><span>Quem recebe</span>
+                <div class="seg quem" id="seg-nc-recebe"><button type="button" data-v="ele" class="c-ele"><svg class="gen" viewBox="0 0 24 24" aria-hidden="true"><circle cx="10" cy="14" r="5.5"/><path d="M14 10 19.5 4.5M14.5 4.5h5v5"/></svg>Ele</button><button type="button" data-v="ela" class="c-ela"><svg class="gen" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="9" r="5.5"/><path d="M12 14.5V21M9 18h6"/></svg>Ela</button><button type="button" data-v="ambos" class="on">Ambos</button></div></div>
+            </div>
+            <div class="campo"><span>Fase</span>
+              <div class="seg" id="seg-nc-fase"><button type="button" data-v="0" class="on">Aquecimento</button><button type="button" data-v="1">Provocação</button><button type="button" data-v="2">Fogo</button><button type="button" data-v="3">Clímax</button></div></div>
+            <div class="campo"><span>Tempo</span>
+              <div class="seg" id="seg-nc-tempo"><button type="button" data-v="0" class="on">Livre</button><button type="button" data-v="30">30s</button><button type="button" data-v="60">1 min</button><button type="button" data-v="120">2 min</button></div></div>
+            <div class="campo"><span>Foto no lugar do ícone <small>opcional</small></span>
+              <div class="foto-campo">
+                <label class="foto-prev" id="nc-foto-prev" aria-label="Escolher foto"><input type="file" id="nc-foto" accept="image/*"></label>
+                <div><button type="button" class="ghost mini" id="nc-foto-btn">Escolher foto</button><button type="button" class="link hidden" id="nc-foto-tirar">Remover foto</button></div>
+              </div></div>
+            <div class="nc-acoes"><button type="button" class="ghost hidden" id="nc-cancelar">Cancelar</button><button class="cta" id="nc-ok">Adicionar carta</button></div>
+          </form>
+          <div class="group do-casal">
+            <h3>Do casal <small id="cartas-total"></small></h3>
+            <ul class="lista-cartas" id="lista-cartas"></ul>
+          </div>
         </div>
       </div>
       <div class="sheet-foot"><button class="cta" data-close>Pronto</button></div>
@@ -411,11 +453,12 @@
 
   <!-- CONFIGURAÇÕES -->
   <section id="settings" class="screen hidden">
-    <div class="panel scroll sheet">
+    <div class="panel sheet fixa">
       <header class="sheet-head">
         <h2>Configurações</h2>
         <button class="icon-btn close" data-close aria-label="Fechar"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
       </header>
+      <div class="sheet-body">
       <div class="groups">
       <div class="col">
       <div class="group">
@@ -427,6 +470,8 @@
       <div class="group">
         <h3>Narração</h3>
         <label class="row">Voz da narradora<span class="switch"><input type="checkbox" id="cfg-narracao"><i></i></span></label>
+        <div class="campo"><span>Voz</span>
+          <div class="seg" id="seg-voz"><button data-v="nova">Nova<small>mais grave</small></button><button data-v="original">Original<small>a de antes</small></button></div></div>
         <label class="row">Volume da voz<input type="range" id="cfg-voz" min="0" max="1" step="0.05"></label>
         <button class="ghost" id="btn-voz-teste">Ouvir a narradora</button>
       </div>
@@ -440,14 +485,15 @@
       </div>
       </div>
       <div class="col">
-      <div class="group">
-        <h3>Cartas</h3>
-        <p class="fine" id="catalogo-resumo">Todas as cartas ligadas.</p>
-        <button class="ghost" id="btn-catalogo">Ver todas as cartas</button>
+      <div class="group" id="grupo-dado">
+        <h3>Dado <span class="selo">Premium</span></h3>
+        <div class="gemas" id="gemas" role="radiogroup" aria-label="Pedra do dado"></div>
+        <p class="fine esq hidden" id="dado-premium">Escolher a pedra do dado faz parte do Premium. A noite segue com o rubi.</p>
       </div>
       <div class="group" id="conta">
         <h3>Conta</h3>
         <p class="fine conta-user"></p>
+        <p class="plano-linha">Plano <b id="plano-nome">Gratuito</b></p>
         <button class="ghost hidden" id="btn-entrar">Entrar ou criar conta</button>
         <button class="ghost" id="btn-proteger">Proteger o jogo com senha</button>
         <button class="ghost" id="btn-senha">Alterar senha</button>
@@ -459,15 +505,22 @@
         <button class="ghost" id="btn-sair">Sair</button>
         <button class="ghost danger" id="btn-apagar">Apagar conta deste aparelho</button>
       </div>
-      <div class="group">
-        <h3>Modo de teste</h3>
-        <p class="fine">O jogo se joga sozinho, com os dois jogadores automáticos — bom para conferir o tabuleiro, as cartas e o ritmo.</p>
-        <div class="seg" id="seg-vel">
-          <button data-v="1">1×</button>
-          <button data-v="2">2×</button>
-          <button data-v="4">4×</button>
-        </div>
+      <!-- só admins: o grupo inteiro nem é montado para os outros planos -->
+      <div class="group dev hidden" id="dev">
+        <h3>Desenvolvedor <span class="selo dev">Admin</span></h3>
+        <p class="fine esq">Inspeção e testes. Jogadores não veem esta área.</p>
+        <div class="campo"><span>Ver o jogo como</span>
+          <div class="seg" id="seg-vercomo"><button data-v="admin">Admin</button><button data-v="premium">Premium</button><button data-v="gratuito">Gratuito</button></div></div>
+        <button class="ghost" id="btn-catalogo">Todas as cartas <small id="catalogo-resumo"></small></button>
+        <div class="campo"><span>Modo de teste</span>
+          <p class="fine esq">O jogo se joga sozinho, com os dois jogadores automáticos: confere o tabuleiro, as cartas e o ritmo.</p>
+          <div class="seg" id="seg-vel">
+            <button data-v="1">1×</button>
+            <button data-v="2">2×</button>
+            <button data-v="4">4×</button>
+          </div></div>
         <button class="ghost" id="btn-teste">Iniciar modo de teste</button>
+      </div>
       </div>
       </div>
       </div>

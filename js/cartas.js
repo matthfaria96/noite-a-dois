@@ -37,13 +37,30 @@ export function idCarta(texto) {
 const ligada = (texto, desligadas = []) => !desligadas.includes(idCarta(texto));
 const vale = (texto, cfg) => liberado(texto, cfg.limites) && ligada(texto, cfg.desligadas);
 
+// Cartas do casal: cada uma diz quem faz e quem recebe (ele, ela ou ambos). Com dois jogadores,
+// quem recebe é sempre o par de quem faz, então a carta só sai para quem pode fazer E tem par que pode receber.
+const outro = g => (g === 'ele' ? 'ela' : 'ele');
+export function normalizarCarta(c, desligadas = []) {
+  return {
+    id: c.id ?? idCarta(c.t), t: c.t, tipo: c.tipo ?? 'verdade', f: c.f ?? 0, s: c.s || 0,
+    faz: c.faz ?? 'ambos', recebe: c.recebe ?? 'ambos',
+    ativa: c.ativa ?? !desligadas.includes(idCarta(c.t)), ...(c.foto ? { foto: c.foto } : {}),
+  };
+}
+export const podeFazer = (c, g) => (c.faz === 'ambos' || c.faz === g) && (c.recebe === 'ambos' || c.recebe === outro(g));
+// para quem a carta sai, no formato das cartas padrão ('ambos' | 'ele' | 'ela' | null = nunca)
+export function paraQuem(c) {
+  const ok = ['ele', 'ela'].filter(g => podeFazer(c, g));
+  return ok.length === 2 ? 'ambos' : ok[0] ?? null;
+}
+
 // Cartas da fase `f` para um tipo, com as cartas do casal e sem o que está desligado (limites ou catálogo).
 // Nunca devolve vazio: se tudo foi desligado, usa as verdades da fase, depois as de qualquer fase
 // e, em último caso, as verdades originais (falar sobre algo não é fazer).
 const BASE = { verdade: VERDADE, desafio: DESAFIO, pena: PENA };
 function cartasDe(tipo, f, cfg) {
-  const proprias = (cfg.cartas ?? []).filter(c => c.tipo === tipo && c.f === f && ligada(c.t, cfg.desligadas))
-    .map(c => ({ t: c.t, p: 'ambos', s: c.s || 0, nossa: true }));
+  const proprias = (cfg.cartas ?? []).filter(c => c.tipo === tipo && c.f === f && c.ativa !== false && paraQuem(c))
+    .map(c => ({ t: c.t, p: paraQuem(c), s: c.s || 0, nossa: true, foto: c.foto, faz: c.faz, recebe: c.recebe }));
   const base = BASE[tipo][f].filter(c => (tipo === 'verdade' ? ligada(c.t, cfg.desligadas) : vale(c.t, cfg)));
   return [...base, ...proprias];
 }
@@ -82,6 +99,15 @@ export function catalogo(cfg = {}) {
     desejo: [...DESEJOS.ambos.map(t => ({ ...linha('desejo', t, null), p: 'ambos' })),
              ...DESEJOS.ele.map(t => ({ ...linha('desejo', t, null), p: 'ele' })),
              ...DESEJOS.ela.map(t => ({ ...linha('desejo', t, null), p: 'ela' }))],
-    nossas: (cfg.cartas ?? []).map(c => ({ ...linha(c.tipo, c, c.f), nossa: true, limite: false })),
+    nossas: (cfg.cartas ?? []).map(c => ({ ...linha(c.tipo, c, c.f), id: c.id, p: paraQuem(c) ?? 'ninguém', nossa: true, ativa: c.ativa !== false, limite: false })),
   };
 }
+
+// Acessórios: toda carta que pede um acessório ganha uma alternativa para quem não tem,
+// a não ser que o próprio texto já traga a alternativa.
+const ACESSORIOS = [
+  { re: /\bpena\b/i, tem: /dedo/i, dica: 'Sem pena? Use suavemente as pontas dos dedos.' },
+  { re: /vend[ae]/i, tem: /fech/i, dica: 'Sem venda? Peça para fechar os olhos.' },
+  { re: /óleo/i, tem: /creme|hidratante/i, dica: 'Sem óleo? Um creme hidratante faz o mesmo.' },
+];
+export const alternativa = texto => ACESSORIOS.filter(a => a.re.test(texto) && !a.tem.test(texto)).map(a => a.dica).join(' ');

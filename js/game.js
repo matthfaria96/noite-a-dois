@@ -1,20 +1,29 @@
 // Regras, fluxo de turnos, interface, configurações, conta, modo de teste, narração e música.
 import { Board3D } from './scene.js';
-import { DiceStage } from './dice.js';
-import { FASES, CATEGORIAS } from './data.js';
-import { LIMITES, limitesAtivos, catalogo, baralho, armadilhas, sortes, desejos, faseDaCasa, pesoNoRitmo } from './cartas.js';
+import { DiceStage, GEMAS } from './dice.js';
+import { FASES, CATEGORIAS, VERDADE } from './data.js';
+import { LIMITES, limitesAtivos, catalogo, baralho, armadilhas, sortes, desejos, faseDaCasa, pesoNoRitmo, normalizarCarta, paraQuem, alternativa } from './cartas.js';
 import * as lembranca from './lembranca.js';
 
 window.progresso?.(0.74, 'Preparando o tabuleiro…');
-import { iconURL, pedraSVG } from './icons.js';
+import { iconURL, pedraSVG, setPedra } from './icons.js';
 import { $, wait, rnd, shuffle, store } from './util.js';
 import { GameAudio } from './audio.js';
 import { Narrator } from './voice.js';
-import { auth } from './auth.js';
+import { auth, PLANOS, nomePlano } from './auth.js';
 
 // ------------------------------------------------------------ configurações (salvas no aparelho e na nuvem)
-const CFG_DEFAULT = { musica: 0.6, efeitos: 0.7, voz: 1, narracao: true, vibrar: true, graficos: 'auto', dur: 40, start: 'ela', ritmo: 'provocante', testeVel: 2, limites: {}, cartas: [], desligadas: [] };
+const CFG_DEFAULT = { musica: 0.6, efeitos: 0.7, voz: 1, narracao: true, vibrar: true, graficos: 'auto', vozNarradora: 'nova', dur: 40, start: 'ela', ritmo: 'provocante', testeVel: 2, limites: {}, cartas: [], desligadas: [], gema: 'rubi' };
 const cfg = { ...CFG_DEFAULT, ...store.get('cfg', {}) };
+// cartas do casal no formato atual (id, quem faz, quem recebe, ativa); as antigas viram "ambos" e ficam como estavam
+const normalizarCartas = () => { cfg.cartas = (cfg.cartas ?? []).map(c => normalizarCarta(c, cfg.desligadas)); };
+normalizarCartas();
+
+// ------------------------------------------------------------ planos: gratuito < premium < admin
+// O admin pode "ver o jogo como" outro plano para testar; a área do desenvolvedor segue o plano real.
+const ehAdmin = () => auth.plano === 'admin';
+const planoEfetivo = () => (ehAdmin() ? store.get('ver-como', 'admin') : auth.plano);
+const podeUsar = nivel => PLANOS.indexOf(planoEfetivo()) >= PLANOS.indexOf(nivel);
 let saveT;
 function saveCfg() {
   store.set('cfg', cfg);
@@ -29,6 +38,7 @@ function applyCfg() {
   audio.setVolume('efeitos', cfg.efeitos);
   voice.enabled = cfg.narracao;
   voice.volume = cfg.voz;
+  voice.setVoz(cfg.vozNarradora);
 }
 applyCfg();
 
@@ -53,13 +63,17 @@ function generateBoard(N) {
 
 // baralhos sem repetição
 const used = new Map();
+// (as cartas do casal têm destaque: enquanto houver uma inédita, ela sai em metade dos sorteios)
 function draw(key, list, gender) {
   const ok = list.filter(c => !c.p || c.p === 'ambos' || c.p === gender);
+  if (!ok.length) return null;
   let seen = used.get(key) ?? new Set();
-  let free = ok.filter(c => !seen.has(c));
+  let free = ok.filter(c => !seen.has(c.t));
   if (!free.length) { seen = new Set(); free = ok; }
-  const card = free[rnd(free.length)];
-  seen.add(card); used.set(key, seen);
+  const nossas = free.filter(c => c.nossa);
+  const pool = nossas.length && Math.random() < 0.5 ? nossas : free;
+  const card = pool[rnd(pool.length)];
+  seen.add(card.t); used.set(key, seen);
   return card;
 }
 
@@ -144,16 +158,24 @@ const refreshThrottle = () => board.setThrottle(OVERLAYS.some(visible));
 new MutationObserver(refreshThrottle).observe(document.body, { subtree: true, attributes: true, attributeFilter: ['class'] });
 
 // Mostra uma carta e devolve 'feito' | 'recusou'
-function showCard({ cat, text, secs = 0, who, fase, refusable = true, falar = true }) {
+function showCard({ cat, text, secs = 0, who, fase, refusable = true, falar = true, nossa = false, foto = null }) {
   return new Promise(resolve => {
     const card = $('#card .card');
     card.style.setProperty('--c', cat.cor);
+    card.classList.toggle('nossa', nossa);
+    $('#card .nossa-selo').classList.toggle('hidden', !nossa);
     const tipo = Object.keys(CATEGORIAS).find(k => CATEGORIAS[k] === cat);
-    $('#card .ico').style.backgroundImage = `url(${iconURL(tipo, 160)}), linear-gradient(145deg, rgba(255,255,255,.28), rgba(255,255,255,.06))`;
+    const ico = $('#card .ico');
+    ico.classList.toggle('foto', !!foto);
+    ico.style.backgroundImage = foto ? `url(${foto})` : `url(${iconURL(tipo, 160)}), linear-gradient(145deg, rgba(255,255,255,.28), rgba(255,255,255,.06))`;
     $('#card .cat').textContent = cat.nome;
     $('#card .fase-tag').textContent = FASES[fase].nome;
-    $('#card .card-who').innerHTML = `Para <b style="color:var(--${who})">${G.players[who].name}</b>`;
+    const nome = g => `<b style="color:var(--${g})">${G.players[g].name}</b>`;
+    $('#card .card-who').innerHTML = nossa ? `De ${nome(who)} para ${nome(other(who))}` : `Para ${nome(who)}`;
     $('#card .card-text').textContent = text;
+    const dica = alternativa(text);
+    $('#card .card-dica').textContent = dica;
+    $('#card .card-dica').classList.toggle('hidden', !dica);
     const p = G.players[who];
     const refuse = $('#btn-refuse');
     refuse.classList.toggle('hidden', !refusable);
@@ -273,11 +295,25 @@ window.addEventListener('appinstalled', () => hide('#instalar'));
 if (ios) setTimeout(convidarInstalar, 4000);
 
 // ------------------------------------------------------------ fluxo da partida
+// os dois nomes são obrigatórios para começar
+function nomesOk() {
+  const vazios = ['ele', 'ela'].filter(g => !$(`#name-${g}`).value.trim());
+  for (const g of ['ele', 'ela']) $(`#name-${g}`).closest('label').classList.toggle('erro', vazios.includes(g));
+  if (!vazios.length) return true;
+  $(`#name-${vazios[0]}`).focus();
+  toast(vazios.length === 2 ? 'Escrevam os dois nomes para começar' : `Falta o nome ${vazios[0] === 'ele' ? 'dele' : 'dela'}`);
+  return false;
+}
+function pintarInicio() { $('#btn-start').classList.toggle('falta', ['ele', 'ela'].some(g => !$(`#name-${g}`).value.trim())); }
+for (const g of ['ele', 'ela']) $(`#name-${g}`).addEventListener('input', e => { e.target.closest('label').classList.remove('erro'); pintarInicio(); });
+
 function startGame(teste = false) {
+  if (teste && !ehAdmin()) return; // modo de teste: só admins
+  if (!teste && !nomesOk()) return;
   TESTE.on = teste; TESTE.vel = teste ? cfg.testeVel : 1;
   board.speed = dice.speed = TESTE.on ? TESTE.vel : 1;
-  const nEle = teste ? 'Ele (teste)' : $('#name-ele').value.trim() || 'Ele';
-  const nEla = teste ? 'Ela (teste)' : $('#name-ela').value.trim() || 'Ela';
+  const nEle = teste ? 'Ele (teste)' : $('#name-ele').value.trim();
+  const nEla = teste ? 'Ela (teste)' : $('#name-ela').value.trim();
   if (!teste) { store.set('names', [nEle, nEla]); saveCfg(); }
   G.players = {
     ele: { g: 'ele', name: nEle, pos: 0, skip: false, passe: 0 },
@@ -378,9 +414,10 @@ async function resolveTile(who) {
   await pause(950);
 
   if (tile.tipo === 'verdade' || tile.tipo === 'desafio' || tile.tipo === 'pena') {
-    const card = draw(tile.tipo + f, baralho(tile.tipo, f, cfg), who);
+    // se nenhuma carta da casa servir para quem joga, vale uma verdade da fase
+    const card = draw(tile.tipo + f, baralho(tile.tipo, f, cfg), who) ?? draw('verdade' + f, baralho('verdade', f, cfg), who) ?? VERDADE[f][0];
     G.diario[tile.tipo]++;
-    const r = await showCard({ cat, text: fill(card.t, who), secs: card.s, who, fase: f });
+    const r = await showCard({ cat, text: fill(card.t, who), secs: card.s, who, fase: f, nossa: !!card.nossa, foto: card.foto });
     if (r === 'recusou') await refusePenalty(who);
     return false;
   }
@@ -491,10 +528,35 @@ function segment(id, get, set) {
   segSet(id, get());
   document.querySelectorAll(`${id} button`).forEach(b => b.onclick = () => { set(b.dataset.v); segSet(id, get()); saveCfg(); });
 }
-segment('#seg-dur', () => G.N, v => { G.N = cfg.dur = Number(v); });
+// casas no tabuleiro: só mudam o tamanho do percurso (todas as cartas continuam no baralho)
+const CASAS = { min: 20, max: 64, passo: 4 };
+const minutosDe = n => Math.round((n * 1.3) / 5) * 5; // ~1,3 min por casa (média do dado 3,5 e 1 a 2 min por carta)
+function pintarCasas() {
+  const n = G.N, el = $('#casas');
+  el.value = n;
+  el.style.setProperty('--p', (n - CASAS.min) / (CASAS.max - CASAS.min));
+  $('#casas-val').textContent = `${n} casas`;
+  $('#casas-tempo').textContent = `~${minutosDe(n)} min`;
+  $('#casas-menos').disabled = n <= CASAS.min; $('#casas-mais').disabled = n >= CASAS.max;
+}
+let casasT;
+function setCasas(n) {
+  n = Math.max(CASAS.min, Math.min(CASAS.max, Math.round(n / CASAS.passo) * CASAS.passo));
+  if (n === G.N) return;
+  G.N = cfg.dur = n;
+  pintarCasas(); saveCfg();
+  // o tabuleiro do fundo acompanha o tamanho escolhido
+  clearTimeout(casasT); casasT = setTimeout(() => { if (visible('#setup')) { G.tiles = generateBoard(G.N); board.build(G.tiles); board.setMode('orbit'); } }, 350);
+}
+$('#casas').oninput = e => setCasas(Number(e.target.value));
+$('#casas-menos').onclick = () => setCasas(G.N - CASAS.passo);
+$('#casas-mais').onclick = () => setCasas(G.N + CASAS.passo);
+G.N = cfg.dur = Math.max(CASAS.min, Math.min(CASAS.max, cfg.dur || 40));
+pintarCasas();
 segment('#seg-start', () => G.starter, v => { G.starter = cfg.start = v; });
 segment('#seg-graf', () => cfg.graficos, v => setGraficos(v));
 segment('#seg-vel', () => cfg.testeVel, v => { cfg.testeVel = Number(v); });
+segment('#seg-voz', () => cfg.vozNarradora, v => { cfg.vozNarradora = v; applyCfg(); voice.stop(); const was = voice.enabled; voice.enabled = true; voice.fala('inicio').then(() => { voice.enabled = was; }); });
 setGraficos(cfg.graficos);
 
 // ------------------------------------------------------------ tela de configurações
@@ -537,11 +599,11 @@ document.querySelectorAll('#ap-pontos i').forEach((d, i) => d.onclick = () => ap
 
 // visitante: joga sem conta (com a nuvem ligada, nada é salvo nela até entrar)
 let visitante = false;
-function entrarComoVisitante(demo) {
+function entrarComoVisitante() {
   visitante = true;
+  auth.setPlano('gratuito'); aplicarPlano();
   hide('#lock');
   $('#btn-entrar-setup').classList.toggle('hidden', !auth.cloud);
-  if (demo) return startGame(true);
   show('#setup');
   board.setMode('orbit');
   toast('Modo visitante: joguem à vontade');
@@ -559,16 +621,22 @@ function renderConta() {
   box.querySelector('#btn-sair').classList.toggle('hidden', !logged);
   box.querySelector('#btn-apagar').classList.toggle('hidden', auth.cloud || !auth.hasAccount());
 }
-function openSettings() { renderConta(); hide('#menu'); show('#settings'); }
+function openSettings() { renderConta(); aplicarPlano(); hide('#menu'); show('#settings'); }
 $('#btn-settings').onclick = openSettings;
 $('#btn-lembranca').onclick = () => G.noite && lembranca.guardar(G.noite).catch(() => toast('Não deu para salvar a imagem'));
 
 // ------------------------------------------------------------ ritmo, limites e cartas do casal
 segment('#seg-ritmo', () => cfg.ritmo, v => { cfg.ritmo = v; });
+$('#btn-ritmo-info').onclick = () => {
+  const abrir = $('#ritmo-info').classList.contains('hidden');
+  $('#ritmo-info').classList.toggle('hidden', !abrir);
+  $('#btn-ritmo-info').classList.toggle('on', abrir);
+  $('#btn-ritmo-info').setAttribute('aria-expanded', String(abrir));
+};
 function resumoNoite() {
-  const n = limitesAtivos(cfg.limites).length, c = cfg.cartas.length;
+  const n = limitesAtivos(cfg.limites).length, c = cfg.cartas.length, ativas = cfg.cartas.filter(x => x.ativa !== false).length;
   $('#limites-resumo').textContent = n ? `${n} ${n === 1 ? 'limite' : 'limites'} hoje` : 'Tudo liberado';
-  $('#cartas-resumo').textContent = c ? `${c} ${c === 1 ? 'carta' : 'cartas'} de vocês` : 'Criem as suas';
+  $('#cartas-resumo').textContent = c ? `${ativas} ${ativas === 1 ? 'carta ativa' : 'cartas ativas'}` : podeUsar('premium') ? 'Criem as suas' : '✦ Premium';
 }
 function abrirLimites() {
   $('#limites-lista').innerHTML = LIMITES.map(l => `
@@ -583,51 +651,180 @@ function abrirLimites() {
 $('#btn-limites').onclick = abrirLimites;
 $('#btn-limites-menu').onclick = abrirLimites;
 
-const nova = { tipo: 'verdade', f: 0, s: 0 };
-const segLocal = (id, k, num) => {
-  segSet(id, nova[k]);
-  document.querySelectorAll(`${id} button`).forEach(b => b.onclick = () => { nova[k] = num ? Number(b.dataset.v) : b.dataset.v; segSet(id, nova[k]); });
-};
-segLocal('#seg-nc-tipo', 'tipo'); segLocal('#seg-nc-fase', 'f', true); segLocal('#seg-nc-tempo', 's', true);
-function listarCartas() {
-  const ul = $('#lista-cartas');
-  $('#cartas-total').textContent = cfg.cartas.length ? `· ${cfg.cartas.length}` : '';
-  ul.innerHTML = cfg.cartas.length ? '' : '<li class="vazio">Nenhuma ainda. As cartas de vocês aparecem aqui.</li>';
-  cfg.cartas.forEach((c, i) => {
-    const li = document.createElement('li');
-    li.innerHTML = `<span class="tag t-${c.tipo}">${c.tipo === 'verdade' ? 'Verdade' : 'Desafio'} · ${FASES[c.f].nome}${c.s ? ' · ' + (c.s < 60 ? c.s + 's' : c.s / 60 + ' min') : ''}</span><p></p><button type="button" aria-label="Apagar carta">×</button>`;
-    li.querySelector('p').textContent = c.t;
-    li.querySelector('button').onclick = () => { cfg.cartas = cfg.cartas.filter((_, j) => j !== i); saveCfg(); listarCartas(); resumoNoite(); };
-    ul.append(li);
+// ------------------------------------------------------------ nossas cartas: criar e editar é Premium
+// Cada carta diz quem faz e quem recebe; pode ter foto no lugar do ícone; liga e desliga sem apagar.
+const NOVA = () => ({ tipo: 'verdade', f: 0, s: 0, faz: 'ambos', recebe: 'ambos', foto: null });
+let nova = NOVA(), editando = null;
+const nomeDe = g => $(`#name-${g}`).value.trim() || (g === 'ele' ? 'Ele' : 'Ela');
+function quemTexto(c) {
+  const p = paraQuem(c);
+  if (!p) return 'Ninguém pode fazer: revise quem faz e quem recebe';
+  return p === 'ambos' ? 'Os dois fazem · o par recebe' : `${nomeDe(p)} faz · ${nomeDe(other(p))} recebe`;
+}
+const tempoTexto = s => (s ? (s < 60 ? s + 's' : s / 60 + ' min') : '');
+// com dois jogadores, ninguém faz e recebe ao mesmo tempo: "Ele faz" tira "Ele recebe", e vice-versa
+function ajustarQuem(k) {
+  if (k === 'faz' && nova.faz !== 'ambos' && nova.recebe === nova.faz) nova.recebe = other(nova.faz);
+  if (k === 'recebe' && nova.recebe !== 'ambos' && nova.faz === nova.recebe) nova.faz = other(nova.recebe);
+}
+function pintarForm() {
+  segSet('#seg-nc-tipo', nova.tipo); segSet('#seg-nc-fase', nova.f); segSet('#seg-nc-tempo', nova.s);
+  segSet('#seg-nc-faz', nova.faz); segSet('#seg-nc-recebe', nova.recebe);
+  const prev = $('#nc-foto-prev');
+  prev.classList.toggle('com-foto', !!nova.foto);
+  prev.style.backgroundImage = nova.foto ? `url(${nova.foto})` : `url(${iconURL(nova.tipo, 96)})`;
+  $('#nc-foto-tirar').classList.toggle('hidden', !nova.foto);
+  $('#nc-foto-btn').textContent = nova.foto ? 'Trocar foto' : 'Escolher foto';
+  $('#nc-titulo').textContent = editando ? 'Editar carta' : 'Nova carta';
+  $('#nc-ok').textContent = editando ? 'Salvar alterações' : 'Adicionar carta';
+  $('#nc-cancelar').classList.toggle('hidden', !editando);
+}
+const segNova = (id, k, num) => document.querySelectorAll(`${id} button`).forEach(b => b.onclick = () => {
+  nova[k] = num ? Number(b.dataset.v) : b.dataset.v; ajustarQuem(k); pintarForm();
+});
+segNova('#seg-nc-tipo', 'tipo'); segNova('#seg-nc-fase', 'f', true); segNova('#seg-nc-tempo', 's', true);
+segNova('#seg-nc-faz', 'faz'); segNova('#seg-nc-recebe', 'recebe');
+
+// foto: recorte quadrado no centro, 320 px em JPEG (leve para salvar no aparelho e na nuvem)
+function lerFoto(file) {
+  return new Promise((res, rej) => {
+    const img = new Image(), url = URL.createObjectURL(file);
+    img.onload = () => {
+      const S = 320, k = Math.min(img.naturalWidth, img.naturalHeight), cv = document.createElement('canvas');
+      cv.width = cv.height = S;
+      cv.getContext('2d').drawImage(img, (img.naturalWidth - k) / 2, (img.naturalHeight - k) / 2, k, k, 0, 0, S, S);
+      URL.revokeObjectURL(url); res(cv.toDataURL('image/jpeg', 0.82));
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); rej(new Error('foto')); };
+    img.src = url;
   });
 }
-$('#btn-cartas').onclick = () => { listarCartas(); show('#cartas'); };
+$('#nc-foto-btn').onclick = () => $('#nc-foto').click();
+$('#nc-foto').onchange = async e => {
+  const f = e.target.files?.[0]; e.target.value = '';
+  if (!f) return;
+  try { nova.foto = await lerFoto(f); pintarForm(); } catch { toast('Não deu para abrir essa foto'); }
+};
+$('#nc-foto-tirar').onclick = () => { nova.foto = null; pintarForm(); };
+
+function limparForm() { nova = NOVA(); editando = null; $('#nc-texto').value = ''; pintarForm(); }
+$('#nc-cancelar').onclick = limparForm;
+function editarCarta(id) {
+  const c = cfg.cartas.find(x => x.id === id);
+  if (!c || !podeUsar('premium')) return;
+  editando = id;
+  nova = { tipo: c.tipo, f: c.f, s: c.s, faz: c.faz, recebe: c.recebe, foto: c.foto ?? null };
+  $('#nc-texto').value = c.t;
+  pintarForm();
+  $('#nova-carta').scrollIntoView({ block: 'start', behavior: 'smooth' });
+  $('#nc-texto').focus({ preventScroll: true });
+}
+function listarCartas() {
+  const premium = podeUsar('premium'), ul = $('#lista-cartas');
+  $('#cartas-premium').classList.toggle('hidden', premium);
+  $('#nova-carta').classList.toggle('hidden', !premium);
+  $('#cartas .cartas-grid').classList.toggle('so-lista', !premium);
+  $('#cartas .cartas-grid').classList.toggle('tem-cartas', cfg.cartas.length > 0);
+  $('#cartas .do-casal').classList.toggle('hidden', !premium && !cfg.cartas.length);
+  const ativas = cfg.cartas.filter(c => c.ativa !== false).length;
+  $('#cartas-total').textContent = cfg.cartas.length ? `· ${ativas} de ${cfg.cartas.length} ativas` : '';
+  ul.innerHTML = cfg.cartas.length ? '' : '<li class="vazio">Nenhuma ainda. As cartas que vocês criarem aparecem aqui, com destaque no jogo.</li>';
+  for (const c of cfg.cartas) {
+    const li = document.createElement('li');
+    li.className = 'carta-casal' + (c.ativa === false ? ' off' : '');
+    li.style.setProperty('--c', CATEGORIAS[c.tipo].cor);
+    li.innerHTML = `<span class="mini-ico${c.foto ? ' foto' : ''}"></span>
+      <div class="info"><span class="tag t-${c.tipo}">${CATEGORIAS[c.tipo].nome} · ${FASES[c.f].nome}${c.s ? ' · ' + tempoTexto(c.s) : ''}</span><p></p><small></small></div>
+      <div class="acoes">
+        <span class="switch" title="Ativa no baralho"><input type="checkbox" aria-label="Carta ativa" ${c.ativa === false ? '' : 'checked'}><i></i></span>
+        ${premium ? '<button type="button" class="editar" aria-label="Editar carta"><svg viewBox="0 0 24 24"><path d="M4 20h4L19 9l-4-4L4 16v4Z"/><path d="m13.5 6.5 4 4"/></svg></button>' : ''}
+        <button type="button" class="apagar" aria-label="Apagar carta"><svg viewBox="0 0 24 24"><path d="M5 7h14M10 7V5h4v2M7 7l1 13h8l1-13"/></svg></button>
+      </div>`;
+    li.querySelector('.mini-ico').style.backgroundImage = `url(${c.foto || iconURL(c.tipo, 96)})`;
+    li.querySelector('p').textContent = c.t;
+    li.querySelector('small').textContent = quemTexto(c);
+    li.querySelector('input').onchange = e => {
+      c.ativa = e.target.checked; li.classList.toggle('off', !c.ativa);
+      saveCfg(); resumoNoite();
+      $('#cartas-total').textContent = `· ${cfg.cartas.filter(x => x.ativa !== false).length} de ${cfg.cartas.length} ativas`;
+    };
+    li.querySelector('.editar')?.addEventListener('click', () => editarCarta(c.id));
+    li.querySelector('.apagar').onclick = () => {
+      if (!confirm('Apagar esta carta? Para tirar só desta noite, é só desligar.')) return;
+      cfg.cartas = cfg.cartas.filter(x => x.id !== c.id);
+      if (editando === c.id) limparForm();
+      saveCfg(); listarCartas(); resumoNoite();
+    };
+    ul.append(li);
+  }
+}
+$('#btn-cartas').onclick = () => { limparForm(); listarCartas(); show('#cartas'); };
 $('#nova-carta').onsubmit = e => {
   e.preventDefault();
+  if (!podeUsar('premium')) return toast('Criar cartas é um recurso Premium');
   const t = $('#nc-texto').value.trim().replace(/\s+/g, ' ');
-  if (t.length < 6) return toast('Escreva a carta primeiro');
-  cfg.cartas = [{ t, tipo: nova.tipo, f: nova.f, s: nova.s }, ...cfg.cartas];
-  $('#nc-texto').value = '';
+  if (t.length < 6) { $('#nc-texto').focus(); return toast('Escreva a carta primeiro'); }
+  const dados = { t, tipo: nova.tipo, f: nova.f, s: nova.s, faz: nova.faz, recebe: nova.recebe };
+  const comFoto = c => { const { foto, ...resto } = c; return nova.foto ? { ...resto, foto: nova.foto } : resto; };
+  if (editando) cfg.cartas = cfg.cartas.map(c => (c.id === editando ? comFoto({ ...c, ...dados }) : c));
+  else cfg.cartas = [comFoto({ id: Date.now().toString(36) + rnd(1e6).toString(36), ativa: true, ...dados }), ...cfg.cartas];
+  toast(editando ? 'Carta atualizada' : 'Carta adicionada ao baralho');
+  limparForm();
   saveCfg(); listarCartas(); resumoNoite();
-  toast('Carta adicionada ao baralho');
 };
+pintarForm();
 resumoNoite();
 
-// ------------------------------------------------------------ catálogo: todas as cartas, ligar/desligar uma a uma
-const ABAS = [['verdade', 'Verdades'], ['desafio', 'Desafios'], ['pena', 'Penas'], ['armadilha', 'Armadilhas'], ['sorte', 'Sortes'], ['desejo', 'Desejos'], ['nossas', 'De vocês']];
+// ------------------------------------------------------------ dado: escolher a pedra é Premium
+function aplicarGema() {
+  const k = podeUsar('premium') && GEMAS[cfg.gema] ? cfg.gema : 'rubi';
+  dice.setGema(k); setPedra(k);
+  if (!G.players.ele) $('#btn-roll .die-ico').innerHTML = pedraSVG();
+}
+function desenharGemas() {
+  const premium = podeUsar('premium'), atual = premium ? cfg.gema : 'rubi';
+  $('#gemas').innerHTML = Object.entries(GEMAS).map(([k, g]) =>
+    `<button type="button" role="radio" data-v="${k}" aria-checked="${k === atual}" class="${k === atual ? 'on' : ''}"${!premium && k !== 'rubi' ? ' disabled' : ''}>${pedraSVG('', k)}<small>${g.nome}</small></button>`).join('');
+  $('#gemas').querySelectorAll('button').forEach(b => b.onclick = () => { cfg.gema = b.dataset.v; aplicarGema(); saveCfg(); desenharGemas(); });
+  $('#dado-premium').classList.toggle('hidden', premium);
+  $('#grupo-dado').classList.toggle('bloqueado', !premium);
+}
+
+// ------------------------------------------------------------ plano na interface
+function aplicarPlano() {
+  const admin = ehAdmin();
+  $('#dev').classList.toggle('hidden', !admin);
+  if (admin) segSet('#seg-vercomo', planoEfetivo());
+  else ['#catalogo'].forEach(hide);
+  $('#plano-nome').textContent = nomePlano(auth.plano) + (admin && planoEfetivo() !== 'admin' ? ` · vendo como ${nomePlano(planoEfetivo())}` : '');
+  resumoNoite(); aplicarGema(); desenharGemas();
+  if (visible('#cartas')) listarCartas();
+}
+document.querySelectorAll('#seg-vercomo button').forEach(b => b.onclick = () => {
+  if (!ehAdmin()) return;
+  store.set('ver-como', b.dataset.v);
+  aplicarPlano();
+  toast(`Vendo o jogo como ${nomePlano(b.dataset.v)}`);
+});
+
+// ------------------------------------------------------------ desenvolvedor (só admin): todas as cartas, ligar/desligar uma a uma
+const ABAS = [['verdade', 'Verdades'], ['desafio', 'Desafios'], ['pena', 'Penas'], ['armadilha', 'Armadilhas'], ['sorte', 'Sortes'], ['desejo', 'Desejos'], ['nossas', 'Do casal']];
 let catAba = 'verdade';
 const legivel = t => t.replace(/\{par\}/g, 'seu par').replace(/\{eu\}/g, 'você').replace(/\{(?:par:)?([^|{}]*)\|([^{}]*)\}/g, '$1/$2');
+// desligadas: as padrão ficam em cfg.desligadas; as do casal, no próprio "ativa"
+const desligadasAgora = () => new Set([...cfg.desligadas, ...cfg.cartas.filter(c => c.ativa === false).map(c => c.id)]);
 function resumoCatalogo() {
   const n = cfg.desligadas.length;
-  $('#catalogo-resumo').textContent = n ? `${n} ${n === 1 ? 'carta desligada' : 'cartas desligadas'}.` : 'Todas as cartas ligadas.';
+  $('#catalogo-resumo').textContent = n ? `· ${n} ${n === 1 ? 'desligada' : 'desligadas'}` : '';
 }
 function abrirCatalogo() {
+  if (!ehAdmin()) return;
   $('#cat-busca').value = '';
   ['#settings', '#limites', '#menu'].forEach(hide);
   desenharCatalogo(); show('#catalogo');
 }
 function desenharCatalogo() {
-  const cat = catalogo(cfg), off = new Set(cfg.desligadas), busca = $('#cat-busca').value.trim().toLowerCase();
+  const cat = catalogo(cfg), off = desligadasAgora(), busca = $('#cat-busca').value.trim().toLowerCase();
   if (catAba === 'nossas' && !cat.nossas.length) catAba = 'verdade';
   $('#cat-abas').innerHTML = ABAS.filter(([k]) => k !== 'nossas' || cat.nossas.length).map(([k, nome]) => {
     const l = cat[k], ligadas = l.filter(c => !off.has(c.id)).length;
@@ -636,39 +833,41 @@ function desenharCatalogo() {
   $('#cat-abas').querySelectorAll('button').forEach(b => b.onclick = () => { catAba = b.dataset.k; desenharCatalogo(); });
   const lista = cat[catAba].filter(c => !busca || legivel(c.t).toLowerCase().includes(busca));
   const contar = () => {
-    const offAgora = new Set(cfg.desligadas), toda = catalogo(cfg)[catAba];
+    const offAgora = desligadasAgora(), toda = catalogo(cfg)[catAba];
     $('#cat-contagem').textContent = `${lista.filter(c => !offAgora.has(c.id)).length} de ${lista.length} ligadas`;
     const sm = $(`#cat-abas [data-k="${catAba}"] small`); if (sm) sm.textContent = `${toda.filter(c => !offAgora.has(c.id)).length}/${toda.length}`;
   };
   let fase = -1, html = '';
   for (const c of lista) {
     if (c.f !== null && c.f !== fase) { fase = c.f; html += `<h4>${FASES[c.f].nome}</h4>`; }
-    const meta = [c.nossa && 'de vocês', c.p !== 'ambos' && `só quando ${c.p} joga`, c.s && (c.s < 60 ? c.s + 's' : c.s / 60 + ' min'), c.limite && 'fora pelos limites de hoje'].filter(Boolean).join(' · ');
-    html += `<label class="cat-carta${off.has(c.id) ? ' off' : ''}${c.limite ? ' limite' : ''}"><span><p></p>${meta ? `<small>${meta}</small>` : ''}</span>
+    const meta = [c.nossa && `do casal · ${CATEGORIAS[c.tipo].nome}`, c.p !== 'ambos' && `só quando ${c.p} joga`, c.s && tempoTexto(c.s), c.limite && 'fora pelos limites de hoje', alternativa(c.t) && 'mostra alternativa de acessório'].filter(Boolean).join(' · ');
+    html += `<label class="cat-carta${off.has(c.id) ? ' off' : ''}${c.limite ? ' limite' : ''}${c.nossa ? ' nossa' : ''}"><span><p></p>${meta ? `<small>${meta}</small>` : ''}</span>
       <span class="switch"><input type="checkbox" data-id="${c.id}" ${off.has(c.id) ? '' : 'checked'}><i></i></span></label>`;
   }
   const el = $('#cat-lista');
   el.innerHTML = html || '<p class="lead">Nenhuma carta encontrada.</p>';
   el.querySelectorAll('.cat-carta p').forEach((p, i) => { p.textContent = legivel(lista[i].t); });
   el.querySelectorAll('input').forEach(i => i.onchange = () => {
-    cfg.desligadas = i.checked ? cfg.desligadas.filter(x => x !== i.dataset.id) : [...new Set([...cfg.desligadas, i.dataset.id])];
+    const nossa = cfg.cartas.find(c => c.id === i.dataset.id);
+    if (nossa) nossa.ativa = i.checked;
+    else cfg.desligadas = i.checked ? cfg.desligadas.filter(x => x !== i.dataset.id) : [...new Set([...cfg.desligadas, i.dataset.id])];
     i.closest('.cat-carta').classList.toggle('off', !i.checked);
-    saveCfg(); resumoCatalogo(); contar();
+    saveCfg(); resumoCatalogo(); resumoNoite(); contar();
   });
   contar();
 }
 $('#cat-busca').oninput = desenharCatalogo;
 $('#cat-ligar').onclick = () => {
+  if (catAba === 'nossas') cfg.cartas.forEach(c => { c.ativa = true; });
   const ids = new Set(catalogo(cfg)[catAba].map(c => c.id));
   cfg.desligadas = cfg.desligadas.filter(x => !ids.has(x));
-  saveCfg(); resumoCatalogo(); desenharCatalogo();
+  saveCfg(); resumoCatalogo(); resumoNoite(); desenharCatalogo();
 };
 $('#btn-catalogo').onclick = abrirCatalogo;
-$('#btn-catalogo-limites').onclick = abrirCatalogo;
 resumoCatalogo();
 $('#btn-settings-menu').onclick = openSettings;
 $('#btn-proteger').onclick = () => { hide('#settings'); openLock('criar'); };
-$('#btn-sair').onclick = async () => { await auth.logout(); hide('#settings'); hide('#hud'); hide('#setup'); openLock('entrar'); };
+$('#btn-sair').onclick = async () => { await auth.logout(); aplicarPlano(); hide('#settings'); hide('#hud'); hide('#setup'); openLock('entrar'); };
 $('#btn-apagar').onclick = () => { if (confirm('Apagar a conta e os dados salvos neste aparelho?')) { auth.removeLocal(); store.clearAll(); location.reload(); } };
 $('#btn-senha').onclick = () => $('#troca-senha').classList.toggle('hidden');
 $('#troca-senha').onsubmit = async e => {
@@ -679,8 +878,7 @@ $('#troca-senha').onsubmit = async e => {
   toast(err || 'Senha alterada');
   if (!err) { e.target.reset(); e.target.classList.add('hidden'); }
 };
-$('#btn-teste').onclick = () => { hide('#settings'); startGame(true); };
-$('#btn-teste-setup').onclick = () => startGame(true);
+$('#btn-teste').onclick = () => { if (!ehAdmin()) return; hide('#settings'); startGame(true); };
 $('#test-badge button').onclick = stopTest;
 
 // ------------------------------------------------------------ tela de login
@@ -697,15 +895,14 @@ function openLock(mode) {
   $('#lk-troca').textContent = criar ? 'Já tenho conta' : 'Criar uma conta';
   $('#lk-troca').classList.toggle('hidden', !auth.cloud && auth.hasAccount() && !criar);
   $('#lk-esqueci').classList.toggle('hidden', criar);
-  ['#lk-convidado', '#lk-demo', '#lock .ou'].forEach(q => $(q).classList.toggle('hidden', criar));
+  ['#lk-convidado', '#lock .ou'].forEach(q => $(q).classList.toggle('hidden', criar));
   $('#lk-msg').textContent = auth.cloud ? '' : 'Conta local: fica salva só neste aparelho.';
   $('#lk-user').value = criar ? '' : auth.user();
   ['#setup', '#hud'].forEach(hide);
   show('#lock');
 }
 $('#lk-troca').onclick = () => openLock(lockMode === 'criar' ? 'entrar' : 'criar');
-$('#lk-convidado').onclick = () => entrarComoVisitante(false);
-$('#lk-demo').onclick = () => entrarComoVisitante(true);
+$('#lk-convidado').onclick = () => entrarComoVisitante();
 $('#btn-entrar').onclick = () => { hide('#settings'); openLock('entrar'); };
 $('#btn-entrar-setup').onclick = () => openLock('entrar');
 $('#lk-esqueci').onclick = async () => {
@@ -755,15 +952,21 @@ async function afterLogin() {
   $('#btn-entrar-setup').classList.add('hidden');
   hide('#lock');
   const prof = await auth.loadProfile().catch(() => null);
+  // o plano vem do banco; sem conexão, vale o último conhecido desta conta
+  auth.setPlano(prof?.plano ?? auth.planoSalvo());
+  auth.guardarPlano();
   if (prof) {
     Object.assign(cfg, prof.config ?? {});
+    normalizarCartas();
     store.set('cfg', cfg);
     if (prof.nome_ele) $('#name-ele').value = prof.nome_ele;
     if (prof.nome_ela) $('#name-ela').value = prof.nome_ela;
     applyCfg(); setGraficos(cfg.graficos);
-    G.N = cfg.dur; G.starter = cfg.start; segSet('#seg-dur', G.N); segSet('#seg-start', G.starter); segSet('#seg-ritmo', cfg.ritmo);
-    $('#cfg-vibrar').checked = cfg.vibrar; resumoNoite(); resumoCatalogo();
+    G.N = cfg.dur = Math.max(CASAS.min, Math.min(CASAS.max, cfg.dur || 40)); G.starter = cfg.start; pintarCasas(); segSet('#seg-start', G.starter); segSet('#seg-ritmo', cfg.ritmo);
+    $('#cfg-vibrar').checked = cfg.vibrar; resumoCatalogo();
+    pintarInicio();
   }
+  aplicarPlano();
   show('#setup');
   board.setMode('orbit');
   apresentar();
@@ -777,6 +980,7 @@ const toSetup = () => {
 };
 const [sn1, sn2] = store.get('names', ['', '']);
 $('#name-ele').value = sn1; $('#name-ela').value = sn2;
+pintarInicio();
 $('#btn-start').onclick = () => startGame(false);
 $('#btn-roll').onclick = roll;
 $('#btn-rules').onclick = () => show('#rules');
@@ -818,7 +1022,10 @@ function ready() {
 }
 setTimeout(ready, 8000);
 auth.init().then(async () => {
-  if (auth.isLogged()) { if (auth.cloud) await afterLogin(); else show('#setup'); }
+  if (auth.isLogged()) {
+    if (auth.cloud) await afterLogin();
+    else { auth.setPlano(auth.planoSalvo()); aplicarPlano(); show('#setup'); }
+  }
   else openLock('entrar');
 }).finally(etapaPronta);
 window.__G = G; window.__B = board; window.__D = dice; // depuração

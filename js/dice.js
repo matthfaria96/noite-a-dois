@@ -11,6 +11,15 @@ const STRETCH = 1.35;   // quanto o cristal é esticado entre as pontas
 const INR = 0.45;       // distância do centro até cada face (o dado pousa a essa altura)
 const CHAMFER = 0.2;    // lapidação dos cantos
 const CROWN = 0.13;     // cada face sobe numa pirâmide baixinha: 4 facetas que cintilam
+// Pedras do dado (personalizar o dado é Premium). O rubi é a pedra de sempre.
+export const GEMAS = {
+  rubi:      { nome: 'Rubi',      corpo: 0xf0123a, atenua: 0xe0102e, brilho: 0xff8aa4, emissivo: 0x8a0020, nucleo: 0x6a0016, aura: ['255,90,140', '200,30,80', '70,4,30'] },
+  ametista:  { nome: 'Ametista',  corpo: 0xa23cff, atenua: 0x7a1fd0, brilho: 0xd9a8ff, emissivo: 0x4a0a80, nucleo: 0x2e0650, aura: ['190,110,255', '120,40,200', '40,8,70'] },
+  safira:    { nome: 'Safira',    corpo: 0x2a5cff, atenua: 0x1a3ad0, brilho: 0x9ab8ff, emissivo: 0x0a2080, nucleo: 0x061650, aura: ['110,150,255', '40,70,200', '8,20,70'] },
+  esmeralda: { nome: 'Esmeralda', corpo: 0x12c474, atenua: 0x0a9a58, brilho: 0x9affc8, emissivo: 0x046040, nucleo: 0x033a26, aura: ['90,230,160', '20,150,90', '4,60,36'] },
+};
+const gema = k => GEMAS[k] ?? GEMAS.rubi;
+
 const AXES = [[1, 0, 0, 1], [-1, 0, 0, 6], [0, 1, 0, 2], [0, -1, 0, 5], [0, 0, 1, 3], [0, 0, -1, 4]];
 
 const SHAPE = (() => {
@@ -79,19 +88,20 @@ function numberTexture(n) {
   return t;
 }
 
-export function makeDie(env) {
+export function makeDie(env, k = 'rubi') {
+  const G = gema(k);
   const g = new THREE.Group();
   const crystal = new THREE.MeshPhysicalMaterial({
-    color: 0xf0123a, roughness: 0.02, metalness: 0, transmission: 1, thickness: 1.6, ior: 2.3,
-    attenuationColor: new THREE.Color(0xe0102e), attenuationDistance: 1.7,
-    clearcoat: 1, clearcoatRoughness: 0.02, specularIntensity: 1, specularColor: new THREE.Color(0xff8aa4),
-    envMap: env, envMapIntensity: 3, emissive: 0x8a0020, emissiveIntensity: 0.5, flatShading: true,
+    color: G.corpo, roughness: 0.02, metalness: 0, transmission: 1, thickness: 1.6, ior: 2.3,
+    attenuationColor: new THREE.Color(G.atenua), attenuationDistance: 1.7,
+    clearcoat: 1, clearcoatRoughness: 0.02, specularIntensity: 1, specularColor: new THREE.Color(G.brilho),
+    envMap: env, envMapIntensity: 3, emissive: G.emissivo, emissiveIntensity: 0.5, flatShading: true,
   });
   const body = new THREE.Mesh(new ConvexGeometry(SHAPE.pts), crystal);
   body.castShadow = true;
   g.add(body);
   // núcleo: dá profundidade ao vermelho quando visto através do cristal
-  const core = new THREE.Mesh(new THREE.OctahedronGeometry(0.22, 0), new THREE.MeshBasicMaterial({ color: 0x6a0016 }));
+  const core = new THREE.Mesh(new THREE.OctahedronGeometry(0.22, 0), new THREE.MeshBasicMaterial({ color: G.nucleo }));
   core.name = 'nucleo';
   core.scale.y = 1.7;
   g.add(core);
@@ -108,6 +118,17 @@ export function makeDie(env) {
     g.add(m);
   }
   return g;
+}
+
+function auraTex(k) {
+  const [a, b, c] = gema(k).aura;
+  const cv = document.createElement('canvas'); cv.width = cv.height = 256;
+  const g = cv.getContext('2d');
+  const rg = g.createRadialGradient(128, 128, 0, 128, 128, 128);
+  rg.addColorStop(0, `rgba(${a},.55)`); rg.addColorStop(0.22, `rgba(${b},.35)`); rg.addColorStop(0.5, `rgba(${c},.2)`); rg.addColorStop(1, 'rgba(0,0,0,0)');
+  g.fillStyle = rg; g.fillRect(0, 0, 256, 256);
+  const t = new THREE.CanvasTexture(cv); t.colorSpace = THREE.SRGBColorSpace;
+  return t;
 }
 
 export class DiceStage {
@@ -133,17 +154,12 @@ export class DiceStage {
     const fill = new THREE.HemisphereLight(0x3a0a26, 0x0a0006, 0.35);
     this.scene.add(key, rim, baixo, fill);
 
+    this.gema = 'rubi';
     this.die = makeDie(this.env);
     this.scene.add(this.die);
 
-    // fundo: quase preto, com um vinho profundo só atrás da pedra
-    const cv = document.createElement('canvas'); cv.width = cv.height = 256;
-    const g = cv.getContext('2d');
-    const rg = g.createRadialGradient(128, 128, 0, 128, 128, 128);
-    rg.addColorStop(0, 'rgba(255,90,140,.55)'); rg.addColorStop(0.22, 'rgba(200,30,80,.35)'); rg.addColorStop(0.5, 'rgba(70,4,30,.2)'); rg.addColorStop(1, 'rgba(0,0,0,0)');
-    g.fillStyle = rg; g.fillRect(0, 0, 256, 256);
-    const ctex = new THREE.CanvasTexture(cv); ctex.colorSpace = THREE.SRGBColorSpace;
-    this.aura = new THREE.Mesh(new THREE.PlaneGeometry(7, 7), new THREE.MeshBasicMaterial({ map: ctex, transparent: true, opacity: 0, depthWrite: false }));
+    // fundo: quase preto, com a cor da pedra só atrás dela
+    this.aura = new THREE.Mesh(new THREE.PlaneGeometry(7, 7), new THREE.MeshBasicMaterial({ map: auraTex('rubi'), transparent: true, opacity: 0, depthWrite: false }));
     this.aura.position.set(0, 0, -2.5);
     this.scene.add(this.aura);
 
@@ -162,6 +178,16 @@ export class DiceStage {
     this.camera.aspect = w / h;
     this.camera.fov = w / h < 1 ? 44 : 30; // no celular a câmera fecha mais para a pedra não ficar pequena
     this.camera.updateProjectionMatrix();
+  }
+
+  // troca a pedra (Premium): cor do cristal, do núcleo e da aura
+  setGema(k) {
+    if (k === this.gema) return;
+    this.gema = k;
+    const G = gema(k), corpo = this.die.children[0].material;
+    corpo.color.setHex(G.corpo); corpo.attenuationColor.setHex(G.atenua); corpo.specularColor.setHex(G.brilho); corpo.emissive.setHex(G.emissivo);
+    this.die.getObjectByName('nucleo').material.color.setHex(G.nucleo);
+    this.aura.material.map?.dispose(); this.aura.material.map = auraTex(k); this.aura.material.needsUpdate = true;
   }
 
   setQuality(q) {

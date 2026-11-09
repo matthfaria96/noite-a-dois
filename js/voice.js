@@ -1,5 +1,6 @@
-// Narradora: voz sussurrada gravada no VoiceStudio. Só toca falas gravadas em audio/voz/<chave>.mp3
-// e listadas em audio/lista.json ("voz"); o que não estiver gravado fica em silêncio (o texto segue na tela).
+// Narradora: voz sussurrada gravada no VoiceStudio. Só toca falas gravadas em audio/<pasta>/<chave>.mp3
+// e listadas em audio/lista.json; o que não estiver gravado fica em silêncio (o texto segue na tela).
+// Duas vozes: 'nova' (audio/voz2, mais grave e aveludada, a padrão) e 'original' (audio/voz).
 // As falas são curtas e genéricas (servem para qualquer carta). Cada momento do jogo tem várias variações,
 // sorteadas sem repetir até todas terem saído, e isso vale entre partidas.
 import { store, rnd } from './util.js';
@@ -85,6 +86,8 @@ export class Narrator {
     this.enabled = true;
     this.volume = 1;
     this.files = new Set();
+    this.vozes = { original: new Set(), nova: new Set() };
+    this.voz = 'nova';
     this.queue = Promise.resolve();
     this.el = new Audio(); // um player só: depois de liberado no primeiro toque, o iOS deixa ele tocar sozinho
     this.loadFiles();
@@ -100,9 +103,21 @@ export class Narrator {
   async loadFiles() {
     try {
       const r = await fetch('audio/lista.json', { cache: 'no-store' });
-      if (r.ok) ((await r.json()).voz ?? []).forEach(k => this.files.add(k));
+      if (r.ok) {
+        const l = await r.json();
+        (l.voz ?? []).forEach(k => this.vozes.original.add(k));
+        (l.voz2 ?? []).forEach(k => this.vozes.nova.add(k));
+        this.setVoz(this.voz);
+      }
     } catch {}
   }
+
+  // troca a voz; se a escolhida não tiver falas gravadas, fica a original
+  setVoz(v) {
+    this.voz = v === 'original' ? 'original' : 'nova';
+    this.files = this.vozes[this.voz].size ? this.vozes[this.voz] : this.vozes.original;
+  }
+  get pasta() { return this.files === this.vozes.nova ? 'voz2' : 'voz'; }
 
   stop() {
     this.queue = Promise.resolve();
@@ -139,7 +154,7 @@ export class Narrator {
       const end = () => { this.audio.duck(false); resolve(); };
       this.audio.duck(true);
       const el = this.el;
-      el.muted = false; el.src = `audio/voz/${key}.mp3`; el.volume = this.volume;
+      el.muted = false; el.src = `audio/${this.pasta}/${key}.mp3`; el.volume = this.volume;
       el.onended = el.onerror = end;
       el.play().catch(end);
     });

@@ -37,10 +37,12 @@ Ao publicar mudanças, aumente `VERSAO` em `sw.js`. O jogo confere a cada minuto
   - **Alta:** brilho (bloom) e foco suave nas bordas.
   - **Leve:** sem bloom e com resolução menor.
   - **Automático:** começa em Alta e troca para Leve sozinho se o aparelho não aguentar.
-- **Cartas:** **Todas as cartas** mostra o baralho inteiro (verdades, desafios, penas, armadilhas, sortes, desejos e as de vocês), por tipo e fase, com busca e um interruptor em cada carta. O que for desligado sai do baralho.
-- **Conta:** criar conta e senha, alterar senha, sair. Visitantes podem entrar a qualquer momento para salvar na nuvem.
-- **Modo de teste:** o jogo se joga sozinho com os dois jogadores automáticos, em 1×, 2× ou 4×. Também tem um atalho na tela inicial.
-  Rola o dado, cumpre as cartas (às vezes recusa, para testar a penalidade), escolhe o desejo e mostra no fim quantas rodadas e quanto tempo levou.
+- **Dado (Premium):** escolhe a pedra: Rubi, Ametista, Safira ou Esmeralda. No gratuito fica o rubi.
+- **Conta:** mostra o plano, criar conta e senha, alterar senha, sair. Visitantes podem entrar a qualquer momento para salvar na nuvem.
+- **Desenvolvedor (só admin):** não aparece para os outros planos.
+  - **Ver o jogo como** Admin, Premium ou Gratuito, para conferir o que cada plano vê.
+  - **Todas as cartas:** o baralho inteiro (verdades, desafios, penas, armadilhas, sortes, desejos e as do casal), por tipo e fase, com busca e um interruptor em cada carta.
+  - **Modo de teste:** o jogo se joga sozinho com os dois jogadores automáticos, em 1×, 2× ou 4×. Rola o dado, cumpre as cartas (às vezes recusa, para testar a penalidade), escolhe o desejo e mostra no fim quantas rodadas e quanto tempo levou.
 - As configurações ficam salvas no aparelho e, com login na nuvem, no perfil da conta.
 
 ## Conta e login (Supabase, banco próprio do jogo)
@@ -51,12 +53,27 @@ O jogo usa um **projeto Supabase separado**, com um banco só dele.
 2. No **SQL Editor**, rode `supabase/migrations/20261101120000_inicial.sql`. Ele cria a tabela `perfis` com RLS: cada um só lê e altera o próprio perfil.
 3. Em **Authentication → URL Configuration**, coloque `https://noiteadois.witchmymac.com/` como Site URL e Redirect URL.
 4. Em **Project Settings → API**, copie a *Project URL* e a *anon public key* para `js/config.js`.
+5. Rode também `supabase/migrations/20261109120000_planos.sql`: cria o **plano** de cada conta e deixa como **admin** todas as contas que já existem.
 
 Com isso, o jogo exige login (com "esqueci a senha" por e-mail), e os nomes, as configurações e as estatísticas ficam salvos na nuvem.
+### Planos
+| | Gratuito | Premium | Admin |
+|---|---|---|---|
+| Jogo completo, cartas padrão (surpresa) e "O que vale hoje?" | ✓ | ✓ | ✓ |
+| Criar e editar cartas próprias (quem faz, quem recebe, foto) | | ✓ | ✓ |
+| Escolher a pedra do dado | | ✓ | ✓ |
+| Área do desenvolvedor (todas as cartas, modo de teste, ver como) | | | ✓ |
+
+O plano fica na coluna `perfis.plano`, e **o app não consegue alterá-lo**: um gatilho no banco ignora qualquer mudança vinda do jogo. Contas novas começam no gratuito.
+Para mudar o plano de alguém, use o SQL Editor (o exemplo está no fim da migração). Visitante sem conta é sempre gratuito.
+> As cartas padrão estão em `js/data.js`, que é público como todo site estático. A área de admin esconde o conteúdo da experiência do jogador, mas não é um cofre.
+
 **Sem configurar**, o jogo usa uma conta local opcional (usuário e senha só neste aparelho, com hash PBKDF2), criada em Configurações → "Proteger o jogo com senha".
 
 ## Narração e música
 - **Narradora:** voz feminina sussurrada e sedutora, gravada no VoiceStudio (OmniVoice, clonada de um trecho de ASMR).
+  Há duas versões em Configurações → Narração: **Nova** (`audio/voz2`, padrão, a mesma gravação um pouco mais grave e aveludada, com um leve ar de quarto) e **Original** (`audio/voz`).
+  Para gravar uma voz nova de verdade, gere as mesmas falas do roteiro em `audio/voz2/<chave>.mp3` e liste-as em `"voz2"` no `audio/lista.json`.
   Ela dá as boas-vindas, avisa de quem é a vez, anuncia as fases, o tipo de carta, armadilhas, sorte, o Pico do Amor e o desejo. A música abaixa enquanto ela fala.
   **Só toca falas gravadas** (`audio/voz/ROTEIRO.md`, listadas em `audio/lista.json`): o jogo não usa a voz do aparelho. Nomes, texto das cartas e desejos aparecem só na tela.
 - **Música:** trilha lounge sensual **gerada em tempo real**, sem arquivo e fixa (não muda com as fases): piano elétrico, baixo quente, batida trip-hop baixinha, colchão e chiado de vinil, a 70 BPM. Partes cheia e vazia se alternam a cada 16 compassos e as frases de melodia variam, para não enjoar. Para usar uma faixa própria, coloque `audio/musica.mp3` e marque `"musica": true` em `audio/lista.json`.
@@ -89,7 +106,7 @@ js/icons.js       ícones vetoriais das categorias (3D e interface)
 js/game.js        regras, turnos, cartas, configurações, login, modo de teste
 js/audio.js       trilha lounge gerada em tempo real (fixa) + efeitos sonoros
 js/voice.js       narradora: 64 falas gravadas, sorteadas sem repetir por momento do jogo
-js/cartas.js      baralho da noite: limites, catálogo (ligar/desligar), cartas do casal, ritmo
+js/cartas.js      baralho da noite: limites, catálogo (admin), cartas do casal (quem faz/recebe), alternativas de acessório, ritmo
 js/lembranca.js   resumo da noite e imagem para guardar
 js/auth.js        login: Supabase (nuvem) ou conta local
 js/config.js      chaves públicas do Supabase (vazio = conta local)
@@ -121,7 +138,7 @@ vendor/supabase/  cliente Supabase (carregado só se configurado)
 - O tabuleiro é dividido em **4 fases**, e o conteúdo esquenta a cada uma:
   Aquecimento → Provocação → Fogo → Clímax. A cor dos degraus acompanha (azul → roxo → rosa → vermelho).
 - A média do dado é 3,5. No modo Normal (40 casas) dá cerca de 11 turnos por pessoa, ou seja, uns 22 a 25 cartas no total.
-  Com 1 a 2 minutos por carta, a partida fica em torno de **45 a 55 min**. O modo Rápido tem 28 casas e o Longo, 52.
+  Com 1 a 2 minutos por carta, a partida fica em torno de **45 a 55 min**. O número de casas é escolhido na tela inicial (de 20 a 64, de 4 em 4) e só muda o tamanho do percurso: todas as cartas continuam no baralho e as 4 fases se espalham pelo tabuleiro todo.
 - O peso de cada categoria muda por fase: no começo há mais Verdades, no fim há mais Desafios e Armadilhas.
   Assim a tensão sobe aos poucos, e a fase final concentra o conteúdo mais intenso.
 - As armadilhas (voltar casas, perder a vez) aumentam a duração e mantêm os dois próximos no tabuleiro, então a disputa vai até o fim.

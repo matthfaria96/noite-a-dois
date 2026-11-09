@@ -2,6 +2,8 @@
 // - Com Supabase configurado (js/config.js): conta de verdade com e-mail e senha, e o perfil
 //   (nomes, configurações e estatísticas) fica salvo na nuvem, protegido por RLS.
 // - Sem Supabase: conta local com usuário e senha, guardada só neste aparelho (hash PBKDF2).
+// Planos: 'gratuito' < 'premium' < 'admin'. O plano vem do perfil na nuvem e só o banco muda
+// (o jogador não consegue alterar o próprio plano: ver a migração 20261109120000_planos.sql).
 import { store } from './util.js';
 import { SUPABASE_URL, SUPABASE_ANON_KEY } from './config.js';
 
@@ -26,11 +28,16 @@ const MSG = {
   'User already registered': 'Esse e-mail já tem conta. Tente entrar.',
 };
 const msg = e => MSG[e?.message] ?? e?.message ?? 'Algo deu errado. Tente de novo.';
+export const PLANOS = ['gratuito', 'premium', 'admin'];
+const NOME_PLANO = { gratuito: 'Gratuito', premium: 'Premium', admin: 'Admin' };
+export const nomePlano = p => NOME_PLANO[p] ?? NOME_PLANO.gratuito;
 
 export const auth = {
   cloud: Boolean(SUPABASE_URL && SUPABASE_ANON_KEY),
   sb: null,
   session: null,
+  // último plano conhecido desta conta (vale offline); visitante é sempre gratuito
+  plano: 'gratuito',
 
   async init() {
     if (!this.cloud) return;
@@ -103,12 +110,25 @@ export const auth = {
   },
 
   async logout() {
+    this.plano = 'gratuito'; store.del('plano');
     if (this.cloud) { await this.sb.auth.signOut(); this.session = null; return; }
     store.set('lembrar', false);
     try { sessionStorage.removeItem('nad:sessao'); } catch {}
   },
 
   removeLocal() { store.del('conta'); store.del('lembrar'); },
+
+  // ---------------------------------------------------------------- plano
+  // tem acesso a um nível? ('premium' vale para premium e admin)
+  pode(nivel) { return PLANOS.indexOf(this.plano) >= PLANOS.indexOf(nivel); },
+  setPlano(p) { this.plano = PLANOS.includes(p) ? p : 'gratuito'; },
+  // plano salvo da conta logada, para abrir offline sem perder o acesso
+  planoSalvo() {
+    const s = store.get('plano', null);
+    if (!s) return 'gratuito';
+    return !this.cloud || s.user === this.user() ? s.plano : 'gratuito'; // sem nuvem (offline): o último plano deste aparelho
+  },
+  guardarPlano() { store.set('plano', { user: this.user(), plano: this.plano }); },
 
   // ---------------------------------------------------------------- perfil na nuvem
   async loadProfile() {

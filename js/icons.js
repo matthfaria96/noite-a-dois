@@ -108,18 +108,26 @@ export function iconURL(tipo, size = 128) {
 
 // Pedra do dado (o mesmo rubi lapidado da rolagem), em vetor: losango em pé com as 4 facetas da coroa,
 // contorno rosé e o número claro no centro. Serve para o botão de rolar e para o último lance.
-let pedraN = 0;
-export function pedraSVG(numero = '') {
-  const id = 'pd' + (pedraN++);
+// As cores seguem a pedra escolhida (Premium); sem escolha, é o rubi.
+const PEDRAS = {
+  rubi: ['#ff5c7c', '#c8102e', '#5c0418', '#ffb1c2'],
+  ametista: ['#c58cff', '#7b22d6', '#2e0752', '#dcb8ff'],
+  safira: ['#7aa0ff', '#1f44c8', '#0a1650', '#b8ccff'],
+  esmeralda: ['#5fe0a0', '#0e9a5c', '#043a24', '#b0f5d2'],
+};
+let pedraN = 0, pedraAtual = 'rubi';
+export const setPedra = k => { pedraAtual = PEDRAS[k] ? k : 'rubi'; };
+export function pedraSVG(numero = '', k = pedraAtual) {
+  const id = 'pd' + (pedraN++), [c0, c1, c2, borda] = PEDRAS[k] ?? PEDRAS.rubi;
   return `<svg class="pedra-svg" viewBox="0 0 64 72" aria-hidden="true">
-    <defs><radialGradient id="${id}" cx="40%" cy="35%" r="70%"><stop offset="0" stop-color="#ff5c7c"/><stop offset=".55" stop-color="#c8102e"/><stop offset="1" stop-color="#5c0418"/></radialGradient></defs>
+    <defs><radialGradient id="${id}" cx="40%" cy="35%" r="70%"><stop offset="0" stop-color="${c0}"/><stop offset=".55" stop-color="${c1}"/><stop offset="1" stop-color="${c2}"/></radialGradient></defs>
     <path d="M28 3h8l24 30v6L36 69h-8L4 39v-6Z" fill="url(#${id})"/>
     <path d="M32 36 28 3h8Z M32 36 60 33v6Z M32 36 36 69h-8Z M32 36 4 39v-6Z" fill="#000" opacity=".12"/>
     <path d="M32 36 36 3 60 33Z" fill="#ff8aa2" opacity=".28"/>
     <path d="M32 36 4 33 28 3Z" fill="#ffb3c4" opacity=".38"/>
     <path d="M32 36 60 39 36 69Z" fill="#2a0010" opacity=".42"/>
     <path d="M32 36 4 39 28 69Z" fill="#3a0016" opacity=".26"/>
-    <path d="M28 3h8l24 30v6L36 69h-8L4 39v-6Z" fill="none" stroke="#ffb1c2" stroke-opacity=".7" stroke-width="1.2" stroke-linejoin="round"/>
+    <path d="M28 3h8l24 30v6L36 69h-8L4 39v-6Z" fill="none" stroke="${borda}" stroke-opacity=".7" stroke-width="1.2" stroke-linejoin="round"/>
     ${numero !== '' ? `<text x="32" y="44" text-anchor="middle" class="pedra-num">${numero}</text>` : ''}
   </svg>`;
 }
