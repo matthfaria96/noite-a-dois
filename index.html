@@ -188,7 +188,7 @@
         <label class="ela"><span><svg class="gen" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="9" r="5.5"/><path d="M12 14.5V21M9 18h6"/></svg>Ela</span><input id="name-ela" maxlength="14" placeholder="Nome dela" required aria-required="true" autocomplete="off"></label>
       </div>
       <div class="opt casas">
-        <span class="rotulo">Casas no tabuleiro <b id="casas-val">40 casas</b><small id="casas-tempo">~50 min</small></span>
+        <span class="rotulo">Casas no tabuleiro <button type="button" class="info" data-info="casas" aria-label="Como as casas funcionam"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5v.01"/></svg></button><b id="casas-val">40 casas</b><small id="casas-tempo">~50 min</small></span>
         <div class="casas-ctrl">
           <button type="button" class="passo-btn" id="casas-menos" aria-label="Menos casas">−</button>
           <input type="range" id="casas" min="20" max="64" step="4" value="40" aria-label="Casas no tabuleiro">
@@ -204,19 +204,11 @@
         </div>
       </div>
       <div class="opt">
-        <span class="rotulo">Ritmo <button type="button" class="info" id="btn-ritmo-info" aria-label="Como o ritmo funciona" aria-expanded="false" aria-controls="ritmo-info"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5v.01"/></svg></button></span>
+        <span class="rotulo">Ritmo <button type="button" class="info" data-info="ritmo" aria-label="Como o ritmo funciona"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5v.01"/></svg></button></span>
         <div class="seg" id="seg-ritmo">
           <button data-v="romantico">Romântico<small>mais verdades</small></button>
           <button data-v="provocante" class="on">Provocante<small>equilibrado</small></button>
           <button data-v="intenso">Intenso<small>esquenta rápido</small></button>
-        </div>
-        <div class="dica hidden" id="ritmo-info" role="note">
-          <p>O ritmo decide <b>o que aparece</b> nas casas e <b>quando o clima esquenta</b>. Ele não muda o tamanho da partida.</p>
-          <ul>
-            <li><b>Romântico:</b> mais verdades e carícias; as fases quentes chegam mais tarde.</li>
-            <li><b>Provocante:</b> o equilíbrio entre conversa e ação.</li>
-            <li><b>Intenso:</b> mais desafios e o Fogo e o Clímax chegam mais cedo.</li>
-          </ul>
         </div>
       </div>
       <div class="pair">
@@ -369,6 +361,18 @@
         <div class="pontos" id="ap-pontos"><i class="on"></i><i></i><i></i></div>
         <button class="cta" id="ap-proximo">Próximo</button>
       </div>
+    </div>
+  </section>
+
+  <!-- EXPLICAÇÕES: o (i) dos ajustes abre aqui, com o fundo borrado -->
+  <section id="info" class="screen foco hidden">
+    <div class="panel sheet fixa info-panel" role="dialog" aria-labelledby="info-titulo">
+      <header class="sheet-head">
+        <h2 id="info-titulo"></h2>
+        <button class="icon-btn close" data-close aria-label="Fechar"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+      </header>
+      <div class="sheet-body" id="info-corpo"></div>
+      <div class="sheet-foot"><button class="cta" data-close>Entendi</button></div>
     </div>
   </section>
 

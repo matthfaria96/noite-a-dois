@@ -540,8 +540,8 @@ button, .tile-btn, .limite, .wish { -webkit-user-select: none; user-select: none
 /* celular: telas de conteúdo em fluxo normal. O painel tem no mínimo a altura da tela e cresce com o conteúdo,
    então nunca transborda para cima (parte inalcançável) — rola normalmente. Carta e pausa seguem centralizada/folha. */
 @media (max-width: 640px) {
-  .screen:not(#card):not(#menu):not(#limites) { display: block; }
-  .screen:not(#card):not(#menu):not(#limites) > .panel:not(.sheet) { min-height: 100%; }
+  .screen:not(#card):not(#menu):not(#limites):not(#info) { display: block; }
+  .screen:not(#card):not(#menu):not(#limites):not(#info) > .panel:not(.sheet) { min-height: 100%; }
 }
 
 /* =====================================================================
@@ -1031,3 +1031,22 @@ body.modal-aberto #setup > .panel, body.modal-aberto #hud, body.modal-aberto .si
 @media (max-width: 380px) { .mini-carta.m1 { transform: translateX(-74px) rotate(-11deg) translateY(14px) scale(.82); } .mini-carta.m3 { transform: translateX(74px) rotate(11deg) translateY(14px) scale(.82); } }
 @media (prefers-reduced-motion: reduce) { .mini-carta { transition: none; } }
 #cartas.so-premium .sheet-foot .cta { background: transparent; border: 1px solid var(--hair); box-shadow: none; text-shadow: none; font-size: 16px; padding: 14px; }
+
+/* (i) dos ajustes: só o ícone, sem cara de botão */
+.info { width: 24px; height: 24px; padding: 0; border: 0; background: none; box-shadow: none; color: var(--ink-3); display: inline-grid; place-items: center; }
+.info svg { width: 17px; height: 17px; stroke-width: 1.8; }
+.info:hover, .info:focus-visible { color: #fff; background: none; outline: none; filter: drop-shadow(0 0 6px rgba(255, 90, 130, .8)); }
+/* folha de explicação */
+@media (min-width: 641px) { #info > .panel { width: min(480px, 100%); } }
+@media (max-width: 640px) {
+  #info { place-items: end stretch; }
+  #info > .panel { min-height: 0; height: auto; max-height: calc(100% - max(24px, env(safe-area-inset-top) + 12px));
+    border-radius: var(--r-lg) var(--r-lg) 0 0; animation: rise .5s var(--ease); }
+  #info .sheet-head { padding-top: 20px; }
+}
+.info-lista { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+.info-lista li { padding: 12px 14px; border-radius: var(--r-sm); background: rgba(0, 0, 0, .26); border: 1px solid rgba(255, 110, 150, .12); }
+.info-lista b { display: block; font: italic 600 18px var(--serif); color: #f8dce6; }
+.info-lista span { display: block; margin-top: 2px; font-size: 14px; line-height: 1.5; color: var(--ink-2); }
+#info .lead b { color: #ffd6e0; font-weight: 600; }
+@media (max-width: 640px) { #info h2 { font-size: 26px; } }

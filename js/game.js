@@ -155,7 +155,7 @@ function sides(tipo, acao, { titulo = CATEGORIAS[tipo]?.nome, sub = 'Casa', subR
 // O 3D trabalha menos quando uma tela cobre o tabuleiro (economia de bateria e fluidez)
 const OVERLAYS = ['#setup', '#lock', '#card', '#menu', '#rules', '#final', '#settings'];
 // menus em folha: fundo totalmente borrado e o 3D congelado por baixo (o desfoque é feito uma vez, sobre uma imagem parada)
-const MODAIS = ['#settings', '#limites', '#cartas', '#rules', '#catalogo'];
+const MODAIS = ['#settings', '#limites', '#cartas', '#rules', '#catalogo', '#info'];
 const refreshThrottle = () => {
   board.setThrottle(OVERLAYS.some(visible));
   const modal = MODAIS.some(visible);
@@ -634,12 +634,30 @@ $('#btn-lembranca').onclick = () => G.noite && lembranca.guardar(G.noite).catch(
 
 // ------------------------------------------------------------ ritmo, limites e cartas do casal
 segment('#seg-ritmo', () => cfg.ritmo, v => { cfg.ritmo = v; });
-$('#btn-ritmo-info').onclick = () => {
-  const abrir = $('#ritmo-info').classList.contains('hidden');
-  $('#ritmo-info').classList.toggle('hidden', !abrir);
-  $('#btn-ritmo-info').classList.toggle('on', abrir);
-  $('#btn-ritmo-info').setAttribute('aria-expanded', String(abrir));
+// (i) dos ajustes: explicação numa folha com o fundo borrado
+const INFOS = {
+  ritmo: { titulo: 'Ritmo', corpo: `
+    <p class="lead">O ritmo decide <b>o que aparece</b> nas casas e <b>quando o clima esquenta</b>. Ele não muda o tamanho da partida.</p>
+    <ul class="info-lista">
+      <li><b>Romântico</b><span>Mais verdades e carícias. As fases quentes chegam mais tarde, sem pressa.</span></li>
+      <li><b>Provocante</b><span>O equilíbrio entre conversa e ação. É o ritmo padrão.</span></li>
+      <li><b>Intenso</b><span>Mais desafios, e o Fogo e o Clímax chegam mais cedo.</span></li>
+    </ul>` },
+  casas: { titulo: 'Casas no tabuleiro', corpo: `
+    <p class="lead">As casas são os degraus da subida até o <b>Pico do Amor</b>. O número de casas decide <b>quanto tempo a noite dura</b>.</p>
+    <ul class="info-lista">
+      <li><b>Menos casas</b><span>Partida mais curta: com 20 casas, cerca de 25 minutos.</span></li>
+      <li><b>Mais casas</b><span>Noite mais longa e com mais cartas: com 64 casas, cerca de 85 minutos.</span></li>
+      <li><b>As cartas não mudam</b><span>Todas continuam no baralho e as 4 fases se espalham pelo tabuleiro inteiro. Só muda quanto tempo vocês passam em cada uma.</span></li>
+    </ul>
+    <p class="fine">A estimativa considera cerca de 3,5 casas por jogada e 1 a 2 minutos por carta.</p>` },
 };
+document.querySelectorAll('[data-info]').forEach(b => b.onclick = () => {
+  const i = INFOS[b.dataset.info];
+  $('#info-titulo').textContent = i.titulo;
+  $('#info-corpo').innerHTML = i.corpo;
+  show('#info');
+});
 function resumoNoite() {
   const n = limitesAtivos(cfg.limites).length, c = cfg.cartas.length, ativas = cfg.cartas.filter(x => x.ativa !== false).length;
   $('#limites-resumo').textContent = n ? `${n} ${n === 1 ? 'limite' : 'limites'} hoje` : 'Tudo liberado';
