@@ -1,6 +1,6 @@
 // Service worker: deixa o jogo abrir offline e instalável como app.
 // Ao mudar qualquer arquivo, aumente a VERSAO para os aparelhos baixarem a nova.
-const VERSAO = 'nad-v24';
+const VERSAO = 'nad-v25';
 const ARQUIVOS = [
   './',
   'index.html',

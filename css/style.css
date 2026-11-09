@@ -331,7 +331,7 @@ ol { padding-left: 22px; line-height: 1.6; margin: 0; color: rgba(255,255,255,.8
   .group { padding: 20px; gap: 14px; }
   .group h3 { font-size: 22px; }
   .row { font-size: 15px; }
-  #settings h2, .rules-panel > h2 { font-size: 38px; }
+  #settings h2, .rules-panel h2 { font-size: 38px; }
 
   .rules-panel { width: min(1000px, 100%); }
   .rules-panel ol { columns: 2; column-gap: 48px; font-size: 16px; padding: 8px 0 8px 22px; }
@@ -968,3 +968,19 @@ h2 .selo { font-size: 11px; }
 .cat-carta.nossa { border-left: 3px solid #ffc8a8; }
 @media (min-width: 900px) { #cartas .do-casal { position: sticky; top: 0; } }
 @media (max-width: 899px) { #cartas .cartas-grid.tem-cartas .do-casal { order: -1; } }
+
+/* =====================================================================
+   Sem barras de rolagem em lugar nenhum (desktop e navegador do celular):
+   a rolagem continua com o dedo, a roda do mouse e o trackpad, mas a barra do sistema não aparece.
+   E nada rola para o lado.
+   ===================================================================== */
+* { scrollbar-width: none; -ms-overflow-style: none; }
+*::-webkit-scrollbar { display: none; width: 0; height: 0; background: transparent; }
+html, body, .screen, .panel, .sheet-body { overflow-x: hidden; }
+.screen { overscroll-behavior: contain; }
+/* catálogo no formato fixo: abas e busca paradas logo abaixo do título */
+#catalogo .cat-topo { position: relative; top: auto; flex: none; margin: 0; padding: 4px 0 6px; background: none; }
+@media (min-width: 641px) { #catalogo .cat-topo { padding: 4px 28px 6px; margin: 0 -28px; } }
+/* Como jogar: a lista em colunas não pode vazar para o lado */
+.rules-panel ol { margin: 0; }
+.rules-panel .sheet-body { gap: 16px; }

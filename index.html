@@ -232,8 +232,9 @@
 
   <!-- REGRAS -->
   <section id="rules" class="screen hidden">
-    <div class="panel scroll sheet rules-panel">
-      <h2>Como jogar</h2>
+    <div class="panel sheet fixa rules-panel">
+      <header class="sheet-head"><h2>Como jogar</h2></header>
+      <div class="sheet-body">
       <div class="clima">
         <h3>Antes de começar, preparem o clima</h3>
         <p>Para a noite ficar mais intensa, deixem por perto:</p>
@@ -263,6 +264,7 @@
         <li>Recusar uma carta custa 2 casas para trás (ou use um passe livre).</li>
         <li>Quem chegar primeiro ao <b>Clímax</b> escolhe 1 de 3 desejos para o parceiro realizar.</li>
       </ol>
+      </div>
       <div class="sheet-foot"><button class="cta" data-close>Entendi</button></div>
     </div>
   </section>
@@ -387,7 +389,7 @@
 
   <!-- TODAS AS CARTAS: catálogo para ligar/desligar carta por carta -->
   <section id="catalogo" class="screen hidden">
-    <div class="panel scroll sheet">
+    <div class="panel sheet fixa">
       <header class="sheet-head">
         <h2>Todas as cartas <span class="selo dev">Dev</span></h2>
         <button class="icon-btn close" data-close aria-label="Fechar"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
@@ -399,7 +401,7 @@
           <span id="cat-contagem"></span>
         </div>
       </div>
-      <div class="cat-lista" id="cat-lista"></div>
+      <div class="sheet-body"><div class="cat-lista" id="cat-lista"></div></div>
       <div class="sheet-foot"><button class="ghost" id="cat-ligar">Ligar todas</button><button class="cta" data-close>Pronto</button></div>
     </div>
   </section>
