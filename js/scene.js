@@ -139,6 +139,7 @@ export class Board3D {
     this.speed = 1;        // modo de teste acelera as animações
     this.paused = false;   // pausa o 3D enquanto o palco do dado cobre a tela
     this.throttle = false; // 30 fps quando uma tela cobre o tabuleiro
+    this.congelado = false; // menus em folha (configurações, regras…) por cima: o 3D para e o fundo borrado fica parado
     this.frame = 0;
     this.tmpOut = new THREE.Vector3(); this.tmpV = new THREE.Vector3();
     this.mode = 'orbit'; // 'orbit' (tela inicial) | 'follow' | 'overview' | 'free'
@@ -666,7 +667,7 @@ export class Board3D {
   }
 
   #tick() {
-    if (this.paused) { this.clock.getDelta(); return; }
+    if (this.paused || this.congelado) { this.clock.getDelta(); return; }
     if (this.throttle && (this.frame++ & 1)) return;
     const dt = Math.min(0.1, this.clock.getDelta());
     const t = this.clock.elapsedTime;

@@ -827,8 +827,8 @@ html, body { background: #070106; }
   padding: 10px 0 14px; -webkit-mask-image: linear-gradient(transparent, #000 12px, #000 calc(100% - 16px), transparent);
   mask-image: linear-gradient(transparent, #000 12px, #000 calc(100% - 16px), transparent); }
 @media (min-width: 641px) {
-  .fixa > .sheet-head { padding: 22px 28px 10px; }
-  .fixa > .sheet-foot { padding: 12px 28px 22px; }
+  .fixa > .sheet-head { padding-top: 22px; }
+  .fixa > .sheet-foot { padding-bottom: 22px; }
 }
 /* O que vale hoje? no celular: folha que sobe de baixo, do tamanho do conteúdo (sem vão vazio) */
 @media (max-width: 640px) {
@@ -980,7 +980,19 @@ html, body, .screen, .panel, .sheet-body { overflow-x: hidden; }
 .screen { overscroll-behavior: contain; }
 /* catálogo no formato fixo: abas e busca paradas logo abaixo do título */
 #catalogo .cat-topo { position: relative; top: auto; flex: none; margin: 0; padding: 4px 0 6px; background: none; }
-@media (min-width: 641px) { #catalogo .cat-topo { padding: 4px 28px 6px; margin: 0 -28px; } }
 /* Como jogar: a lista em colunas não pode vazar para o lado */
 .rules-panel ol { margin: 0; }
 .rules-panel .sheet-body { gap: 16px; }
+
+/* Folhas fixas: cabeçalho e rodapé alinhados ao conteúdo (o X fica dentro do painel, nunca na borda) */
+.fixa > .sheet-head, .fixa > .sheet-foot { margin-left: 0; margin-right: 0; padding-left: 0; padding-right: 0; }
+.fixa > .sheet-head { display: grid; grid-template-columns: 40px 1fr 40px; align-items: center; gap: 8px; }
+.fixa > .sheet-head h2 { grid-column: 2; }
+.fixa > .sheet-head .close { position: static; grid-column: 3; justify-self: end; transform: none; }
+
+/* Menus em folha: o fundo some num desfoque total, só a folha fica em foco.
+   Leve: o 3D congela enquanto a folha está aberta, então o desfoque não é refeito a cada quadro. */
+.screen.foco { background: rgba(8, 0, 6, .55); -webkit-backdrop-filter: blur(22px) saturate(115%); backdrop-filter: blur(22px) saturate(115%); }
+#setup > .panel, #hud, #side-l, #side-r { transition: opacity .25s ease; }
+body.modal-aberto #setup > .panel, body.modal-aberto #hud, body.modal-aberto .side { opacity: 0; pointer-events: none; }
+@media (prefers-reduced-transparency: reduce) { .screen.foco { -webkit-backdrop-filter: none; backdrop-filter: none; background: rgba(8, 0, 6, .9); } }

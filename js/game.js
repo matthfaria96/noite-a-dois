@@ -154,7 +154,14 @@ function sides(tipo, acao, { titulo = CATEGORIAS[tipo]?.nome, sub = 'Casa', subR
 
 // O 3D trabalha menos quando uma tela cobre o tabuleiro (economia de bateria e fluidez)
 const OVERLAYS = ['#setup', '#lock', '#card', '#menu', '#rules', '#final', '#settings'];
-const refreshThrottle = () => board.setThrottle(OVERLAYS.some(visible));
+// menus em folha: fundo totalmente borrado e o 3D congelado por baixo (o desfoque é feito uma vez, sobre uma imagem parada)
+const MODAIS = ['#settings', '#limites', '#cartas', '#rules', '#catalogo'];
+const refreshThrottle = () => {
+  board.setThrottle(OVERLAYS.some(visible));
+  const modal = MODAIS.some(visible);
+  document.body.classList.toggle('modal-aberto', modal);
+  board.congelado = modal;
+};
 new MutationObserver(refreshThrottle).observe(document.body, { subtree: true, attributes: true, attributeFilter: ['class'] });
 
 // Mostra uma carta e devolve 'feito' | 'recusou'
