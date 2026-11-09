@@ -13,7 +13,7 @@ import { Narrator } from './voice.js';
 import { auth, PLANOS, nomePlano } from './auth.js';
 
 // ------------------------------------------------------------ configurações (salvas no aparelho e na nuvem)
-const CFG_DEFAULT = { musica: 0.6, efeitos: 0.7, voz: 1, narracao: true, vibrar: true, graficos: 'auto', vozNarradora: 'nova', dur: 40, start: 'ela', ritmo: 'provocante', testeVel: 2, limites: {}, cartas: [], desligadas: [], gema: 'rubi' };
+const CFG_DEFAULT = { musica: 0.6, efeitos: 0.7, voz: 1, narracao: true, vibrar: true, graficos: 'auto', vozNarradora: 'original', dur: 40, start: 'ela', ritmo: 'provocante', testeVel: 2, limites: {}, cartas: [], desligadas: [], gema: 'rubi' };
 const cfg = { ...CFG_DEFAULT, ...store.get('cfg', {}) };
 // cartas do casal no formato atual (id, quem faz, quem recebe, ativa); as antigas viram "ambos" e ficam como estavam
 const normalizarCartas = () => { cfg.cartas = (cfg.cartas ?? []).map(c => normalizarCarta(c, cfg.desligadas)); };

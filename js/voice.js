@@ -1,6 +1,6 @@
 // Narradora: voz sussurrada gravada no VoiceStudio. Só toca falas gravadas em audio/<pasta>/<chave>.mp3
 // e listadas em audio/lista.json; o que não estiver gravado fica em silêncio (o texto segue na tela).
-// Duas vozes: 'nova' (audio/voz2, mais grave e aveludada, a padrão) e 'original' (audio/voz).
+// Duas vozes: 'original' (audio/voz) e 'nova' (audio/voz2, quando houver falas gravadas nela).
 // As falas são curtas e genéricas (servem para qualquer carta). Cada momento do jogo tem várias variações,
 // sorteadas sem repetir até todas terem saído, e isso vale entre partidas.
 import { store, rnd } from './util.js';
@@ -87,7 +87,7 @@ export class Narrator {
     this.volume = 1;
     this.files = new Set();
     this.vozes = { original: new Set(), nova: new Set() };
-    this.voz = 'nova';
+    this.voz = 'original';
     this.queue = Promise.resolve();
     this.el = new Audio(); // um player só: depois de liberado no primeiro toque, o iOS deixa ele tocar sozinho
     this.loadFiles();
@@ -108,6 +108,7 @@ export class Narrator {
         (l.voz ?? []).forEach(k => this.vozes.original.add(k));
         (l.voz2 ?? []).forEach(k => this.vozes.nova.add(k));
         this.setVoz(this.voz);
+        document.querySelector('#seg-voz')?.closest('.campo')?.classList.toggle('hidden', !this.vozes.nova.size);
       }
     } catch {}
   }
