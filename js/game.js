@@ -729,6 +729,7 @@ function editarCarta(id) {
 function listarCartas() {
   const premium = podeUsar('premium'), ul = $('#lista-cartas');
   $('#cartas-premium').classList.toggle('hidden', premium);
+  $('#cartas').classList.toggle('so-premium', !premium && !cfg.cartas.length);
   $('#nova-carta').classList.toggle('hidden', !premium);
   $('#cartas .cartas-grid').classList.toggle('so-lista', !premium);
   $('#cartas .cartas-grid').classList.toggle('tem-cartas', cfg.cartas.length > 0);
@@ -765,6 +766,8 @@ function listarCartas() {
     ul.append(li);
   }
 }
+document.querySelectorAll('.mc-ico[data-t]').forEach(el => { el.style.backgroundImage = `url(${iconURL(el.dataset.t, 96)})`; });
+$('#btn-quero-premium').onclick = () => toast('O Premium chega em breve. Vocês vão ser os primeiros a saber.', 3200);
 $('#btn-cartas').onclick = () => { limparForm(); listarCartas(); show('#cartas'); };
 $('#nova-carta').onsubmit = e => {
   e.preventDefault();

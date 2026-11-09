@@ -996,3 +996,38 @@ html, body, .screen, .panel, .sheet-body { overflow-x: hidden; }
 #setup > .panel, #hud, #side-l, #side-r { transition: opacity .25s ease; }
 body.modal-aberto #setup > .panel, body.modal-aberto #hud, body.modal-aberto .side { opacity: 0; pointer-events: none; }
 @media (prefers-reduced-transparency: reduce) { .screen.foco { -webkit-backdrop-filter: none; backdrop-filter: none; background: rgba(8, 0, 6, .9); } }
+
+/* ---------- Nossas cartas no gratuito: amostra do Premium ---------- */
+#cartas.so-premium .cartas-grid { display: none; }
+@media (min-width: 641px) { #cartas.so-premium > .panel { width: min(560px, 100%); } }
+.premium-aviso { gap: 10px; padding: 22px 20px 20px; overflow: hidden; }
+.premium-aviso .pa-titulo { font: italic 600 24px var(--serif); color: #fbe3ea; }
+.amostras { position: relative; height: 210px; width: 100%; margin: 4px 0 6px; }
+.mini-carta { position: absolute; left: 50%; top: 8px; width: 150px; height: 196px; margin-left: -75px; padding: 26px 12px 12px;
+  display: flex; flex-direction: column; align-items: center; gap: 4px; text-align: center; border-radius: 18px;
+  background: linear-gradient(165deg, rgba(60, 12, 36, .96), rgba(18, 3, 12, .98));
+  box-shadow: inset 0 0 0 1px rgba(255, 214, 180, .5), 0 0 30px color-mix(in srgb, #ffb88a 22%, transparent), 0 18px 40px rgba(0, 0, 0, .6);
+  transition: transform .5s var(--ease); }
+.mini-carta.m1 { transform: translateX(-92px) rotate(-11deg) translateY(14px) scale(.9); }
+.mini-carta.m3 { transform: translateX(92px) rotate(11deg) translateY(14px) scale(.9); }
+.mini-carta.m2 { z-index: 2; }
+.premium-aviso:hover .mini-carta.m1 { transform: translateX(-104px) rotate(-14deg) translateY(10px) scale(.9); }
+.premium-aviso:hover .mini-carta.m3 { transform: translateX(104px) rotate(14deg) translateY(10px) scale(.9); }
+.premium-aviso:hover .mini-carta.m2 { transform: translateY(-4px); }
+.mc-selo { position: absolute; top: 8px; left: 50%; transform: translateX(-50%); white-space: nowrap; padding: 2px 8px; border-radius: 999px;
+  font: 700 7.5px/1.3 var(--sf); letter-spacing: .12em; text-transform: uppercase; color: #2a0810; background: linear-gradient(135deg, #ffe0b8, #f0a0b4); }
+.mc-ico { width: 46px; height: 46px; flex: none; border-radius: 50%; overflow: hidden; background: center / 60% no-repeat, rgba(0, 0, 0, .3);
+  border: 1px solid rgba(255, 255, 255, .25); }
+.mc-ico.foto { border: 2px solid rgba(255, 214, 180, .85); box-shadow: 0 0 14px rgba(255, 170, 140, .45); }
+.mc-ico svg { display: block; width: 100%; height: 100%; }
+.mini-carta b { font: italic 700 17px var(--serif); color: #fff; }
+.mini-carta small { font-size: 9.5px; color: var(--ink-2); }
+.mini-carta small i { font-style: normal; font-weight: 700; } .mini-carta i.ele { color: var(--ele); } .mini-carta i.ela { color: var(--ela); }
+.mini-carta p { margin: 2px 0 0; font: italic 500 12.5px/1.3 var(--serif); color: #fff; }
+.vantagens { list-style: none; margin: 4px 0 6px; padding: 0; display: flex; flex-direction: column; gap: 7px; text-align: left; font-size: 14px; color: var(--ink); }
+.vantagens li { display: flex; align-items: baseline; gap: 9px; }
+.vantagens i { font-style: normal; color: #ffc8a8; text-shadow: 0 0 8px rgba(255, 170, 140, .7); }
+#btn-quero-premium { width: 100%; max-width: 320px; margin-top: 4px; }
+@media (max-width: 380px) { .mini-carta.m1 { transform: translateX(-74px) rotate(-11deg) translateY(14px) scale(.82); } .mini-carta.m3 { transform: translateX(74px) rotate(11deg) translateY(14px) scale(.82); } }
+@media (prefers-reduced-motion: reduce) { .mini-carta { transition: none; } }
+#cartas.so-premium .sheet-foot .cta { background: transparent; border: 1px solid var(--hair); box-shadow: none; text-shadow: none; font-size: 16px; padding: 14px; }
