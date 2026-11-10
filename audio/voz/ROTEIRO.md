@@ -1,7 +1,11 @@
-# Roteiro da narradora (gravado no VoiceStudio)
+# Roteiro da narradora (gerado no VoiceStudio)
 
-Voz feminina sussurrada e sedutora, clonada de um trecho de ASMR. Falas curtas e genéricas, que servem para qualquer carta:
+Voz feminina sussurrada e sedutora, clonada de um trecho de sussurro ASMR. Falas curtas e genéricas, que servem para qualquer carta:
 a narradora sugere, não explica. Nada de nomes nem de texto de carta (isso fica na tela).
+
+Todas as falas saem da mesma referência, com os mesmos ajustes (32 passos, velocidade 0,95, sussurro), e depois recebem
+o mesmo tratamento: estalos corrigidos, chiado e estouros domados, entrada e saída suaves, −19 LUFS e pico de −3 dB,
+em MP3 mono 192 kbps. Se precisar gerar uma fala nova, mantenha esses ajustes para o timbre e o volume continuarem iguais.
 
 Cada momento do jogo tem várias variações (`<momento>-<n>`). O jogo sorteia sem repetir até todas saírem, e o sorteio
 continua de uma partida para a outra. As falas opcionais (vez, dado, reações) tocam só às vezes, com intervalo, para soarem espontâneas.

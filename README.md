@@ -70,9 +70,11 @@ Para mudar o plano de alguém, use o SQL Editor (o exemplo está no fim da migra
 **Sem configurar**, o jogo usa uma conta local opcional (usuário e senha só neste aparelho, com hash PBKDF2), criada em Configurações → "Proteger o jogo com senha".
 
 ## Narração e música
-- **Narradora:** voz feminina sussurrada e sedutora, gravada no VoiceStudio (OmniVoice, clonada de um trecho de ASMR).
-  As falas passaram por um tratamento (sem mudar afinação): sopro e cliques de boca removidos, estouros de sussurro no começo e no fim domados,
-  entradas e saídas suaves, todas em −19 LUFS (pico até −3 dB) e um timbre levemente mais quente e sedoso.
+- **Narradora:** voz feminina sussurrada e sedutora, gerada no VoiceStudio (OmniVoice, clonada de um trecho de sussurro ASMR).
+  As falas são sintetizadas uma a uma com a mesma referência e o mesmo ajuste (32 passos, velocidade 0,95), por isso o timbre e a levada não mudam entre uma fala e outra.
+  Depois passam por um tratamento que não mexe na afinação: estalos e cliques domados, chiado e estouros de sussurro no começo e no fim contidos,
+  entradas e saídas suaves, um limitador leve para o sussurro não dar picos e todas niveladas em **−19 LUFS com pico máximo de −3 dB**,
+  em MP3 mono de 192 kbps (44,1 kHz). Sussurro bem baixinho, mas cada palavra legível.
   Ela dá as boas-vindas, avisa de quem é a vez, anuncia as fases, o tipo de carta, armadilhas, sorte, o Pico do Amor e o desejo. A música abaixa enquanto ela fala.
   **Só toca falas gravadas** (`audio/voz/ROTEIRO.md`, listadas em `audio/lista.json`): o jogo não usa a voz do aparelho. Nomes, texto das cartas e desejos aparecem só na tela.
 - **Música:** trilha lounge sensual **gerada em tempo real**, sem arquivo e fixa (não muda com as fases): piano elétrico, baixo quente, batida trip-hop baixinha, colchão e chiado de vinil, a 70 BPM. Partes cheia e vazia se alternam a cada 16 compassos e as frases de melodia variam, para não enjoar. Para usar uma faixa própria, coloque `audio/musica.mp3` e marque `"musica": true` em `audio/lista.json`.
