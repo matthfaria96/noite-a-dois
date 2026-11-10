@@ -20,9 +20,9 @@ const normalizarCartas = () => { cfg.cartas = (cfg.cartas ?? []).map(c => normal
 normalizarCartas();
 
 // ------------------------------------------------------------ planos: gratuito < premium < admin
-// O admin pode "ver o jogo como" outro plano para testar; a área do desenvolvedor segue o plano real.
+// O admin pode ligar "ver como gratuito" para testar; a área do desenvolvedor segue o plano real.
 const ehAdmin = () => auth.plano === 'admin';
-const planoEfetivo = () => (ehAdmin() ? store.get('ver-como', 'admin') : auth.plano);
+const planoEfetivo = () => (ehAdmin() ? (store.get('ver-como', 'admin') === 'gratuito' ? 'gratuito' : 'admin') : auth.plano);
 const podeUsar = nivel => PLANOS.indexOf(planoEfetivo()) >= PLANOS.indexOf(nivel);
 let saveT;
 function saveCfg() {
@@ -822,18 +822,18 @@ function desenharGemas() {
 function aplicarPlano() {
   const admin = ehAdmin();
   $('#dev').classList.toggle('hidden', !admin);
-  if (admin) segSet('#seg-vercomo', planoEfetivo());
+  if (admin) $('#cfg-vercomo').checked = planoEfetivo() === 'gratuito';
   else ['#catalogo'].forEach(hide);
   $('#plano-nome').textContent = nomePlano(auth.plano) + (admin && planoEfetivo() !== 'admin' ? ` · vendo como ${nomePlano(planoEfetivo())}` : '');
   resumoNoite(); aplicarGema(); desenharGemas();
   if (visible('#cartas')) listarCartas();
 }
-document.querySelectorAll('#seg-vercomo button').forEach(b => b.onclick = () => {
+$('#cfg-vercomo').onchange = e => {
   if (!ehAdmin()) return;
-  store.set('ver-como', b.dataset.v);
+  store.set('ver-como', e.target.checked ? 'gratuito' : 'admin');
   aplicarPlano();
-  toast(`Vendo o jogo como ${nomePlano(b.dataset.v)}`);
-});
+  toast(e.target.checked ? 'Vendo o jogo como gratuito' : 'De volta ao modo admin');
+};
 
 // ------------------------------------------------------------ desenvolvedor (só admin): todas as cartas, ligar/desligar uma a uma
 const ABAS = [['verdade', 'Verdades'], ['desafio', 'Desafios'], ['pena', 'Penas'], ['armadilha', 'Armadilhas'], ['sorte', 'Sortes'], ['desejo', 'Desejos'], ['nossas', 'Do casal']];
