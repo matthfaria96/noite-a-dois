@@ -72,8 +72,9 @@ Para mudar o plano de alguém, use o SQL Editor (o exemplo está no fim da migra
 
 ## Narração e música
 - **Narradora:** voz feminina sussurrada e sedutora, gravada no VoiceStudio (OmniVoice, clonada de um trecho de ASMR).
-  Há duas versões em Configurações → Narração: **Nova** (`audio/voz2`, padrão, a mesma gravação um pouco mais grave e aveludada, com um leve ar de quarto) e **Original** (`audio/voz`).
-  Para gravar uma voz nova de verdade, gere as mesmas falas do roteiro em `audio/voz2/<chave>.mp3` e liste-as em `"voz2"` no `audio/lista.json`.
+  Há duas versões em Configurações → Narração: **Original** (`audio/voz`, padrão, as gravações como vieram) e **Doce** (`audio/voz2`):
+  as mesmas falas tratadas, sem sopro no microfone nem estalo de consoante, com bordas suaves, volume igual (−19 LUFS, pico até −3 dB)
+  e o timbre um pouco mais doce (formantes +4% com o Rubber Band R3, sem eco e sem som metálico). As duas têm as 64 falas.
   Ela dá as boas-vindas, avisa de quem é a vez, anuncia as fases, o tipo de carta, armadilhas, sorte, o Pico do Amor e o desejo. A música abaixa enquanto ela fala.
   **Só toca falas gravadas** (`audio/voz/ROTEIRO.md`, listadas em `audio/lista.json`): o jogo não usa a voz do aparelho. Nomes, texto das cartas e desejos aparecem só na tela.
 - **Música:** trilha lounge sensual **gerada em tempo real**, sem arquivo e fixa (não muda com as fases): piano elétrico, baixo quente, batida trip-hop baixinha, colchão e chiado de vinil, a 70 BPM. Partes cheia e vazia se alternam a cada 16 compassos e as frases de melodia variam, para não enjoar. Para usar uma faixa própria, coloque `audio/musica.mp3` e marque `"musica": true` em `audio/lista.json`.

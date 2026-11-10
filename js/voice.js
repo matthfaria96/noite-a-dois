@@ -1,6 +1,7 @@
 // Narradora: voz sussurrada gravada no VoiceStudio. Só toca falas gravadas em audio/<pasta>/<chave>.mp3
 // e listadas em audio/lista.json; o que não estiver gravado fica em silêncio (o texto segue na tela).
-// Duas vozes: 'original' (audio/voz) e 'nova' (audio/voz2, quando houver falas gravadas nela).
+// Duas vozes: 'original' (audio/voz, as gravações como vieram) e 'nova' = "Doce" (audio/voz2: mesmas falas tratadas,
+// sem sopro nem estalo, volume igual e timbre um pouco mais doce; ver scripts no README).
 // As falas são curtas e genéricas (servem para qualquer carta). Cada momento do jogo tem várias variações,
 // sorteadas sem repetir até todas terem saído, e isso vale entre partidas.
 import { store, rnd } from './util.js';
