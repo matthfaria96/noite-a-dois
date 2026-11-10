@@ -1063,3 +1063,15 @@ body.modal-aberto #setup > .panel, body.modal-aberto #hud, body.modal-aberto .si
   #cartas.so-premium .sheet-head { padding-top: 20px; }
   #cartas.so-premium .sheet-body { padding-bottom: max(18px, env(safe-area-inset-bottom)); }
 }
+
+/* admin: interruptor discreto "Free" no canto da tela inicial (oposto à engrenagem) */
+.admin-free { position: absolute; top: 18px; left: 18px; z-index: 2; display: flex; align-items: center; gap: 7px; cursor: pointer;
+  font-size: 11px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); opacity: .75; transition: opacity .2s; }
+.admin-free:hover, .admin-free:has(input:checked) { opacity: 1; }
+.switch.mini { width: 34px; height: 20px; }
+.switch.mini i::after { width: 14px; height: 14px; }
+.switch.mini input:checked + i::after { transform: translateX(14px); }
+@media (min-width: 900px) { .admin-free { top: 24px; left: 26px; } }
+@media (max-width: 640px) {
+  .admin-free { top: max(16px, calc(env(safe-area-inset-top) + 8px)); left: 16px; flex-direction: column-reverse; gap: 3px; font-size: 8.5px; }
+}

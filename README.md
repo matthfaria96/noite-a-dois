@@ -39,8 +39,7 @@ Ao publicar mudanças, aumente `VERSAO` em `sw.js`. O jogo confere a cada minuto
   - **Automático:** começa em Alta e troca para Leve sozinho se o aparelho não aguentar.
 - **Dado (Premium):** escolhe a pedra: Rubi, Ametista, Safira ou Esmeralda. No gratuito fica o rubi.
 - **Conta:** mostra o plano, criar conta e senha, alterar senha, sair. Visitantes podem entrar a qualquer momento para salvar na nuvem.
-- **Desenvolvedor (só admin):** não aparece para os outros planos.
-  - **Ver o jogo como** Admin, Premium ou Gratuito, para conferir o que cada plano vê.
+- **Desenvolvedor (só admin):** não aparece para os outros planos. Na tela inicial, o admin tem um interruptor discreto **Free** no canto, para ver o jogo como um jogador gratuito.
   - **Todas as cartas:** o baralho inteiro (verdades, desafios, penas, armadilhas, sortes, desejos e as do casal), por tipo e fase, com busca e um interruptor em cada carta.
   - **Modo de teste:** o jogo se joga sozinho com os dois jogadores automáticos, em 1×, 2× ou 4×. Rola o dado, cumpre as cartas (às vezes recusa, para testar a penalidade), escolhe o desejo e mostra no fim quantas rodadas e quanto tempo levou.
 - As configurações ficam salvas no aparelho e, com login na nuvem, no perfil da conta.
@@ -72,9 +71,8 @@ Para mudar o plano de alguém, use o SQL Editor (o exemplo está no fim da migra
 
 ## Narração e música
 - **Narradora:** voz feminina sussurrada e sedutora, gravada no VoiceStudio (OmniVoice, clonada de um trecho de ASMR).
-  Há duas versões em Configurações → Narração: **Original** (`audio/voz`, padrão, as gravações como vieram) e **Doce** (`audio/voz2`):
-  as mesmas falas tratadas, sem sopro no microfone nem estalo de consoante, com bordas suaves, volume igual (−19 LUFS, pico até −3 dB)
-  e o timbre um pouco mais doce (formantes +4% com o Rubber Band R3, sem eco e sem som metálico). As duas têm as 64 falas.
+  As falas passaram por um tratamento (sem mudar afinação): sopro e cliques de boca removidos, estouros de sussurro no começo e no fim domados,
+  entradas e saídas suaves, todas em −19 LUFS (pico até −3 dB) e um timbre levemente mais quente e sedoso.
   Ela dá as boas-vindas, avisa de quem é a vez, anuncia as fases, o tipo de carta, armadilhas, sorte, o Pico do Amor e o desejo. A música abaixa enquanto ela fala.
   **Só toca falas gravadas** (`audio/voz/ROTEIRO.md`, listadas em `audio/lista.json`): o jogo não usa a voz do aparelho. Nomes, texto das cartas e desejos aparecem só na tela.
 - **Música:** trilha lounge sensual **gerada em tempo real**, sem arquivo e fixa (não muda com as fases): piano elétrico, baixo quente, batida trip-hop baixinha, colchão e chiado de vinil, a 70 BPM. Partes cheia e vazia se alternam a cada 16 compassos e as frases de melodia variam, para não enjoar. Para usar uma faixa própria, coloque `audio/musica.mp3` e marque `"musica": true` em `audio/lista.json`.

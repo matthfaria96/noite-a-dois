@@ -13,7 +13,7 @@ import { Narrator } from './voice.js';
 import { auth, PLANOS, nomePlano } from './auth.js';
 
 // ------------------------------------------------------------ configurações (salvas no aparelho e na nuvem)
-const CFG_DEFAULT = { musica: 0.6, efeitos: 0.7, voz: 1, narracao: true, vibrar: true, graficos: 'auto', vozNarradora: 'original', dur: 40, start: 'ela', ritmo: 'provocante', testeVel: 2, limites: {}, cartas: [], desligadas: [], gema: 'rubi' };
+const CFG_DEFAULT = { musica: 0.6, efeitos: 0.7, voz: 1, narracao: true, vibrar: true, graficos: 'auto', dur: 40, start: 'ela', ritmo: 'provocante', testeVel: 2, limites: {}, cartas: [], desligadas: [], gema: 'rubi' };
 const cfg = { ...CFG_DEFAULT, ...store.get('cfg', {}) };
 // cartas do casal no formato atual (id, quem faz, quem recebe, ativa); as antigas viram "ambos" e ficam como estavam
 const normalizarCartas = () => { cfg.cartas = (cfg.cartas ?? []).map(c => normalizarCarta(c, cfg.desligadas)); };
@@ -38,7 +38,6 @@ function applyCfg() {
   audio.setVolume('efeitos', cfg.efeitos);
   voice.enabled = cfg.narracao;
   voice.volume = cfg.voz;
-  voice.setVoz(cfg.vozNarradora);
 }
 applyCfg();
 
@@ -563,7 +562,6 @@ pintarCasas();
 segment('#seg-start', () => G.starter, v => { G.starter = cfg.start = v; });
 segment('#seg-graf', () => cfg.graficos, v => setGraficos(v));
 segment('#seg-vel', () => cfg.testeVel, v => { cfg.testeVel = Number(v); });
-segment('#seg-voz', () => cfg.vozNarradora, v => { cfg.vozNarradora = v; applyCfg(); voice.stop(); const was = voice.enabled; voice.enabled = true; voice.fala('inicio').then(() => { voice.enabled = was; }); });
 setGraficos(cfg.graficos);
 
 // ------------------------------------------------------------ tela de configurações
@@ -822,6 +820,7 @@ function desenharGemas() {
 function aplicarPlano() {
   const admin = ehAdmin();
   $('#dev').classList.toggle('hidden', !admin);
+  $('#admin-free').classList.toggle('hidden', !admin);
   if (admin) $('#cfg-vercomo').checked = planoEfetivo() === 'gratuito';
   else ['#catalogo'].forEach(hide);
   $('#plano-nome').textContent = nomePlano(auth.plano) + (admin && planoEfetivo() !== 'admin' ? ` · vendo como ${nomePlano(planoEfetivo())}` : '');
