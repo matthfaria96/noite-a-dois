@@ -2,7 +2,7 @@
 // Com "musica": true em audio/lista.json, toca audio/musica.mp3 no lugar da trilha gerada.
 export class GameAudio {
   constructor() {
-    this.vol = { musica: 0.6, efeitos: 0.7 };
+    this.vol = { musica: 0.85, efeitos: 0.9 };
     this.started = false;
   }
 
@@ -57,13 +57,14 @@ export class GameAudio {
     this.vol[kind] = v;
     if (!this.ctx) return;
     const t = this.ctx.currentTime;
-    if (kind === 'musica') this.musicBus.gain.setTargetAtTime(v * 0.55, t, 0.4);
+    if (kind === 'musica') this.musicBus.gain.setTargetAtTime(v * 0.8, t, 0.35);
     if (kind === 'efeitos') this.sfxBus.gain.setTargetAtTime(v, t, 0.1);
   }
-  // abaixa a música enquanto a narradora fala
+  // abaixa a música enquanto a narradora fala (o suficiente para a voz aparecer, sem sumir)
   duck(on) {
     if (!this.ctx) return;
-    this.duckGain.gain.setTargetAtTime(on ? 0.35 : 1, this.ctx.currentTime, 0.25);
+    const t = this.ctx.currentTime;
+    this.duckGain.gain.setTargetAtTime(on ? 0.55 : 1, t, on ? 0.15 : 0.22);
   }
   // fase nova: a trilha continua igual; só um coração marca a passagem
   setPhase(f) { if (f > 0) this.fase(); }

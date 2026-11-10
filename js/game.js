@@ -13,8 +13,15 @@ import { Narrator } from './voice.js';
 import { auth, PLANOS, nomePlano } from './auth.js';
 
 // ------------------------------------------------------------ configurações (salvas no aparelho e na nuvem)
-const CFG_DEFAULT = { musica: 0.6, efeitos: 0.7, voz: 1, narracao: true, vibrar: true, graficos: 'auto', dur: 40, start: 'ela', ritmo: 'provocante', testeVel: 2, limites: {}, cartas: [], desligadas: [], gema: 'rubi' };
+const CFG_DEFAULT = { musica: 0.85, efeitos: 0.9, voz: 0.8, narracao: true, vibrar: true, graficos: 'auto', dur: 40, start: 'ela', ritmo: 'provocante', testeVel: 2, limites: {}, cartas: [], desligadas: [], gema: 'rubi' };
 const cfg = { ...CFG_DEFAULT, ...store.get('cfg', {}) };
+// mix 2 (nov/2026): a voz da narradora caiu e música/efeitos subiram. Roda uma vez
+// por aparelho (inclusive nos volumes que vêm da conta) para ninguém ficar com a mistura antiga.
+function migrarMix() {
+  if (cfg.mix === 2) return;
+  cfg.mix = 2; cfg.musica = CFG_DEFAULT.musica; cfg.efeitos = CFG_DEFAULT.efeitos; cfg.voz = CFG_DEFAULT.voz;
+  store.set('cfg', cfg);
+}
 // cartas do casal no formato atual (id, quem faz, quem recebe, ativa); as antigas viram "ambos" e ficam como estavam
 const normalizarCartas = () => { cfg.cartas = (cfg.cartas ?? []).map(c => normalizarCarta(c, cfg.desligadas)); };
 normalizarCartas();
@@ -33,6 +40,7 @@ function saveCfg() {
 
 const audio = new GameAudio();
 const voice = new Narrator(audio);
+migrarMix();
 function applyCfg() {
   audio.setVolume('musica', cfg.musica);
   audio.setVolume('efeitos', cfg.efeitos);
@@ -984,6 +992,7 @@ async function afterLogin() {
   auth.guardarPlano();
   if (prof) {
     Object.assign(cfg, prof.config ?? {});
+    migrarMix();
     normalizarCartas();
     store.set('cfg', cfg);
     if (prof.nome_ele) $('#name-ele').value = prof.nome_ele;

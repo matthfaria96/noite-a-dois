@@ -83,16 +83,24 @@ export class Narrator {
   constructor(audio) {
     this.audio = audio;
     this.enabled = true;
-    this.volume = 1;
+    this._volume = 0.8;
     this.files = new Set();
     this.queue = Promise.resolve();
     this.el = new Audio(); // um player só: depois de liberado no primeiro toque, o iOS deixa ele tocar sozinho
+    this.el.preload = 'auto';
+    this.release = null; // solta o duck da fala que está tocando (stop() usa para a música não ficar abafada)
+    this.fading = false;
     this.loadFiles();
   }
+
+  // volume ao vivo: o controle das configurações vale também para a fala que está tocando
+  get volume() { return this._volume; }
+  set volume(v) { this._volume = Math.max(0, Math.min(1, Number(v) || 0)); if (!this.fading) this.el.volume = this._volume; }
 
   // iOS só libera áudio depois de um toque: chamar isto no primeiro clique
   unlock() {
     const el = this.el;
+    if (this.playing || !el.paused) return; // já tem fala tocando: não troca o src no meio
     el.muted = true; el.src = 'audio/voz/vez-1.mp3';
     el.play().then(() => { el.pause(); el.muted = false; }).catch(() => { el.muted = false; });
   }
@@ -104,10 +112,29 @@ export class Narrator {
     } catch {}
   }
 
-  stop() {
-    this.queue = Promise.resolve();
-    this.el.pause();
-    this.audio.duck(false);
+  // corta a fala atual sem estalo: o volume cai em ~140 ms e só então pausa.
+  // Se falta menos de meio segundo para acabar, deixa terminar — cortar a última
+  // palavra era o que soava como "acelerou no final".
+  stop(fade = 0.14) {
+    const el = this.el;
+    this.queue = Promise.resolve(); // falas ainda na fila são descartadas
+    if (this.fading || el.paused) { this.audio.duck(false); return; }
+    const left = Number.isFinite(el.duration) ? el.duration - el.currentTime : Infinity;
+    if (left > 0.45) {
+      const v0 = this._volume, ms = Math.max(70, fade * 1000), t0 = performance.now();
+      const release = this.release; this.release = null; this.fading = true;
+      this.queue = new Promise(res => {
+        const step = () => {
+          const k = Math.min(1, (performance.now() - t0) / ms);
+          el.volume = v0 * (1 - k);
+          if (k < 1) return requestAnimationFrame(step);
+          el.pause(); el.volume = v0; this.fading = false;
+          release?.(); res();
+        };
+        step();
+      });
+    }
+    this.audio.duck(false); // a música volta na hora, mesmo que a fala seja abandonada
   }
 
   // próxima fala do momento: sorteio sem repetir até todas saírem (o "saco" fica salvo entre partidas),
@@ -136,10 +163,19 @@ export class Narrator {
 
   #play(key) {
     return new Promise(resolve => {
-      const end = () => { this.audio.duck(false); resolve(); };
-      this.audio.duck(true);
       const el = this.el;
-      el.muted = false; el.src = `audio/voz/${key}.mp3`; el.volume = this.volume;
+      let done = false;
+      const end = () => {
+        if (done) return; done = true;
+        this.playing = false;
+        this.release = null;
+        this.audio.duck(false);
+        resolve();
+      };
+      this.release = end; // stop() chama isto se abandonar a fala, senão a música ficava abaixada
+      this.playing = true;
+      this.audio.duck(true);
+      el.muted = false; el.src = `audio/voz/${key}.mp3`; el.volume = this._volume;
       el.onended = el.onerror = end;
       el.play().catch(end);
     });

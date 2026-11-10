@@ -33,6 +33,8 @@ Ao publicar mudanças, aumente `VERSAO` em `sw.js`. O jogo confere a cada minuto
 ## Configurações (⚙️ na tela inicial ou ☰ → Configurações)
 - **Som:** volume da música e dos efeitos, e vibração (Android).
 - **Narração:** liga/desliga a narradora, escolhe o volume e tem um botão para ouvir.
+  A voz fica na frente da trilha: a música abaixa na hora em que ela fala e volta sozinha no fim (mesmo se a fala for interrompida).
+  Se uma fala for cortada por outra ação (fechar carta, rolar o dado), ela desce o volume em ~140 ms em vez de parar no meio da palavra, e uma fala com menos de meio segundo para acabar nunca é cortada.
 - **Gráficos:** Automático, Alta ou Leve.
   - **Alta:** brilho (bloom) e foco suave nas bordas.
   - **Leve:** sem bloom e com resolução menor.
