@@ -110,6 +110,8 @@ function simboloGenero(g, quem, cx, cy, size) {
 }
 
 export class Board3D {
+  fotos = {};
+  #fotoUrl = {};
   constructor(container) {
     this.container = container;
     const r = this.renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
@@ -284,13 +286,7 @@ export class Board3D {
     const band = new THREE.Mesh(new THREE.TorusGeometry(0.43, 0.025, 8, 48), silver);
     band.rotation.x = Math.PI / 2; band.position.y = 0.04;
     g.add(coreB, coreH, body, head, band);
-    const [cv, c2] = canvas(128);
-    c2.beginPath(); c2.arc(64, 64, 56, 0, TAU); c2.fillStyle = 'rgba(30,4,20,.55)'; c2.fill();
-    c2.lineWidth = 3; c2.strokeStyle = 'rgba(255,120,160,.55)'; c2.stroke();
-    const hex = '#' + new THREE.Color(color).getHexString();
-    c2.strokeStyle = '#f6e3ea'; c2.shadowColor = hex; c2.shadowBlur = 16;
-    simboloGenero(c2, symbol, 64, 64, 84);
-    const spr = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex(cv), depthWrite: false, fog: false }));
+    const spr = new THREE.Sprite(new THREE.SpriteMaterial({ map: this.#selo(symbol, color), depthWrite: false, fog: false }));
     spr.scale.setScalar(0.55); spr.position.y = 1.75; g.add(spr);
     const ring = new THREE.Mesh(new THREE.RingGeometry(0.52, 0.64, 48),
       new THREE.MeshBasicMaterial({ color: FOCUS, transparent: true, opacity: 0.9, side: THREE.DoubleSide }));
@@ -299,6 +295,38 @@ export class Board3D {
     ring.rotation.x = -Math.PI / 2; ring.position.y = 0.03; g.add(ring);
     g.userData = { ring, sprite: spr };
     return g;
+  }
+
+  // selo acima da peça: o símbolo de ele/ela ou, no Premium, a foto de quem joga
+  #selo(who, color) {
+    const [cv, c2] = canvas(256), img = this.fotos[who];
+    const hex = '#' + new THREE.Color(color).getHexString();
+    c2.scale(2, 2);
+    c2.beginPath(); c2.arc(64, 64, 56, 0, TAU); c2.fillStyle = 'rgba(30,4,20,.55)'; c2.fill();
+    if (img) {
+      c2.save(); c2.clip(); c2.drawImage(img, 8, 8, 112, 112); c2.restore();
+      c2.lineWidth = 5; c2.strokeStyle = '#f6e3ea'; c2.shadowColor = hex; c2.shadowBlur = 14; c2.stroke();
+      return tex(cv);
+    }
+    c2.lineWidth = 3; c2.strokeStyle = 'rgba(255,120,160,.55)'; c2.stroke();
+    c2.strokeStyle = '#f6e3ea'; c2.shadowColor = hex; c2.shadowBlur = 16;
+    simboloGenero(c2, who, 64, 64, 84);
+    return tex(cv);
+  }
+  // foto de quem joga no lugar do símbolo (null volta ao símbolo); vale também para as peças dos próximos tabuleiros
+  setFoto(who, url) {
+    if (url === this.#fotoUrl[who]) return;
+    this.#fotoUrl[who] = url;
+    const aplicar = img => {
+      if (this.#fotoUrl[who] !== url) return; // chegou uma foto mais nova antes desta carregar
+      this.fotos[who] = img;
+      const m = this.pieces[who]?.userData.sprite.material;
+      if (m) { m.map?.dispose(); m.map = this.#selo(who, PIECE_COLORS[who]); m.needsUpdate = true; }
+    };
+    if (!url) return aplicar(null);
+    const img = new Image();
+    img.onload = () => aplicar(img);
+    img.src = url;
   }
 
   #heart(color, scale, glow = 0.5) {

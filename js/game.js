@@ -13,7 +13,7 @@ import { Narrator } from './voice.js';
 import { auth, PLANOS, nomePlano } from './auth.js';
 
 // ------------------------------------------------------------ configurações (salvas no aparelho e na nuvem)
-const CFG_DEFAULT = { musica: 0.85, efeitos: 0.9, voz: 0.8, narracao: true, vibrar: true, graficos: 'auto', dur: 40, start: 'ela', ritmo: 'provocante', testeVel: 2, limites: {}, cartas: [], desligadas: [], gema: 'rubi' };
+const CFG_DEFAULT = { musica: 0.85, efeitos: 0.9, voz: 0.8, narracao: true, vibrar: true, graficos: 'auto', dur: 40, start: 'ela', ritmo: 'provocante', testeVel: 2, limites: {}, cartas: [], desligadas: [], gema: 'rubi', fotos: { ele: null, ela: null } };
 const cfg = { ...CFG_DEFAULT, ...store.get('cfg', {}) };
 // mix 2 (nov/2026): a voz da narradora caiu e música/efeitos subiram. Roda uma vez
 // por aparelho (inclusive nos volumes que vêm da conta) para ninguém ficar com a mistura antiga.
@@ -172,16 +172,14 @@ const refreshThrottle = () => {
 new MutationObserver(refreshThrottle).observe(document.body, { subtree: true, attributes: true, attributeFilter: ['class'] });
 
 // Mostra uma carta e devolve 'feito' | 'recusou'
-function showCard({ cat, text, secs = 0, who, fase, refusable = true, falar = true, nossa = false, foto = null }) {
+function showCard({ cat, text, secs = 0, who, fase, refusable = true, falar = true, nossa = false }) {
   return new Promise(resolve => {
     const card = $('#card .card');
     card.style.setProperty('--c', cat.cor);
     card.classList.toggle('nossa', nossa);
     $('#card .nossa-selo').classList.toggle('hidden', !nossa);
     const tipo = Object.keys(CATEGORIAS).find(k => CATEGORIAS[k] === cat);
-    const ico = $('#card .ico');
-    ico.classList.toggle('foto', !!foto);
-    ico.style.backgroundImage = foto ? `url(${foto})` : `url(${iconURL(tipo, 160)}), linear-gradient(145deg, rgba(255,255,255,.28), rgba(255,255,255,.06))`;
+    $('#card .ico').style.backgroundImage = `url(${iconURL(tipo, 160)}), linear-gradient(145deg, rgba(255,255,255,.28), rgba(255,255,255,.06))`;
     $('#card .cat').textContent = cat.nome;
     $('#card .fase-tag').textContent = FASES[fase].nome;
     const nome = g => `<b style="color:var(--${g})">${G.players[g].name}</b>`;
@@ -431,7 +429,7 @@ async function resolveTile(who) {
     // se nenhuma carta da casa servir para quem joga, vale uma verdade da fase
     const card = draw(tile.tipo + f, baralho(tile.tipo, f, cfg), who) ?? draw('verdade' + f, baralho('verdade', f, cfg), who) ?? VERDADE[f][0];
     G.diario[tile.tipo]++;
-    const r = await showCard({ cat, text: fill(card.t, who), secs: card.s, who, fase: f, nossa: !!card.nossa, foto: card.foto });
+    const r = await showCard({ cat, text: fill(card.t, who), secs: card.s, who, fase: f, nossa: !!card.nossa });
     if (r === 'recusou') await refusePenalty(who);
     return false;
   }
@@ -683,8 +681,8 @@ $('#btn-limites').onclick = abrirLimites;
 $('#btn-limites-menu').onclick = abrirLimites;
 
 // ------------------------------------------------------------ nossas cartas: criar e editar é Premium
-// Cada carta diz quem faz e quem recebe; pode ter foto no lugar do ícone; liga e desliga sem apagar.
-const NOVA = () => ({ tipo: 'verdade', f: 0, s: 0, faz: 'ambos', recebe: 'ambos', foto: null });
+// Cada carta diz quem faz e quem recebe; liga e desliga sem apagar.
+const NOVA = () => ({ tipo: 'verdade', f: 0, s: 0, faz: 'ambos', recebe: 'ambos' });
 let nova = NOVA(), editando = null;
 const nomeDe = g => $(`#name-${g}`).value.trim() || (g === 'ele' ? 'Ele' : 'Ela');
 function quemTexto(c) {
@@ -701,11 +699,6 @@ function ajustarQuem(k) {
 function pintarForm() {
   segSet('#seg-nc-tipo', nova.tipo); segSet('#seg-nc-fase', nova.f); segSet('#seg-nc-tempo', nova.s);
   segSet('#seg-nc-faz', nova.faz); segSet('#seg-nc-recebe', nova.recebe);
-  const prev = $('#nc-foto-prev');
-  prev.classList.toggle('com-foto', !!nova.foto);
-  prev.style.backgroundImage = nova.foto ? `url(${nova.foto})` : `url(${iconURL(nova.tipo, 96)})`;
-  $('#nc-foto-tirar').classList.toggle('hidden', !nova.foto);
-  $('#nc-foto-btn').textContent = nova.foto ? 'Trocar foto' : 'Escolher foto';
   $('#nc-titulo').textContent = editando ? 'Editar carta' : 'Nova carta';
   $('#nc-ok').textContent = editando ? 'Salvar alterações' : 'Adicionar carta';
   $('#nc-cancelar').classList.toggle('hidden', !editando);
@@ -716,12 +709,12 @@ const segNova = (id, k, num) => document.querySelectorAll(`${id} button`).forEac
 segNova('#seg-nc-tipo', 'tipo'); segNova('#seg-nc-fase', 'f', true); segNova('#seg-nc-tempo', 's', true);
 segNova('#seg-nc-faz', 'faz'); segNova('#seg-nc-recebe', 'recebe');
 
-// foto: recorte quadrado no centro, 320 px em JPEG (leve para salvar no aparelho e na nuvem)
-function lerFoto(file) {
+// foto: recorte quadrado no centro, em JPEG pequeno (leve para salvar no aparelho e na nuvem)
+function lerFoto(file, S = 256) {
   return new Promise((res, rej) => {
     const img = new Image(), url = URL.createObjectURL(file);
     img.onload = () => {
-      const S = 320, k = Math.min(img.naturalWidth, img.naturalHeight), cv = document.createElement('canvas');
+      const k = Math.min(img.naturalWidth, img.naturalHeight), cv = document.createElement('canvas');
       cv.width = cv.height = S;
       cv.getContext('2d').drawImage(img, (img.naturalWidth - k) / 2, (img.naturalHeight - k) / 2, k, k, 0, 0, S, S);
       URL.revokeObjectURL(url); res(cv.toDataURL('image/jpeg', 0.82));
@@ -730,13 +723,6 @@ function lerFoto(file) {
     img.src = url;
   });
 }
-$('#nc-foto-btn').onclick = () => $('#nc-foto').click();
-$('#nc-foto').onchange = async e => {
-  const f = e.target.files?.[0]; e.target.value = '';
-  if (!f) return;
-  try { nova.foto = await lerFoto(f); pintarForm(); } catch { toast('Não deu para abrir essa foto'); }
-};
-$('#nc-foto-tirar').onclick = () => { nova.foto = null; pintarForm(); };
 
 function limparForm() { nova = NOVA(); editando = null; $('#nc-texto').value = ''; pintarForm(); }
 $('#nc-cancelar').onclick = limparForm;
@@ -744,7 +730,7 @@ function editarCarta(id) {
   const c = cfg.cartas.find(x => x.id === id);
   if (!c || !podeUsar('premium')) return;
   editando = id;
-  nova = { tipo: c.tipo, f: c.f, s: c.s, faz: c.faz, recebe: c.recebe, foto: c.foto ?? null };
+  nova = { tipo: c.tipo, f: c.f, s: c.s, faz: c.faz, recebe: c.recebe };
   $('#nc-texto').value = c.t;
   pintarForm();
   $('#nova-carta').scrollIntoView({ block: 'start', behavior: 'smooth' });
@@ -765,14 +751,14 @@ function listarCartas() {
     const li = document.createElement('li');
     li.className = 'carta-casal' + (c.ativa === false ? ' off' : '');
     li.style.setProperty('--c', CATEGORIAS[c.tipo].cor);
-    li.innerHTML = `<span class="mini-ico${c.foto ? ' foto' : ''}"></span>
+    li.innerHTML = `<span class="mini-ico"></span>
       <div class="info"><span class="tag t-${c.tipo}">${CATEGORIAS[c.tipo].nome} · ${FASES[c.f].nome}${c.s ? ' · ' + tempoTexto(c.s) : ''}</span><p></p><small></small></div>
       <div class="acoes">
         <span class="switch" title="Ativa no baralho"><input type="checkbox" aria-label="Carta ativa" ${c.ativa === false ? '' : 'checked'}><i></i></span>
         ${premium ? '<button type="button" class="editar" aria-label="Editar carta"><svg viewBox="0 0 24 24"><path d="M4 20h4L19 9l-4-4L4 16v4Z"/><path d="m13.5 6.5 4 4"/></svg></button>' : ''}
         <button type="button" class="apagar" aria-label="Apagar carta"><svg viewBox="0 0 24 24"><path d="M5 7h14M10 7V5h4v2M7 7l1 13h8l1-13"/></svg></button>
       </div>`;
-    li.querySelector('.mini-ico').style.backgroundImage = `url(${c.foto || iconURL(c.tipo, 96)})`;
+    li.querySelector('.mini-ico').style.backgroundImage = `url(${iconURL(c.tipo, 96)})`;
     li.querySelector('p').textContent = c.t;
     li.querySelector('small').textContent = quemTexto(c);
     li.querySelector('input').onchange = e => {
@@ -799,15 +785,57 @@ $('#nova-carta').onsubmit = e => {
   const t = $('#nc-texto').value.trim().replace(/\s+/g, ' ');
   if (t.length < 6) { $('#nc-texto').focus(); return toast('Escreva a carta primeiro'); }
   const dados = { t, tipo: nova.tipo, f: nova.f, s: nova.s, faz: nova.faz, recebe: nova.recebe };
-  const comFoto = c => { const { foto, ...resto } = c; return nova.foto ? { ...resto, foto: nova.foto } : resto; };
-  if (editando) cfg.cartas = cfg.cartas.map(c => (c.id === editando ? comFoto({ ...c, ...dados }) : c));
-  else cfg.cartas = [comFoto({ id: Date.now().toString(36) + rnd(1e6).toString(36), ativa: true, ...dados }), ...cfg.cartas];
+  if (editando) cfg.cartas = cfg.cartas.map(c => (c.id === editando ? { ...c, ...dados } : c));
+  else cfg.cartas = [{ id: Date.now().toString(36) + rnd(1e6).toString(36), ativa: true, ...dados }, ...cfg.cartas];
   toast(editando ? 'Carta atualizada' : 'Carta adicionada ao baralho');
   limparForm();
   saveCfg(); listarCartas(); resumoNoite();
 };
 pintarForm();
 resumoNoite();
+
+// ------------------------------------------------------------ fotos de ele e ela: no lugar dos símbolos é Premium
+// Ficam na configuração (aparelho e nuvem). Sem Premium voltam os símbolos, mas a foto continua guardada.
+const fotoDe = g => (podeUsar('premium') ? cfg.fotos?.[g] ?? null : null);
+function pintarFotos() {
+  const premium = podeUsar('premium');
+  for (const g of ['ele', 'ela']) {
+    const f = fotoDe(g), dele = g === 'ele' ? 'dele' : 'dela';
+    for (const el of [$(`#foto-${g}`), $(`#chip-${g} .sym`)]) {
+      el.classList.toggle('foto', !!f);
+      el.style.backgroundImage = f ? `url(${f})` : '';
+    }
+    $(`#foto-${g}`).classList.toggle('adicionar', premium && !f);
+    $(`#foto-${g}`).setAttribute('aria-label', f ? `Foto ${dele}: trocar ou tirar` : premium ? `Pôr a foto ${dele}` : `Foto ${dele} (Premium)`);
+    board.setFoto(g, f);
+  }
+}
+let fotoDaVez = null;
+const fecharMenuFoto = () => $('#foto-menu').classList.add('hidden');
+document.querySelectorAll('.avatar').forEach(b => b.onclick = e => {
+  e.preventDefault();
+  const g = b.dataset.g, menu = $('#foto-menu');
+  if (!podeUsar('premium')) return toast('Pôr a foto de cada um no lugar do símbolo é Premium', 2600);
+  if (!cfg.fotos?.[g]) { fecharMenuFoto(); fotoDaVez = g; return $('#foto-arquivo').click(); }
+  const aberto = !menu.classList.contains('hidden') && fotoDaVez === g;
+  fotoDaVez = g;
+  $('#foto-menu-quem').textContent = `Foto de ${nomeDe(g)}`;
+  menu.classList.toggle('hidden', aberto);
+  menu.classList.toggle('ela', g === 'ela');
+});
+document.addEventListener('pointerdown', e => { if (!e.target.closest('#foto-menu, .avatar')) fecharMenuFoto(); });
+$('#foto-trocar').onclick = () => { fecharMenuFoto(); $('#foto-arquivo').click(); };
+$('#foto-tirar').onclick = () => {
+  fecharMenuFoto();
+  cfg.fotos = { ...cfg.fotos, [fotoDaVez]: null };
+  saveCfg(); pintarFotos();
+};
+$('#foto-arquivo').onchange = async e => {
+  const f = e.target.files?.[0], g = fotoDaVez; e.target.value = '';
+  if (!f || !g || !podeUsar('premium')) return;
+  try { cfg.fotos = { ...cfg.fotos, [g]: await lerFoto(f) }; saveCfg(); pintarFotos(); }
+  catch { toast('Não deu para abrir essa foto'); }
+};
 
 // ------------------------------------------------------------ dado: escolher a pedra é Premium
 function aplicarGema() {
@@ -832,7 +860,7 @@ function aplicarPlano() {
   if (admin) $('#cfg-vercomo').checked = planoEfetivo() === 'gratuito';
   else ['#catalogo'].forEach(hide);
   $('#plano-nome').textContent = nomePlano(auth.plano) + (admin && planoEfetivo() !== 'admin' ? ` · vendo como ${nomePlano(planoEfetivo())}` : '');
-  resumoNoite(); aplicarGema(); desenharGemas();
+  resumoNoite(); aplicarGema(); desenharGemas(); pintarFotos();
   if (visible('#cartas')) listarCartas();
 }
 $('#cfg-vercomo').onchange = e => {

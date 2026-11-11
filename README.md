@@ -39,6 +39,9 @@ Ao publicar mudanças, aumente `VERSAO` em `sw.js`. O jogo confere a cada minuto
   - **Alta:** brilho (bloom) e foco suave nas bordas.
   - **Leve:** sem bloom e com resolução menor.
   - **Automático:** começa em Alta e troca para Leve sozinho se o aparelho não aguentar.
+- **Fotos de vocês (Premium, na tela inicial):** o símbolo de ele/ela dentro do campo do nome vira um botão. Toque para pôr a foto (recorte quadrado, JPEG de 256 px);
+  com foto, o toque abre **Trocar foto** e **Voltar ao símbolo**. A foto aparece no campo do nome, no placar e no selo em cima da peça no tabuleiro.
+  Fica salva no aparelho e na nuvem; sem Premium voltam os símbolos (a foto continua guardada). No gratuito, o toque avisa que é Premium.
 - **Dado (Premium):** escolhe a pedra: Rubi, Ametista, Safira ou Esmeralda. No gratuito fica o rubi.
 - **Conta:** mostra o plano, criar conta e senha, alterar senha, sair. Visitantes podem entrar a qualquer momento para salvar na nuvem.
 - **Desenvolvedor (só admin):** não aparece para os outros planos. Na tela inicial, o admin tem um interruptor discreto **Free** no canto, para ver o jogo como um jogador gratuito.
@@ -61,7 +64,8 @@ Com isso, o jogo exige login (com "esqueci a senha" por e-mail), e os nomes, as 
 | | Gratuito | Premium | Admin |
 |---|---|---|---|
 | Jogo completo, cartas padrão (surpresa) e "O que vale hoje?" | ✓ | ✓ | ✓ |
-| Criar e editar cartas próprias (quem faz, quem recebe, foto) | | ✓ | ✓ |
+| Criar e editar cartas próprias (quem faz, quem recebe) | | ✓ | ✓ |
+| Foto de cada um no lugar dos símbolos de ele e ela | | ✓ | ✓ |
 | Escolher a pedra do dado | | ✓ | ✓ |
 | Área do desenvolvedor (todas as cartas, modo de teste, ver como) | | | ✓ |
 

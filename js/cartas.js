@@ -44,7 +44,7 @@ export function normalizarCarta(c, desligadas = []) {
   return {
     id: c.id ?? idCarta(c.t), t: c.t, tipo: c.tipo ?? 'verdade', f: c.f ?? 0, s: c.s || 0,
     faz: c.faz ?? 'ambos', recebe: c.recebe ?? 'ambos',
-    ativa: c.ativa ?? !desligadas.includes(idCarta(c.t)), ...(c.foto ? { foto: c.foto } : {}),
+    ativa: c.ativa ?? !desligadas.includes(idCarta(c.t)),
   };
 }
 export const podeFazer = (c, g) => (c.faz === 'ambos' || c.faz === g) && (c.recebe === 'ambos' || c.recebe === outro(g));
@@ -60,7 +60,7 @@ export function paraQuem(c) {
 const BASE = { verdade: VERDADE, desafio: DESAFIO, pena: PENA };
 function cartasDe(tipo, f, cfg) {
   const proprias = (cfg.cartas ?? []).filter(c => c.tipo === tipo && c.f === f && c.ativa !== false && paraQuem(c))
-    .map(c => ({ t: c.t, p: paraQuem(c), s: c.s || 0, nossa: true, foto: c.foto, faz: c.faz, recebe: c.recebe }));
+    .map(c => ({ t: c.t, p: paraQuem(c), s: c.s || 0, nossa: true, faz: c.faz, recebe: c.recebe }));
   const base = BASE[tipo][f].filter(c => (tipo === 'verdade' ? ligada(c.t, cfg.desligadas) : vale(c.t, cfg)));
   return [...base, ...proprias];
 }

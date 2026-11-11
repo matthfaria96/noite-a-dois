@@ -156,7 +156,7 @@ body.leve .dreamblur { display: none; }
 .tag { text-align: center; margin: 0; color: var(--ink-2); font-size: 15px; line-height: 1.45; }
 .names { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 .names label { display: flex; flex-direction: column; gap: 6px; font-size: 12px; font-weight: 600; color: var(--ink-2); padding-left: 4px; }
-.names .ele span { color: #9cc2ff; } .names .ela span { color: #ff9ab4; }
+.names .ele > span:first-child { color: #9cc2ff; } .names .ela > span:first-child { color: #ff9ab4; }
 input { width: 100%; padding: 12px 14px; border-radius: var(--r-sm); color: #fff; font: 500 16px var(--sf);
   background: rgba(255,255,255,.08); box-shadow: inset 0 1px 3px rgba(0,0,0,.25); margin-left: -4px; }
 input::placeholder { color: var(--ink-3); }
@@ -613,7 +613,7 @@ h2 { color: #f8e1e9; text-shadow: 0 0 24px rgba(200, 20, 60, .35); }
 svg.gen { width: 1.15em; height: 1.15em; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round;
   vertical-align: -.2em; margin-right: .3em; flex: none; }
 .chip .sym svg.gen { width: 19px; height: 19px; margin: 0; vertical-align: 0; display: block; }
-.names label span { display: inline-flex; align-items: center; }
+.names label > span:first-child { display: inline-flex; align-items: center; }
 
 /* =====================================================================
    Avisos laterais estilo RPG
@@ -843,8 +843,8 @@ html, body { background: #070106; }
 
 /* ---------- tela inicial: nomes obrigatórios ---------- */
 .names label.erro input { border-color: rgba(255, 90, 120, .85); box-shadow: inset 0 1px 4px rgba(0,0,0,.45), 0 0 0 3px rgba(220, 30, 70, .35); animation: treme .4s; }
-.names label.erro span { color: #ff8a9e !important; }
-.names label span::after { content: '*'; margin-left: 2px; color: var(--ink-3); }
+.names label.erro > span:first-child { color: #ff8a9e !important; }
+.names label > span:first-child::after { content: '*'; margin-left: 2px; color: var(--ink-3); }
 @keyframes treme { 20%, 60% { transform: translateX(-4px) } 40%, 80% { transform: translateX(4px) } }
 #btn-start.falta { opacity: .55; filter: saturate(.6); }
 
@@ -912,12 +912,6 @@ h2 .selo { font-size: 11px; }
 .seg.quem button svg.gen { margin-right: 2px; width: 1em; height: 1em; }
 .seg.quem button.c-ele.on { color: #cfd6ff; } .seg.quem button.c-ela.on { color: #ffd0e0; }
 @media (max-width: 380px) { .quem-grid { grid-template-columns: 1fr; } }
-.foto-campo { display: flex; align-items: center; gap: 14px; }
-.foto-campo > div { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; }
-.foto-prev { position: relative; width: 64px; height: 64px; flex: none; border-radius: 50%; cursor: pointer; overflow: hidden;
-  background: center / 60% no-repeat, rgba(0, 0, 0, .3); border: 1px dashed rgba(255, 160, 190, .45); }
-.foto-prev.com-foto { background-size: cover; border: 2px solid rgba(255, 214, 180, .8); box-shadow: 0 0 16px rgba(255, 160, 140, .35); }
-.foto-prev input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
 .ghost.mini { padding: 9px 16px; font-size: 14px; }
 .nc-acoes { display: flex; gap: 10px; }
 .nc-acoes > * { flex: 1; }
@@ -928,7 +922,6 @@ h2 .selo { font-size: 11px; }
 .lista-cartas li.carta-casal.off { opacity: .5; }
 .carta-casal .mini-ico { width: 46px; height: 46px; flex: none; border-radius: 50%; background: center / 62% no-repeat, rgba(0, 0, 0, .3);
   border: 1px solid rgba(255, 255, 255, .2); }
-.carta-casal .mini-ico.foto { background-size: cover; border: 2px solid rgba(255, 214, 180, .75); }
 .carta-casal .info { flex: 1; min-width: 0; }
 .carta-casal .info p { margin: 4px 0 2px; font: italic 500 16px/1.35 var(--serif); color: #fff; overflow-wrap: anywhere; }
 .carta-casal .info small { display: block; font-size: 12px; color: var(--ink-3); }
@@ -945,7 +938,6 @@ h2 .selo { font-size: 11px; }
   font: 700 10px/1.2 var(--sf); letter-spacing: .14em; text-transform: uppercase; color: #2a0810;
   background: linear-gradient(135deg, #ffe0b8, #f0a0b4); box-shadow: 0 0 16px rgba(255, 180, 150, .5); }
 .card.nossa .card-head { padding-top: 42px; }
-.card-head .ico.foto { background-size: cover; background-position: center; border: 2px solid rgba(255, 214, 180, .85); box-shadow: 0 0 22px rgba(255, 170, 140, .5); }
 .card-dica { margin: 0 22px 6px; padding: 8px 12px; border-radius: 12px; text-align: center; font-size: 13px; line-height: 1.45;
   color: var(--ink-2); background: rgba(0, 0, 0, .28); border: 1px dashed rgba(255, 160, 190, .25); }
 
@@ -1025,8 +1017,6 @@ body.modal-aberto #setup > .panel, body.modal-aberto #hud, body.modal-aberto .si
 .mc-selo { position: absolute; top: 7px; left: 50%; transform: translateX(-50%); white-space: nowrap; padding: 2px 7px; border-radius: 999px;
   font: 700 6.5px/1.3 var(--sf); letter-spacing: .12em; text-transform: uppercase; color: #2a0810; background: linear-gradient(135deg, #ffe0b8, #f0a0b4); }
 .mc-ico { width: 38px; height: 38px; flex: none; border-radius: 50%; overflow: hidden; background: center / 60% no-repeat, rgba(0, 0, 0, .3); border: 1px solid rgba(255, 255, 255, .25); }
-.mc-ico.foto { border: 2px solid rgba(255, 214, 180, .85); box-shadow: 0 0 12px rgba(255, 170, 140, .45); }
-.mc-ico svg { display: block; width: 100%; height: 100%; }
 .mini-carta b { font: italic 700 14px var(--serif); color: #fff; }
 .mini-carta small { font-size: 8px; color: var(--ink-2); }
 .mini-carta small i { font-style: normal; font-weight: 700; } .mini-carta i.ele { color: var(--ele); } .mini-carta i.ela { color: var(--ela); }
@@ -1075,3 +1065,30 @@ body.modal-aberto #setup > .panel, body.modal-aberto #hud, body.modal-aberto .si
 @media (max-width: 640px) {
   .admin-free { top: max(16px, calc(env(safe-area-inset-top) + 8px)); left: 16px; flex-direction: column-reverse; gap: 3px; font-size: 8.5px; }
 }
+
+/* =====================================================================
+   FOTO DE ELE E ELA (Premium): o símbolo dentro do campo do nome vira a foto
+   ===================================================================== */
+.campo-nome { position: relative; display: block; }
+.names .campo-nome input { padding-left: 50px; }
+.avatar { position: absolute; left: 6px; top: 50%; transform: translateY(-50%); width: 34px; height: 34px; border-radius: 50%;
+  display: grid; place-items: center; color: #fff; background: center / cover no-repeat;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.6), 0 2px 10px rgba(0,0,0,.3); transition: transform .3s var(--ease); }
+.avatar::before { content: ''; position: absolute; inset: -5px; border-radius: 50%; } /* área de toque maior */
+.avatar:active { transform: translateY(-50%) scale(.92); }
+.names .ele .avatar { background-color: #6a6ae0; background-image: linear-gradient(160deg, #b8c0ff, #6a6ae0); }
+.names .ela .avatar { background-color: #e04a9a; background-image: linear-gradient(160deg, #ffb0d0, #e04a9a); }
+.avatar svg.gen { width: 19px; height: 19px; margin: 0; display: block; }
+/* sem foto ainda, no Premium: um "+" pequeno convida a pôr a foto */
+.avatar.adicionar::after { content: '+'; position: absolute; right: -3px; bottom: -3px; width: 15px; height: 15px; border-radius: 50%;
+  display: grid; place-items: center; font: 700 12px/1 var(--sf); color: #2a0810; background: linear-gradient(135deg, #ffe0b8, #f0a0b4);
+  box-shadow: 0 0 8px rgba(255, 180, 150, .6); }
+.avatar.foto, .chip .sym.foto { background-size: cover; background-position: center; border: 2px solid rgba(255, 214, 180, .85); }
+.avatar.foto svg, .chip .sym.foto svg { visibility: hidden; }
+@media (min-width: 900px) { .names .campo-nome input { padding-left: 54px; } .avatar { width: 38px; height: 38px; } }
+.foto-menu { display: flex; align-items: center; justify-content: flex-start; gap: 16px; flex-wrap: wrap; margin-top: -2px; padding: 8px 14px;
+  border-radius: 12px; background: rgba(0, 0, 0, .3); border: 1px solid rgba(255, 160, 190, .2); font-size: 13px; color: var(--ink-2);
+  animation: aparece .25s var(--ease); }
+.foto-menu.ela { justify-content: flex-end; }
+.foto-menu .link { font-size: 13px; color: #ff9ab4; }
+@keyframes aparece { from { opacity: 0; transform: translateY(-4px); } }
