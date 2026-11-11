@@ -60,11 +60,13 @@ export class GameAudio {
     if (kind === 'musica') this.musicBus.gain.setTargetAtTime(v * 0.8, t, 0.35);
     if (kind === 'efeitos') this.sfxBus.gain.setTargetAtTime(v, t, 0.1);
   }
-  // abaixa a música enquanto a narradora fala (o suficiente para a voz aparecer, sem sumir)
+  // abaixa a música enquanto a narradora fala (o suficiente para a voz aparecer, sem sumir);
+  // no fim da fala a música volta devagar, junto com a saída suave da voz
   duck(on) {
     if (!this.ctx) return;
     const t = this.ctx.currentTime;
-    this.duckGain.gain.setTargetAtTime(on ? 0.55 : 1, t, on ? 0.15 : 0.22);
+    this.duckGain.gain.cancelScheduledValues(t);
+    this.duckGain.gain.setTargetAtTime(on ? 0.55 : 1, t, on ? 0.15 : 0.45);
   }
   // fase nova: a trilha continua igual; só um coração marca a passagem
   setPhase(f) { if (f > 0) this.fase(); }

@@ -33,8 +33,9 @@ Ao publicar mudanças, aumente `VERSAO` em `sw.js`. O jogo confere a cada minuto
 ## Configurações (⚙️ na tela inicial ou ☰ → Configurações)
 - **Som:** volume da música e dos efeitos, e vibração (Android).
 - **Narração:** liga/desliga a narradora, escolhe o volume e tem um botão para ouvir.
-  A voz fica na frente da trilha: a música abaixa na hora em que ela fala e volta sozinha no fim (mesmo se a fala for interrompida).
-  Se uma fala for cortada por outra ação (fechar carta, rolar o dado), ela desce o volume em ~140 ms em vez de parar no meio da palavra, e uma fala com menos de meio segundo para acabar nunca é cortada.
+  A voz fica na frente da trilha: a música abaixa na hora em que ela fala e volta devagar no fim.
+  **Uma fala nunca é cortada:** se o jogo seguir em frente (fechar a carta, rolar o dado), a fala que está tocando vai até o fim;
+  só caem as que ainda esperavam a vez na fila. A próxima fala só começa quando a anterior terminou.
 - **Gráficos:** Automático, Alta ou Leve.
   - **Alta:** brilho (bloom) e foco suave nas bordas.
   - **Leve:** sem bloom e com resolução menor.
@@ -79,7 +80,7 @@ Para mudar o plano de alguém, use o SQL Editor (o exemplo está no fim da migra
 - **Narradora:** voz feminina sussurrada e sedutora, gerada no VoiceStudio (OmniVoice, clonada de um trecho de sussurro ASMR).
   As falas são sintetizadas uma a uma com a mesma referência e o mesmo ajuste (32 passos, velocidade 0,95), por isso o timbre e a levada não mudam entre uma fala e outra.
   Depois passam por um tratamento que não mexe na afinação: estalos e cliques domados, chiado e estouros de sussurro no começo e no fim contidos,
-  entradas e saídas suaves, um limitador leve para o sussurro não dar picos e todas niveladas em **−19 LUFS com pico máximo de −3 dB**,
+  entradas suaves e **saída natural**: onde o som era cortado no fim, a textura do sussurro continua e se apaga em ~0,45 s (decaimento exponencial, como o eco de uma sala), seguida de 0,25 s de silêncio, um limitador leve para o sussurro não dar picos e todas niveladas em **−19 LUFS com pico máximo de −3 dB**,
   em MP3 mono de 192 kbps (44,1 kHz). Sussurro bem baixinho, mas cada palavra legível.
   Ela dá as boas-vindas, avisa de quem é a vez, anuncia as fases, o tipo de carta, armadilhas, sorte, o Pico do Amor e o desejo. A música abaixa enquanto ela fala.
   **Só toca falas gravadas** (`audio/voz/ROTEIRO.md`, listadas em `audio/lista.json`): o jogo não usa a voz do aparelho. Nomes, texto das cartas e desejos aparecem só na tela.

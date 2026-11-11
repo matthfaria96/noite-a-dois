@@ -86,16 +86,15 @@ export class Narrator {
     this._volume = 0.8;
     this.files = new Set();
     this.queue = Promise.resolve();
+    this.geracao = 0; // stop() muda a geração: as falas que ainda esperavam na fila são descartadas
     this.el = new Audio(); // um player só: depois de liberado no primeiro toque, o iOS deixa ele tocar sozinho
     this.el.preload = 'auto';
-    this.release = null; // solta o duck da fala que está tocando (stop() usa para a música não ficar abafada)
-    this.fading = false;
     this.loadFiles();
   }
 
   // volume ao vivo: o controle das configurações vale também para a fala que está tocando
   get volume() { return this._volume; }
-  set volume(v) { this._volume = Math.max(0, Math.min(1, Number(v) || 0)); if (!this.fading) this.el.volume = this._volume; }
+  set volume(v) { this._volume = Math.max(0, Math.min(1, Number(v) || 0)); this.el.volume = this._volume; }
 
   // iOS só libera áudio depois de um toque: chamar isto no primeiro clique
   unlock() {
@@ -112,30 +111,10 @@ export class Narrator {
     } catch {}
   }
 
-  // corta a fala atual sem estalo: o volume cai em ~140 ms e só então pausa.
-  // Se falta menos de meio segundo para acabar, deixa terminar — cortar a última
-  // palavra era o que soava como "acelerou no final".
-  stop(fade = 0.14) {
-    const el = this.el;
-    this.queue = Promise.resolve(); // falas ainda na fila são descartadas
-    if (this.fading || el.paused) { this.audio.duck(false); return; }
-    const left = Number.isFinite(el.duration) ? el.duration - el.currentTime : Infinity;
-    if (left > 0.45) {
-      const v0 = this._volume, ms = Math.max(70, fade * 1000), t0 = performance.now();
-      const release = this.release; this.release = null; this.fading = true;
-      this.queue = new Promise(res => {
-        const step = () => {
-          const k = Math.min(1, (performance.now() - t0) / ms);
-          el.volume = v0 * (1 - k);
-          if (k < 1) return requestAnimationFrame(step);
-          el.pause(); el.volume = v0; this.fading = false;
-          release?.(); res();
-        };
-        step();
-      });
-    }
-    this.audio.duck(false); // a música volta na hora, mesmo que a fala seja abandonada
-  }
+  // O jogo seguiu em frente (fechou a carta, rolou o dado…): a fala que está tocando NUNCA é cortada,
+  // vai até o fim com a saída suave que já vem no arquivo. Só as falas que ainda esperavam a vez caem,
+  // porque já não combinam com o que está na tela.
+  stop() { this.geracao++; }
 
   // próxima fala do momento: sorteio sem repetir até todas saírem (o "saco" fica salvo entre partidas),
   // e nunca a mesma que acabou de tocar quando o saco recomeça
@@ -156,27 +135,34 @@ export class Narrator {
   // fala em fila (uma de cada vez)
   say(key) {
     if (!this.enabled || !this.files.has(key)) return Promise.resolve();
+    const g = this.geracao;
     this.ultima = key;
-    this.queue = this.queue.then(() => this.#play(key)).catch(() => {});
+    // a próxima só começa quando a anterior terminou de verdade (nunca troca o arquivo no meio de uma fala)
+    this.queue = this.queue.then(() => (g === this.geracao ? this.#play(key) : undefined)).catch(() => {});
     return this.queue;
   }
 
   #play(key) {
     return new Promise(resolve => {
       const el = this.el;
-      let done = false;
+      let done = false, guarda;
       const end = () => {
         if (done) return; done = true;
+        clearTimeout(guarda);
+        el.onended = el.onerror = el.onloadedmetadata = null;
         this.playing = false;
-        this.release = null;
         this.audio.duck(false);
         resolve();
       };
-      this.release = end; // stop() chama isto se abandonar a fala, senão a música ficava abaixada
       this.playing = true;
       this.audio.duck(true);
       el.muted = false; el.src = `audio/voz/${key}.mp3`; el.volume = this._volume;
       el.onended = el.onerror = end;
+      // rede: se o "ended" nunca chegar (aparelho travou o áudio), a fila não fica presa para sempre
+      guarda = setTimeout(end, 9000);
+      el.onloadedmetadata = () => {
+        if (Number.isFinite(el.duration)) { clearTimeout(guarda); guarda = setTimeout(end, el.duration * 1000 + 2500); }
+      };
       el.play().catch(end);
     });
   }
